@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Mantenimiento</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header>
+    <div class="brand">MantenimientoApp</div>
+    <div class="role-switch hidden" id="header-roles" style="display: none;">
+      <button id="btn-role-operator" class="active">Operario</button>
+      <button id="btn-role-supervisor">Supervisor</button>
+    </div>
+  </header>
+
+  <main style="max-width: 100%; padding: 2rem 5%;">
+    
+    <!-- INITIAL PLANT VIEW -->
+    <div id="view-plant">
+       <div class="card" style="max-width:450px; margin:4rem auto; text-align:center;">
+          <h2 class="card-title" style="border:none;">Gestión Operativa <br/><span style="color:var(--primary); font-size:1.5rem">Serin SA</span></h2>
+          <div class="form-group" style="margin-top:1.5rem;">
+            <label style="margin-bottom:1rem; font-size:1rem;">Por favor, confirme su ubicación de trabajo de hoy para registrar en los servidores:</label>
+            <select id="select-plant" style="font-size:1.1rem; padding:0.75rem; border:2px solid var(--primary); font-weight:bold; cursor:pointer;">
+               <option value="">Seleccione Planta...</option>
+               <option value="RAM">Planta RAM</option>
+               <option value="SL1">Planta SL1</option>
+               <option value="SL2">Planta SL2</option>
+               <option value="CBA">Planta CBA</option>
+               <option value="PIL">Planta PIL</option>
+               <option value="PY">Planta PY</option>
+               <option value="RIV">Planta RIV</option>
+            </select>
+          </div>
+          <button type="button" id="btn-enter-plant" class="btn btn-primary" style="margin-top:1.5rem; font-size:1.1rem;">Iniciar Operaciones</button>
+       </div>
+    </div>
+
+    <!-- LOGIN SUPERVISOR -->
+    <div id="view-login" class="hidden">
+      <div class="card" style="max-width: 400px; margin: 2rem auto;">
+        <h2 class="card-title">Acceso de Supervisor</h2>
+        <form id="form-login">
+          <div class="form-group">
+            <label for="login_user">Usuario</label>
+            <input type="text" id="login_user" required autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label for="login_pass">Contraseña</label>
+            <input type="password" id="login_pass" required autocomplete="current-password">
+          </div>
+          <div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-top:-0.5rem; margin-bottom:1.5rem;">
+            <input type="checkbox" id="login_remember" style="width:auto; cursor:pointer;">
+            <label for="login_remember" style="margin:0; font-weight:normal; font-size:0.875rem; cursor:pointer;">Recordar credenciales</label>
+          </div>
+          <div class="form-group">
+            <p id="login_error" style="color: var(--danger); font-size: 0.875rem; display: none; text-align: center;">Credenciales incorrectas.</p>
+          </div>
+          <button type="submit" class="btn btn-primary">Ingresar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- VISTA OPERARIO -->
+    <div id="view-operator" class="hidden" style="max-width: 800px; margin: 0 auto;">
+      <div class="card">
+        <h2 class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Registro Diario de Actividades</span>
+          <span style="font-size:0.875rem; color:var(--text-muted); background:var(--bg-color); padding:0.25rem 0.5rem; border-radius:4px; font-weight:600;">RPMT0003</span>
+        </h2>
+        <form id="form-operator">
+          
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="fecha">Fecha</label>
+              <input type="date" id="fecha" required>
+            </div>
+            <div class="form-group">
+              <label for="turno">Turno</label>
+              <select id="turno" required>
+                <option value="">Seleccione...</option>
+                <option value="Mañana">Mañana</option>
+                <option value="Tarde">Tarde</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 2rem;">
+            <label for="operario">Operario principal</label>
+            <select id="operario" required>
+              <option value="">Seleccione Operario...</option>
+            </select>
+          </div>
+
+          <div id="tareas-container">
+            <!-- Tareas dinámicas se inyectarán aquí (cada tarea incluye su propia sección OT) -->
+          </div>
+          
+          <div class="form-group" style="text-align: right; margin-bottom: 2rem;">
+             <button type="button" id="btn-add-task" class="btn" style="width: auto; background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border);">+ Agregar otra tarea finalizada</button>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 2rem;">
+            <div style="padding: 1rem; background: var(--bg-color); border-radius: 0.5rem; text-align: center;">
+              <strong id="tiempo_total" style="color: var(--primary); font-size: 1.125rem;">Tiempo total de la jornada: 0h 0m</strong>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="font-size: 1.125rem; padding: 1rem;">Guardar Jornada</button>
+        </form>
+      </div>
+    </div> <!-- FIN VISTA OPERARIO -->
+
+    <!-- VISTA SUPERVISOR (CALENDARIO) -->
+    <div id="view-supervisor" class="hidden" style="width: 100%; max-width: 1600px; margin: 0 auto;">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 0.5rem;">
+          <h2 class="card-title" style="margin: 0; border: none; padding: 0;">Calendario de tareas pendientes</h2>
+          <div style="display:flex; gap:1rem; align-items: center;">
+             <label style="font-weight:bold; color:var(--text-muted)">Fecha:</label>
+             <input type="date" id="visor-fecha" style="padding:0.4rem; font-size:1rem; border-color:var(--border); border-radius:4px;">
+          </div>
+        </div>
+        
+        <div id="calendar-wrapper" style="overflow: auto; max-height: 65vh; background: #fffcf2; padding: 0.5rem; border-radius: var(--radius); border: 1px solid #fde047; min-height:400px;">
+          <!-- Aqui va el CSS Grid inyectado via JS -->
+          <div style="display: flex; min-width: 900px; position: relative;">
+             <div id="calendar-time-axis" style="width: 60px; flex-shrink: 0; position: relative; border-right:2px solid var(--border)"></div>
+             <div id="calendar-operators" style="flex: 1; display: flex; position: relative; padding-left: 0.5rem; gap:0.5rem;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE INSPECCIÓN SUPERVISOR -->
+    <div id="modal-supervisor" class="hidden" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:999; display:flex; align-items:center; justify-content:center;">
+       <div class="card" style="width:90%; max-width:600px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1);">
+           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--border); padding-bottom:0.5rem;">
+             <h3 id="modal-title" style="color:var(--primary); margin:0;">Inpección de Registro</h3>
+             <button id="btn-modal-close-icon" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+           </div>
+           
+           <div id="modal-content" style="margin:1rem 0; font-size:0.9rem; line-height:1.6; color:var(--text-main);">
+              <!-- Datos Dinámicos -->
+           </div>
+           
+           <div class="form-group" style="margin-top:1.5rem; background:#f9fafb; padding:1rem; border-radius:4px; border:1px solid var(--border);">
+              <label style="font-weight:bold; margin-bottom:0.5rem;">Observaciones y Reparos del Supervisor</label>
+              <textarea id="modal-obs" rows="3" placeholder="Escriba aquí sus anotaciones para constancia... (Se exportarán a Sheets)"></textarea>
+           </div>
+           
+           <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:2rem">
+              <button id="btn-modal-reject" class="btn btn-danger" style="width:auto; font-weight:normal;">Rechazar Reg.</button>
+              <button id="btn-modal-approve" class="btn btn-success" style="width:auto; min-width:120px;">Aprobar Registro</button>
+           </div>
+       </div>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
