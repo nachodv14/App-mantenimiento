@@ -5,7 +5,7 @@ const optionsMaquinas = `<option value="">Seleccione Máquina (Activa OT)...</op
 const optionsNaturaleza = `<option value="">Seleccione...</option><option value="Inspección">Inspección</option><option value="Preventivo Programado">Preventivo Programado</option><option value="Preventivo Condicional">Preventivo Condicional</option><option value="Preventivo semanal">Preventivo semanal</option><option value="Preventivo mensual">Preventivo mensual</option><option value="Preventivo trimestral">Preventivo trimestral</option><option value="Preventivo semestral">Preventivo semestral</option><option value="Preventivo Anual">Preventivo Anual</option><option value="Mejoras">Mejoras</option><option value="Falla">Falla</option>`;
 
 const operatorDict = {
-  "SL2": ['Baigorria', 'Saldaña', 'Gonzalez Aguero', 'Gutierrez', 'Aberastain'],
+  "SL2": ['Baigorria', 'Saldaña', 'Gonzales Aguero', 'Gutierrez', 'Aberastain'],
   "SL1": ['Azcurra', 'Beltran', 'Prado', 'Reyes'],
   "RAM": ['Abella', 'Ferrara', 'Rivero', 'Marun'],
   "CBA": ['Contrera', 'Miranda', 'Aguirre', 'Guardia'],
