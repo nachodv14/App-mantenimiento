@@ -661,6 +661,19 @@ function drawCalendarGrid(visorDate) {
 
   const opsForCol = operatorDict[currentPlant] || [];
 
+  // Paleta de colores distinguibles por operario
+  const OPERATOR_PALETTE = [
+    { border: '#7c3aed', bg: 'rgba(124, 58, 237, 0.13)' },  // violeta
+    { border: '#db2777', bg: 'rgba(219, 39, 119, 0.13)' },  // rosa
+    { border: '#d97706', bg: 'rgba(217, 119, 6, 0.13)'  },  // naranja
+    { border: '#0891b2', bg: 'rgba(8, 145, 178, 0.13)'  },  // cian
+    { border: '#16a34a', bg: 'rgba(22, 163, 74, 0.13)'  },  // verde
+  ];
+
+  // Mapa de: nombre_operario -> índice de color
+  const opColorIndex = {};
+  opsForCol.forEach((name, i) => { opColorIndex[name] = i % OPERATOR_PALETTE.length; });
+
   opsForCol.forEach(opName => {
     // EXTRAE TAREAS DONDE ES PRINCIPAL O APARECE COMO COMPAÑERO
     const opTasks = tasks.filter(t => {
@@ -677,7 +690,9 @@ function drawCalendarGrid(visorDate) {
     col.style.cssText = `flex:1; position:relative; min-width:180px; border-left:1px dashed #e5e7eb;`;
 
     const header = document.createElement('div');
-    header.style.cssText = `position:sticky; top:0; z-index:10; background:#f9fafb; text-align:center; font-weight:bold; padding:0.5rem; border-bottom:2px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.05);`;
+    const opIdx = opColorIndex[opName] ?? 0;
+    const opColor = OPERATOR_PALETTE[opIdx];
+    header.style.cssText = `position:sticky; top:0; z-index:10; background:${opColor.bg}; text-align:center; font-weight:bold; padding:0.5rem; border-bottom:3px solid ${opColor.border}; box-shadow: 0 2px 4px rgba(0,0,0,0.08); color:${opColor.border};`;
     header.textContent = opName;
 
     const timeline = document.createElement('div');
@@ -689,8 +704,12 @@ function drawCalendarGrid(visorDate) {
       const tDurMin = Math.round(parseFloat(t.totalTime) * 60);
 
       const block = document.createElement('div');
-      const colorBorder = t.hasOT ? '#0284c7' : '#10b981';
-      const colorBg = t.hasOT ? 'rgba(2, 132, 199, 0.15)' : 'rgba(16, 185, 129, 0.15)';
+
+      // El color lo determina el OPERARIO PRINCIPAL de la tarea (dueño), 
+      // así las tareas compartidas quedan del mismo color en ambas columnas.
+      const ownerIdx = opColorIndex[t.operator] ?? 0;
+      const colorBorder = OPERATOR_PALETTE[ownerIdx].border;
+      const colorBg    = OPERATOR_PALETTE[ownerIdx].bg;
 
       block.style.cssText = `
             position:absolute; top:${tMin * PIXEL_PER_MINUTE}px; left:2%; width:96%; height:${tDurMin * PIXEL_PER_MINUTE}px;
