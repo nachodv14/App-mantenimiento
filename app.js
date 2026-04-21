@@ -1,7 +1,7 @@
 // Constants
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxcCq6xrMkjUhCLaEPtAUtPvLJEaFpDXyowin-WgOOcFefzRgjU8s6EaS4AcgVL029R/exec";
 
-const optionsMaquinas = `<option value="">Seleccione Máquina (Activa OT)...</option><option value="R31">R31</option><option value="R32">R32</option><option value="R33">R33</option><option value="R34">R34</option><option value="R36">R36</option><option value="R38">R38</option><option value="P05">P05</option><option value="P06">P06</option><option value="PE01">PE01</option><option value="PE02">PE02</option><option value="M01">M01</option><option value="M03">M03</option><option value="M05">M05</option><option value="M06">M06</option><option value="M07">M07</option><option value="M08">M08</option><option value="M09">M09</option><option value="M10">M10</option><option value="M11">M11</option><option value="SEC03">SEC03</option><option value="S08">S08</option><option value="S10">S10</option><option value="SA04">SA04</option><option value="Q03">Q03</option><option value="FL02">FL02</option><option value="X40">X40</option><option value="X42">X42</option>`;
+const optionsMaquinas = `<option value="">Seleccione el codigo de la máquina...</option><option value="R31">R31</option><option value="R32">R32</option><option value="R33">R33</option><option value="R34">R34</option><option value="R36">R36</option><option value="R38">R38</option><option value="P05">P05</option><option value="P06">P06</option><option value="PE01">PE01</option><option value="PE02">PE02</option><option value="M01">M01</option><option value="M03">M03</option><option value="M05">M05</option><option value="M06">M06</option><option value="M07">M07</option><option value="M08">M08</option><option value="M09">M09</option><option value="M10">M10</option><option value="M11">M11</option><option value="SEC03">SEC03</option><option value="S08">S08</option><option value="S10">S10</option><option value="SA04">SA04</option><option value="Q03">Q03</option><option value="FL02">FL02</option><option value="X40">X40</option><option value="X42">X42</option>`;
 const optionsNaturaleza = `<option value="">Seleccione...</option><option value="Inspección">Inspección</option><option value="Preventivo Programado">Preventivo Programado</option><option value="Preventivo Condicional">Preventivo Condicional</option><option value="Preventivo semanal">Preventivo semanal</option><option value="Preventivo mensual">Preventivo mensual</option><option value="Preventivo trimestral">Preventivo trimestral</option><option value="Preventivo semestral">Preventivo semestral</option><option value="Preventivo Anual">Preventivo Anual</option><option value="Mejoras">Mejoras</option><option value="Falla">Falla</option>`;
 
 const operatorDict = {
@@ -18,15 +18,14 @@ const optM = `<option value="">MM</option><option value="00">00</option><option 
 
 // DOM Elements
 const viewPlant = document.getElementById('view-plant');
-const viewOp = document.getElementById('view-operator');
+const viewRole  = document.getElementById('view-role');
+const viewOp    = document.getElementById('view-operator');
 const viewLogin = document.getElementById('view-login');
-const viewSup = document.getElementById('view-supervisor');
-const headerRoles = document.getElementById('header-roles');
+const viewSup   = document.getElementById('view-supervisor');
 
-const btnOp = document.getElementById('btn-role-operator');
-const btnSup = document.getElementById('btn-role-supervisor');
-
-const sltPlant = document.getElementById('select-plant');
+const btnOp  = document.getElementById('btn-role-operator');  // ya no existe en header, queda null pero no se usa
+const btnSup = document.getElementById('btn-role-supervisor'); // idem
+const sltPlant      = document.getElementById('select-plant');
 const btnEnterPlant = document.getElementById('btn-enter-plant');
 
 // Global App State (Local Storage Restored)
@@ -39,8 +38,29 @@ function saveTasks() {
   localStorage.setItem('mantenimiento_tasks', JSON.stringify(tasks));
 }
 
-// init Plant Shield (Always force selection on refresh)
+// init: siempre arrancar desde la pantalla de rol
 sessionStorage.removeItem('mantenimiento_current_plant');
+
+// Pantalla de rol inicial (paso 2)
+document.getElementById('btn-role-op-init').addEventListener('click', () => {
+  viewRole.classList.add('hidden');
+  viewOp.classList.remove('hidden');
+});
+
+document.getElementById('btn-role-sup-init').addEventListener('click', () => {
+  viewRole.classList.add('hidden');
+  if(supervisorLoggedIn) {
+    viewSup.classList.remove('hidden');
+    renderCalendar();
+  } else {
+    viewLogin.classList.remove('hidden');
+  }
+});
+
+document.getElementById('btn-back-plant').addEventListener('click', () => {
+  viewRole.classList.add('hidden');
+  viewPlant.classList.remove('hidden');
+});
 
 btnEnterPlant.addEventListener('click', () => {
   if (!sltPlant.value) return alert("Por favor seleccione una planta válida para continuar.");
@@ -51,36 +71,20 @@ btnEnterPlant.addEventListener('click', () => {
   const plantOps = operatorDict[currentPlant] || [];
   opSelect.innerHTML = `<option value="">Seleccione Operario...</option>` + plantOps.map(op => `<option value="${op}">${op}</option>`).join('');
 
+  // Al confirmar planta, mostrar pantalla de rol
   viewPlant.classList.add('hidden');
-  headerRoles.classList.remove('hidden');
-  headerRoles.style.display = 'flex';
-  viewOp.classList.remove('hidden');
+  // Actualizar el label de planta seleccionada en la pantalla de rol
+  const rolePlantLabel = document.getElementById('role-plant-label');
+  if(rolePlantLabel) rolePlantLabel.textContent = `Planta: ${currentPlant}`;
+  viewRole.classList.remove('hidden');
 
   // Restart rows if they changed plants to recalibrate the Select size
   initRows();
   renderOperatorSidebar();
 });
 
-// Navigation
-btnOp.addEventListener('click', () => {
-  btnOp.classList.add('active');
-  btnSup.classList.remove('active');
-  viewOp.classList.remove('hidden');
-  viewSup.classList.add('hidden');
-  viewLogin.classList.add('hidden');
-});
-
-btnSup.addEventListener('click', () => {
-  btnSup.classList.add('active');
-  btnOp.classList.remove('active');
-  viewOp.classList.add('hidden');
-  if (supervisorLoggedIn) {
-    viewSup.classList.remove('hidden');
-    renderCalendar(); // Renders instantly from memory
-  } else {
-    viewLogin.classList.remove('hidden');
-  }
-});
+// Navigation legacy (header buttons removed — kept as no-ops for safety)
+// btnOp / btnSup are null, so no listeners attached.
 
 // Login Logic
 const loginForm = document.getElementById('form-login');
@@ -174,7 +178,7 @@ function addTaskRow(isRequired = false) {
     
     <div class="grid-2" style="margin-bottom:1rem;">
       <div class="form-group" style="margin-bottom:0;">
-        <label>Desde (Intervalos de 10 min)</label>
+        <label>Desde</label>
         <div style="display:flex; align-items:center; gap:4px; width:100%;">
            <select class="time-desde-h" style="flex:1; padding:0.6rem; text-align:center; font-size:1.1rem; border-color:var(--border);" ${isRequired ? 'required' : ''}>${optH}</select> <b style="font-size:1.2rem">:</b>
            <select class="time-desde-m" style="flex:1; padding:0.6rem; text-align:center; font-size:1.1rem; border-color:var(--border);" ${isRequired ? 'required' : ''}>${optM}</select>
@@ -201,7 +205,7 @@ function addTaskRow(isRequired = false) {
 
     <!-- Trigger de Máquina / OT -->
     <div class="form-group" style="background:#eef6fc; padding:1.25rem; border-radius:6px; margin-bottom:1rem; border:1px solid #bcdcf9;">
-      <label style="color:var(--primary); font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Máquina Intervenida (Abre módulo de OT)</label>
+      <label style="color:var(--primary); font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Máquina Intervenida</label>
       <select class="ot-maquina-trigger" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsMaquinas}</select>
     </div>
 

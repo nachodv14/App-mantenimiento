@@ -11,20 +11,17 @@
 
   <header>
     <div class="brand">MantenimientoApp</div>
-    <div class="role-switch hidden" id="header-roles" style="display: none;">
-      <button id="btn-role-operator" class="active">Operario</button>
-      <button id="btn-role-supervisor">Supervisor</button>
-    </div>
   </header>
 
   <main style="max-width: 100%; padding: 2rem 5%;">
     
-    <!-- INITIAL PLANT VIEW -->
+    <!-- INITIAL PLANT VIEW (paso 1) -->
     <div id="view-plant">
        <div class="card" style="max-width:450px; margin:4rem auto; text-align:center;">
-          <h2 class="card-title" style="border:none;">Gestión Operativa <br/><span style="color:var(--primary); font-size:1.5rem">Serin SA</span></h2>
-          <div class="form-group" style="margin-top:1.5rem;">
-            <label style="margin-bottom:1rem; font-size:1rem;">Por favor, confirme su ubicación de trabajo de hoy para registrar en los servidores:</label>
+          <h2 class="card-title" style="border:none; margin-bottom:0.25rem;">Gestión Operativa</h2>
+          <p style="color:var(--primary); font-size:1.6rem; font-weight:700; margin:0 0 2rem;">Serin SA</p>
+          <div class="form-group" style="margin-top:0.5rem;">
+            <label style="margin-bottom:1rem; font-size:1rem;">Confirmá tu planta de trabajo de hoy:</label>
             <select id="select-plant" style="font-size:1.1rem; padding:0.75rem; border:2px solid var(--primary); font-weight:bold; cursor:pointer;">
                <option value="">Seleccione Planta...</option>
                <option value="RAM">Planta RAM</option>
@@ -36,7 +33,26 @@
                <option value="RIV">Planta RIV</option>
             </select>
           </div>
-          <button type="button" id="btn-enter-plant" class="btn btn-primary" style="margin-top:1.5rem; font-size:1.1rem;">Iniciar Operaciones</button>
+          <button type="button" id="btn-enter-plant" class="btn btn-primary" style="margin-top:1.5rem; font-size:1.1rem;">Continuar</button>
+       </div>
+    </div>
+
+    <!-- PANTALLA DE ROL (paso 2) -->
+    <div id="view-role" class="hidden">
+       <div class="card" style="max-width:520px; margin:4rem auto; text-align:center;">
+          <p id="role-plant-label" style="color:var(--text-muted); font-size:0.95rem; margin-bottom:1.5rem;">Planta seleccionada</p>
+          <p style="color:var(--text-main); font-size:1rem; margin-bottom:1.75rem; font-weight:500;">Seleccioná tu rol para continuar:</p>
+          <div style="display:flex; gap:1.25rem; justify-content:center; flex-wrap:wrap;">
+             <button id="btn-role-op-init" class="btn btn-primary" style="flex:1; min-width:180px; padding:1.5rem 1rem; font-size:1.1rem; display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+               <span style="font-size:2rem;">&#128295;</span>
+               Soy Operario
+             </button>
+             <button id="btn-role-sup-init" class="btn" style="flex:1; min-width:180px; padding:1.5rem 1rem; font-size:1.1rem; border:2px solid var(--primary); color:var(--primary); background:transparent; display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
+               <span style="font-size:2rem;">&#128203;</span>
+               Soy Supervisor
+             </button>
+          </div>
+          <button type="button" id="btn-back-plant" class="btn" style="margin-top:1.25rem; background:none; color:var(--text-muted); font-size:0.9rem; width:auto;">&#8592; Cambiar planta</button>
        </div>
     </div>
 
