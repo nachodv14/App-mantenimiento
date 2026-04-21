@@ -38,8 +38,17 @@ function saveTasks() {
   localStorage.setItem('mantenimiento_tasks', JSON.stringify(tasks));
 }
 
-// init: siempre arrancar desde la pantalla de rol
+// init: siempre arrancar desde la pantalla de planta
 sessionStorage.removeItem('mantenimiento_current_plant');
+
+// Clic en el brand del header → vuelve al inicio
+document.getElementById('btn-brand-home').addEventListener('click', () => {
+  if(!confirm('¿Salir y volver al inicio? Se perderá el formulario en curso.')) return;
+  [viewRole, viewOp, viewSup, viewLogin].forEach(v => v && v.classList.add('hidden'));
+  sltPlant.value = '';
+  currentPlant = null;
+  viewPlant.classList.remove('hidden');
+});
 
 // Pantalla de rol inicial (paso 2)
 document.getElementById('btn-role-op-init').addEventListener('click', () => {
