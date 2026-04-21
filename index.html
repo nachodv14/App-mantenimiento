@@ -66,8 +66,18 @@
     </div>
 
     <!-- VISTA OPERARIO -->
-    <div id="view-operator" class="hidden" style="max-width: 800px; margin: 0 auto;">
-      <div class="card">
+    <div id="view-operator" class="hidden" style="max-width: 1400px; margin: 0 auto; display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap-reverse;">
+      
+      <!-- Panel Lateral Izquierdo: Historial -->
+      <div id="operator-sidebar" class="card" style="flex: 1; min-width: 280px; max-width: 380px; position: sticky; top: 1rem;">
+         <h2 class="card-title" style="font-size:1.1rem; border-bottom:1px solid var(--border); padding-bottom:0.75rem; margin-bottom:1rem; margin-top:0;">Tareas cargadas</h2>
+         <div id="operator-tasks-list" style="display:flex; flex-direction:column; gap:0.75rem; max-height:75vh; overflow-y:auto; padding-right:0.25rem;">
+            <div style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:1.5rem 0;">Aguardando selección de operario...</div>
+         </div>
+      </div>
+
+      <!-- Panel Principal Derecho: Formulario -->
+      <div class="card" style="flex: 2; min-width: 320px;">
         <h2 class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
           <span>Registro Diario de Actividades</span>
           <span style="font-size:0.875rem; color:var(--text-muted); background:var(--bg-color); padding:0.25rem 0.5rem; border-radius:4px; font-weight:600;">RPMT0003</span>
@@ -99,7 +109,6 @@
           <div id="tareas-container">
             <!-- Tareas dinámicas se inyectarán aquí (cada tarea incluye su propia sección OT) -->
           </div>
-          
           <div class="form-group" style="text-align: right; margin-bottom: 2rem;">
              <button type="button" id="btn-add-task" class="btn" style="width: auto; background: var(--bg-color); color: var(--text-main); border: 1px solid var(--border);">+ Agregar otra tarea finalizada</button>
           </div>

@@ -58,6 +58,7 @@ btnEnterPlant.addEventListener('click', () => {
 
   // Restart rows if they changed plants to recalibrate the Select size
   initRows();
+  renderOperatorSidebar();
 });
 
 // Navigation
@@ -127,8 +128,9 @@ function getCompanionOptionsHTML() {
   return html;
 }
 document.getElementById('operario').addEventListener('change', () => {
-  document.querySelectorAll('.ot-operarios').forEach(selectOpt => selectOpt.dispatchEvent(new Event('change')));
-  updateTiempoTotal();
+   document.querySelectorAll('.ot-operarios').forEach(selectOpt => selectOpt.dispatchEvent(new Event('change')));
+   updateTiempoTotal();
+   renderOperatorSidebar();
 });
 
 
@@ -398,7 +400,10 @@ function diffHours(start, end) {
   return (dEnd - dStart) / (1000 * 60 * 60);
 }
 
-document.getElementById('fecha').addEventListener('change', updateTiempoTotal);
+document.getElementById('fecha').addEventListener('change', () => {
+  updateTiempoTotal();
+  renderOperatorSidebar();
+});
 
 function updateTiempoTotal() {
   let totalH = 0, hasError = false, validIntervals = [];
@@ -578,7 +583,56 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
   document.getElementById('form-operator').reset();
   initRows(); document.getElementById('fecha').valueAsDate = new Date();
   updateTiempoTotal();
+  renderOperatorSidebar();
 });
+
+// --- OPERATOR SIDEBAR RENDERER ---
+function renderOperatorSidebar() {
+    const listDiv = document.getElementById('operator-tasks-list');
+    if(!listDiv) return;
+
+    const curDate = document.getElementById('fecha').value;
+    const curOp = document.getElementById('operario').value;
+    
+    if(!curDate || !curOp) {
+       listDiv.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:1.5rem 0;">Aguardando selección de operario...</div>';
+       return;
+    }
+
+    listDiv.innerHTML = '';
+    
+    const myTasks = tasks.filter(t => {
+        if (t.date !== curDate || t.plant !== currentPlant) return false;
+        if (t.operator === curOp) return true;
+        if (t.companions) {
+            const comps = t.companions.split(',').map(c => c.trim());
+            return comps.includes(curOp);
+        }
+        return false;
+    });
+
+    if(myTasks.length === 0) {
+        listDiv.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:1.5rem 0;">Aún no tienes tareas cargadas en esta jornada.</div>';
+    } else {
+        myTasks.sort((a,b) => a.from.localeCompare(b.from)).forEach(t => {
+           let theHtml = `
+             <div style="background:#f9fafb; border:1px solid #e5e7eb; border-left:4px solid ${t.hasOT ? '#0284c7' : '#10b981'}; border-radius:4px; padding:0.75rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+                   <strong style="color:var(--text-main); font-size:0.95rem;">${t.from} a ${t.to} (${t.totalTime}h)</strong>
+                </div>
+                <div style="margin-bottom:0.25rem; font-size:0.9rem; color:var(--text-main);">${t.description}</div>
+           `;
+           if(t.hasOT) {
+              theHtml += `<div style="font-size:0.8rem; color:var(--primary); margin-top:0.25rem;"><strong>OT Máquina:</strong> ${t.machine}</div>`;
+           }
+           if (t.operator !== curOp) {
+              theHtml += `<div style="font-size:0.8rem; color:#8b5cf6; margin-top:0.25rem;"><strong>Trabajaste asistiendo a:</strong> ${t.operator}</div>`;
+           }
+           theHtml += `</div>`;
+           listDiv.innerHTML += theHtml;
+        });
+    }
+}
 
 // --- SUPERVISOR GOOGLE CALENDAR LOGIC ---
 
