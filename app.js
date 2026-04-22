@@ -3,6 +3,9 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbxcCq6xrMkjUhCLaEPtAUtP
 
 const optionsMaquinas = `<option value="">Seleccione el codigo de la máquina...</option><option value="R31">R31</option><option value="R32">R32</option><option value="R33">R33</option><option value="R34">R34</option><option value="R36">R36</option><option value="R38">R38</option><option value="P05">P05</option><option value="P06">P06</option><option value="PE01">PE01</option><option value="PE02">PE02</option><option value="M01">M01</option><option value="M03">M03</option><option value="M05">M05</option><option value="M06">M06</option><option value="M07">M07</option><option value="M08">M08</option><option value="M09">M09</option><option value="M10">M10</option><option value="M11">M11</option><option value="SEC03">SEC03</option><option value="S08">S08</option><option value="S10">S10</option><option value="SA04">SA04</option><option value="Q03">Q03</option><option value="FL02">FL02</option><option value="X40">X40</option><option value="X42">X42</option>`;
 const optionsNaturaleza = `<option value="">Seleccione...</option><option value="Inspección">Inspección</option><option value="Preventivo Programado">Preventivo Programado</option><option value="Preventivo Condicional">Preventivo Condicional</option><option value="Preventivo semanal">Preventivo semanal</option><option value="Preventivo mensual">Preventivo mensual</option><option value="Preventivo trimestral">Preventivo trimestral</option><option value="Preventivo semestral">Preventivo semestral</option><option value="Preventivo Anual">Preventivo Anual</option><option value="Mejoras">Mejoras</option><option value="Falla">Falla</option>`;
+const optionsEdilicio = `<option value="">Seleccione Categoría...</option><option value="Orden y limpieza">Orden y limpieza</option><option value="Reunion, capacitacion o asamblea">Reunion, capacitacion o asamblea</option><option value="Planta general">Planta general</option><option value="Taller o pañol">Taller o pañol</option><option value="Asistencia a Logistica">Asistencia a Logistica</option><option value="Asistencia a Produccion">Asistencia a Produccion</option>`;
+const optionsAusentismo = `<option value="">Seleccione Motivo...</option><option value="Carpeta medica">Carpeta medica</option><option value="Vacaciones">Vacaciones</option><option value="Salidas personales o retiros">Salidas personales o retiros</option><option value="Feriados">Feriados</option>`;
+const optionsTipoRegistro = `<option value="MAQUINA">Mantenimiento de Máquina (OT)</option><option value="EDILICIO">Mantenimiento Edilicio / Varios</option><option value="AUSENTISMO">Ausentismo / No productivo</option>`;
 
 const operatorDict = {
   "SL2": ['Baigorria', 'Saldaña', 'Gonzalez Aguero', 'Gutierrez', 'Aberastain'],
@@ -265,10 +268,34 @@ function addTaskRow(isRequired = false) {
         <div class="ot-companeros-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;"></div>
     </div>
 
-    <!-- Trigger de Máquina / OT -->
-    <div class="form-group" style="background:#eef6fc; padding:1.25rem; border-radius:6px; margin-bottom:1rem; border:1px solid #bcdcf9;">
-      <label style="color:var(--primary); font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Máquina Intervenida</label>
-      <select class="ot-maquina-trigger" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsMaquinas}</select>
+    <!-- Selector de Tipo de Registro -->
+    <div class="form-group" style="margin-bottom:1rem; border-bottom: 1px dashed var(--border); padding-bottom: 1rem;">
+      <label style="font-weight:600;">Tipo de Registro</label>
+      <select class="tipo-registro" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsTipoRegistro}</select>
+    </div>
+
+    <!-- Sección Mantenimiento de Máquina (Default) -->
+    <div class="section-maquina">
+      <div class="form-group" style="background:#eef6fc; padding:1.25rem; border-radius:6px; margin-bottom:1rem; border:1px solid #bcdcf9;">
+        <label style="color:var(--primary); font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Máquina Intervenida</label>
+        <select class="ot-maquina-trigger" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsMaquinas}</select>
+      </div>
+    </div>
+
+    <!-- Sección Edilicio / Varios -->
+    <div class="section-edilicio hidden">
+      <div class="form-group" style="background:#f0fdf4; padding:1.25rem; border-radius:6px; margin-bottom:1rem; border:1px solid #bbf7d0;">
+        <label style="color:#15803d; font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Categoría Edilicio / Varios</label>
+        <select class="cat-edilicio" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsEdilicio}</select>
+      </div>
+    </div>
+
+    <!-- Sección Ausentismo -->
+    <div class="section-ausentismo hidden">
+      <div class="form-group" style="background:#fff1f2; padding:1.25rem; border-radius:6px; margin-bottom:1rem; border:1px solid #fecdd3;">
+        <label style="color:#be123c; font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Motivo Ausentismo / No Productivo</label>
+        <select class="motivo-ausentismo" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsAusentismo}</select>
+      </div>
     </div>
 
     <!-- Módulo OT interno de la fila (se muestra solo si se selecciona máquina) -->
@@ -402,10 +429,34 @@ function addTaskRow(isRequired = false) {
   div.querySelector('.time-hasta-h').addEventListener('change', triggerRecalc);
   div.querySelector('.time-hasta-m').addEventListener('change', triggerRecalc);
 
+  // Lógica de Tipo de Registro
+  const tipoSel = div.querySelector('.tipo-registro');
+  const secMaquina = div.querySelector('.section-maquina');
+  const secEdilicio = div.querySelector('.section-edilicio');
+  const secAusentismo = div.querySelector('.section-ausentismo');
+
+  tipoSel.addEventListener('change', () => {
+    const val = tipoSel.value;
+    secMaquina.classList.add('hidden');
+    secEdilicio.classList.add('hidden');
+    secAusentismo.classList.add('hidden');
+    modOt.classList.add('hidden');
+
+    if (val === 'MAQUINA') {
+      secMaquina.classList.remove('hidden');
+      if (triggerMaquina.value !== "") modOt.classList.remove('hidden');
+    } else if (val === 'EDILICIO') {
+      secEdilicio.classList.remove('hidden');
+    } else if (val === 'AUSENTISMO') {
+      secAusentismo.classList.remove('hidden');
+    }
+    triggerRecalc();
+  });
+
   // Reemplazo fundamental: Mostrar si el operario seleccionó Máquina
   triggerMaquina.addEventListener('change', (e) => {
     const isOt = e.target.value !== "";
-    if (isOt) {
+    if (isOt && tipoSel.value === 'MAQUINA') {
       modOt.classList.remove('hidden');
       div.querySelector('.ot-naturaleza').required = true;
       if (!otTareas.dataset.edited) otTareas.value = descTask.value;
@@ -570,12 +621,20 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
     let hhs = row.querySelector('.time-hasta-h').value, hms = row.querySelector('.time-hasta-m').value;
     const hasta = (hhs && hms) ? `${hhs}:${hms}` : '';
 
+    const tipo = row.querySelector('.tipo-registro').value;
     const triggerMachineCode = row.querySelector('.ot-maquina-trigger').value;
-    const isOt = triggerMachineCode !== "";
+    const catEdilicio = row.querySelector('.cat-edilicio').value;
+    const motAusentismo = row.querySelector('.motivo-ausentismo').value;
+    
+    const isOt = tipo === 'MAQUINA' && triggerMachineCode !== "";
 
     if (!desc || !desde || !hasta) return;
     const dh = diffHours(desde, hasta);
-    let taskData = { desc, desde, hasta, time: dh, hasOT: isOt };
+    let taskData = { desc, desde, hasta, time: dh, hasOT: isOt, type: tipo };
+
+    if (tipo === 'MAQUINA') taskData.machine = triggerMachineCode;
+    else if (tipo === 'EDILICIO') taskData.category = catEdilicio;
+    else if (tipo === 'AUSENTISMO') taskData.category = motAusentismo;
 
     taskData.opsCount = row.querySelector('.ot-operarios').value;
     const compSelects = row.querySelectorAll('.ot-companero-select');
@@ -583,6 +642,10 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
       if (!s.value) { alert("Por favor, selecciona los nombres de todos los compañeros en la tarea."); processFailed = true; return; }
     }
     taskData.companions = Array.from(compSelects).map(s => s.value).filter(v => v).join(', ');
+
+    // Validación de categorías para Edilicio y Ausentismo
+    if (tipo === 'EDILICIO' && !catEdilicio) { alert("Por favor selecciona una categoría para el registro Edilicio."); processFailed = true; return; }
+    if (tipo === 'AUSENTISMO' && !motAusentismo) { alert("Por favor selecciona un motivo para el Ausentismo."); processFailed = true; return; }
 
     if (isOt) {
       taskData.machine = triggerMachineCode;
@@ -622,7 +685,8 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
       id: batchId + '_' + idx, status: 'PENDING',
       plant: currentPlant, date, shift, operator,
       from: r.desde, to: r.hasta, totalTime: r.time.toFixed(2),
-      description: r.desc, hasOT: r.hasOT, opsCount: r.opsCount, companions: r.companions
+      description: r.desc, hasOT: r.hasOT, opsCount: r.opsCount, companions: r.companions,
+      type: r.type, category: r.category || ''
     };
     if (r.hasOT) {
       Object.assign(out, {
@@ -682,7 +746,7 @@ function renderOperatorSidebar() {
     } else {
         myTasks.sort((a,b) => a.from.localeCompare(b.from)).forEach(t => {
            let theHtml = `
-             <div style="background:#f9fafb; border:1px solid #e5e7eb; border-left:4px solid ${t.hasOT ? '#0284c7' : '#10b981'}; border-radius:4px; padding:0.75rem;">
+             <div style="background:#f9fafb; border:1px solid #e5e7eb; border-left:4px solid ${t.hasOT ? '#0284c7' : (t.type === 'AUSENTISMO' ? '#be123c' : '#10b981')}; border-radius:4px; padding:0.75rem;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
                    <strong style="color:var(--text-main); font-size:0.95rem;">${t.from} a ${t.to} (${t.totalTime}h)</strong>
                 </div>
@@ -690,6 +754,8 @@ function renderOperatorSidebar() {
            `;
            if(t.hasOT) {
               theHtml += `<div style="font-size:0.8rem; color:var(--primary); margin-top:0.25rem;"><strong>OT Máquina:</strong> ${t.machine}</div>`;
+           } else if(t.type === 'EDILICIO' || t.type === 'AUSENTISMO') {
+              theHtml += `<div style="font-size:0.8rem; color:${t.type === 'EDILICIO' ? '#15803d' : '#be123c'}; margin-top:0.25rem;"><strong>${t.type === 'EDILICIO' ? 'Edilicio/Varios' : 'Ausentismo'}:</strong> ${t.category}</div>`;
            }
            if (t.operator !== curOp) {
               theHtml += `<div style="font-size:0.8rem; color:#8b5cf6; margin-top:0.25rem;"><strong>Trabajaste asistiendo a:</strong> ${t.operator}</div>`;
@@ -791,7 +857,9 @@ function drawCalendarGrid(visorDate) {
 
       block.innerHTML = `
             <strong style="color:${colorBorder}; margin-right:4px;">${t.from}-${t.to}</strong>
-            <span style="white-space:nowrap; text-overflow:ellipsis; overflow:hidden; display:block;">${t.description}</span>
+            <span style="white-space:nowrap; text-overflow:ellipsis; overflow:hidden; display:block;">
+               ${t.type === 'MAQUINA' ? (t.machine + ': ' + t.description) : (t.category + ': ' + t.description)}
+            </span>
          `;
       timeline.appendChild(block);
     });
