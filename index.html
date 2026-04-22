@@ -60,18 +60,26 @@
     <div id="view-login" class="hidden">
       <div class="card" style="max-width: 400px; margin: 2rem auto;">
         <h2 class="card-title">Acceso de Supervisor</h2>
-        <form id="form-login">
+        <form id="form-login" autocomplete="off">
+          <!-- Selector de perfiles guardados -->
+          <div class="form-group" id="saved-profiles-group" style="display:none;">
+            <label for="login_saved">Perfiles guardados</label>
+            <select id="login_saved" style="font-size:1rem;">
+              <option value="">— Seleccionar perfil guardado —</option>
+            </select>
+          </div>
+
           <div class="form-group">
             <label for="login_user">Usuario</label>
-            <input type="text" id="login_user" required autocomplete="username">
+            <input type="text" id="login_user" required autocomplete="off">
           </div>
           <div class="form-group">
             <label for="login_pass">Contraseña</label>
-            <input type="password" id="login_pass" required autocomplete="current-password">
+            <input type="password" id="login_pass" required autocomplete="off">
           </div>
           <div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-top:-0.5rem; margin-bottom:1.5rem;">
             <input type="checkbox" id="login_remember" style="width:auto; cursor:pointer;">
-            <label for="login_remember" style="margin:0; font-weight:normal; font-size:0.875rem; cursor:pointer;">Recordar credenciales</label>
+            <label for="login_remember" style="margin:0; font-weight:normal; font-size:0.875rem; cursor:pointer;">Guardar este usuario para la próxima vez</label>
           </div>
           <div class="form-group">
             <p id="login_error" style="color: var(--danger); font-size: 0.875rem; display: none; text-align: center;">Credenciales incorrectas.</p>

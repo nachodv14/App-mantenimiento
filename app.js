@@ -62,6 +62,7 @@ document.getElementById('btn-role-sup-init').addEventListener('click', () => {
     viewSup.classList.remove('hidden');
     renderCalendar();
   } else {
+    loadSavedProfiles();
     viewLogin.classList.remove('hidden');
   }
 });
@@ -73,6 +74,8 @@ document.getElementById('btn-back-plant').addEventListener('click', () => {
 
 document.getElementById('btn-sup-go-home').addEventListener('click', () => {
   viewSup.classList.add('hidden');
+  viewLogin.classList.add('hidden');
+  supervisorLoggedIn = false;
   sltPlant.value = '';
   currentPlant = null;
   viewPlant.classList.remove('hidden');
@@ -80,6 +83,16 @@ document.getElementById('btn-sup-go-home').addEventListener('click', () => {
 
 document.getElementById('btn-op-go-home').addEventListener('click', () => {
   viewOp.classList.add('hidden');
+  sltPlant.value = '';
+  currentPlant = null;
+  viewPlant.classList.remove('hidden');
+});
+
+// Brand logo → volver al inicio
+document.getElementById('btn-brand-home').addEventListener('click', () => {
+  if(!confirm('¿Salir y volver al inicio? Se perderá el formulario en curso.')) return;
+  [viewRole, viewOp, viewSup, viewLogin].forEach(v => v && v.classList.add('hidden'));
+  supervisorLoggedIn = false;
   sltPlant.value = '';
   currentPlant = null;
   viewPlant.classList.remove('hidden');
@@ -109,36 +122,62 @@ btnEnterPlant.addEventListener('click', () => {
 // Navigation legacy (header buttons removed — kept as no-ops for safety)
 // btnOp / btnSup are null, so no listeners attached.
 
-// Login Logic
-const loginForm = document.getElementById('form-login');
-const inputLoginUser = document.getElementById('login_user');
-const inputLoginPass = document.getElementById('login_pass');
-const chkRemember = document.getElementById('login_remember');
+// Login Logic — Sistema de perfiles guardados
+const loginForm       = document.getElementById('form-login');
+const inputLoginUser  = document.getElementById('login_user');
+const inputLoginPass  = document.getElementById('login_pass');
+const chkRemember     = document.getElementById('login_remember');
+const loginSaved      = document.getElementById('login_saved');
+const savedProfilesGrp = document.getElementById('saved-profiles-group');
 
-const savedUser = localStorage.getItem('mantenimiento_sup_user');
-const savedPass = localStorage.getItem('mantenimiento_sup_pass');
-if (savedUser && savedPass) {
-  inputLoginUser.value = savedUser;
-  inputLoginPass.value = savedPass;
-  chkRemember.checked = true;
+// Cargar perfiles guardados en el selector
+function loadSavedProfiles() {
+  const profiles = JSON.parse(localStorage.getItem('mantenimiento_sup_profiles') || '[]');
+  if (profiles.length > 0) {
+    savedProfilesGrp.style.display = 'block';
+    loginSaved.innerHTML = '<option value="">— Seleccionar perfil guardado —</option>';
+    profiles.forEach((p, i) => {
+      loginSaved.innerHTML += `<option value="${i}">${p.user}</option>`;
+    });
+  } else {
+    savedProfilesGrp.style.display = 'none';
+  }
+  // Siempre limpiar los campos al mostrar el login
+  inputLoginUser.value = '';
+  inputLoginPass.value = '';
+  chkRemember.checked = false;
 }
+
+// Al seleccionar un perfil guardado, autocompletar los campos
+loginSaved.addEventListener('change', () => {
+  const profiles = JSON.parse(localStorage.getItem('mantenimiento_sup_profiles') || '[]');
+  const idx = parseInt(loginSaved.value);
+  if (!isNaN(idx) && profiles[idx]) {
+    inputLoginUser.value = profiles[idx].user;
+    inputLoginPass.value = profiles[idx].pass;
+  } else {
+    inputLoginUser.value = '';
+    inputLoginPass.value = '';
+  }
+});
 
 loginForm.addEventListener('submit', (e) => {
   e.preventDefault();
-  const u = inputLoginUser.value;
+  const u = inputLoginUser.value.trim();
   const p = inputLoginPass.value;
   if (u === 'asarchioni' && p === 'Serin') {
     if (chkRemember.checked) {
-      localStorage.setItem('mantenimiento_sup_user', u);
-      localStorage.setItem('mantenimiento_sup_pass', p);
-    } else {
-      localStorage.removeItem('mantenimiento_sup_user');
-      localStorage.removeItem('mantenimiento_sup_pass');
+      const profiles = JSON.parse(localStorage.getItem('mantenimiento_sup_profiles') || '[]');
+      const exists = profiles.find(pr => pr.user === u);
+      if (!exists) {
+        profiles.push({ user: u, pass: p });
+        localStorage.setItem('mantenimiento_sup_profiles', JSON.stringify(profiles));
+      }
     }
     supervisorLoggedIn = true;
+    document.getElementById('login_error').style.display = 'none';
     viewLogin.classList.add('hidden');
     viewSup.classList.remove('hidden');
-    if (!chkRemember.checked) inputLoginPass.value = '';
     renderCalendar();
   } else {
     document.getElementById('login_error').style.display = 'block';
