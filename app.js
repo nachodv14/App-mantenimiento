@@ -71,6 +71,13 @@ document.getElementById('btn-back-plant').addEventListener('click', () => {
   viewPlant.classList.remove('hidden');
 });
 
+document.getElementById('btn-sup-go-home').addEventListener('click', () => {
+  viewSup.classList.add('hidden');
+  sltPlant.value = '';
+  currentPlant = null;
+  viewPlant.classList.remove('hidden');
+});
+
 btnEnterPlant.addEventListener('click', () => {
   if (!sltPlant.value) return alert("Por favor seleccione una planta válida para continuar.");
   currentPlant = sltPlant.value;
