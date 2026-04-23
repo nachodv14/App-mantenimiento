@@ -506,7 +506,7 @@ function addTaskRow(isRequired = false) {
       let idt = new Date(`${pIF.value}T${pIH.value}:${pIM.value}`);
       let fdt = new Date(`${pFF.value}T${pFH.value}:${pFM.value}`);
       if (fdt >= idt) {
-        let dh = (fdt - idt) / (1000 * 60 * 60);
+        let dh = getStopTimeAdjusted(idt, fdt, currentPlant);
         let hrs = Math.floor(dh);
         pTiempo.textContent = `Tiempo de Parada: ${hrs}h ${Math.round((dh - hrs) * 60)}m`;
         return;
@@ -519,6 +519,22 @@ function addTaskRow(isRequired = false) {
   if (!isRequired) div.querySelector('.btn-remove-task').addEventListener('click', () => { div.remove(); triggerRecalc(); });
 
   tareasContainer.appendChild(div);
+}
+
+function getStopTimeAdjusted(di, df, plant) {
+  if (plant !== 'SL2') return (df - di) / (1000 * 60 * 60);
+  let totalMs = 0;
+  let cursor = new Date(di.getTime());
+  while (cursor < df) {
+    let y = cursor.getFullYear(), m = cursor.getMonth(), d = cursor.getDate();
+    let sStart = new Date(y, m, d, 6, 0, 0);
+    let sEnd   = new Date(y, m, d, 14, 48, 0);
+    let overlapS = new Date(Math.max(cursor.getTime(), sStart.getTime()));
+    let overlapE = new Date(Math.min(df.getTime(), sEnd.getTime()));
+    if (overlapS < overlapE) totalMs += (overlapE - overlapS);
+    cursor = new Date(y, m, d + 1, 0, 0, 0);
+  }
+  return totalMs / (1000 * 60 * 60);
 }
 
 function initRows() {
@@ -689,7 +705,7 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
         if (df < di) { alert(`Error en fechas de parada.`); processFailed = true; return; }
         taskData.startOut = `${pIF} ${pIH}:${pIM}`;
         taskData.endOut = `${pFF} ${pFH}:${pFM}`;
-        taskData.stopTime = ((df - di) / (1000 * 60 * 60)).toFixed(2);
+        taskData.stopTime = getStopTimeAdjusted(di, df, currentPlant).toFixed(2);
       }
     }
     validRows.push(taskData);
