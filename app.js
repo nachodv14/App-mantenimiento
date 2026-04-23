@@ -507,8 +507,10 @@ function addTaskRow(isRequired = false) {
       let fdt = new Date(`${pFF.value}T${pFH.value}:${pFM.value}`);
       if (fdt >= idt) {
         let dh = getStopTimeAdjusted(idt, fdt, currentPlant);
-        let hrs = Math.floor(dh);
-        pTiempo.textContent = `Tiempo de Parada: ${hrs}h ${Math.round((dh - hrs) * 60)}m`;
+        let totalMins = Math.round(dh * 60);
+        let hrs = Math.floor(totalMins / 60);
+        let mins = totalMins % 60;
+        pTiempo.textContent = `Tiempo de Parada: ${hrs}h ${mins}m`;
         return;
       }
     }
@@ -523,18 +525,33 @@ function addTaskRow(isRequired = false) {
 
 function getStopTimeAdjusted(di, df, plant) {
   if (plant !== 'SL2') return (df - di) / (1000 * 60 * 60);
-  let totalMs = 0;
+  
+  // Rango productivo SL2: 06:00 a 14:48
+  const shiftStartMin = 6 * 60; // 360
+  const shiftEndMin = 14 * 60 + 48; // 888
+  
+  let totalMinutesOverlap = 0;
   let cursor = new Date(di.getTime());
+  
   while (cursor < df) {
     let y = cursor.getFullYear(), m = cursor.getMonth(), d = cursor.getDate();
+    
+    // Inicio y fin del turno para el día del cursor
     let sStart = new Date(y, m, d, 6, 0, 0);
     let sEnd   = new Date(y, m, d, 14, 48, 0);
-    let overlapS = new Date(Math.max(cursor.getTime(), sStart.getTime()));
-    let overlapE = new Date(Math.min(df.getTime(), sEnd.getTime()));
-    if (overlapS < overlapE) totalMs += (overlapE - overlapS);
+    
+    let overlapStart = new Date(Math.max(cursor.getTime(), sStart.getTime()));
+    let overlapEnd   = new Date(Math.min(df.getTime(), sEnd.getTime()));
+    
+    if (overlapStart < overlapEnd) {
+      totalMinutesOverlap += (overlapEnd - overlapStart) / (1000 * 60);
+    }
+    
+    // Avanzar al inicio del día siguiente
     cursor = new Date(y, m, d + 1, 0, 0, 0);
   }
-  return totalMs / (1000 * 60 * 60);
+  
+  return totalMinutesOverlap / 60;
 }
 
 function initRows() {
