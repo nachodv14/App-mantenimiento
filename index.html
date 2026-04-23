@@ -10,7 +10,10 @@
 <body>
 
   <header>
-    <div class="brand" id="btn-brand-home" style="cursor:pointer;" title="Volver al inicio">MantenimientoApp</div>
+    <div class="brand" id="btn-brand-home" style="cursor:pointer; display:flex; align-items:center; gap:0.5rem;" title="Volver al inicio">
+      <img src="logo-serin.png" alt="Grupo Serin" style="height: 32px; width: auto; border-radius: 4px;">
+      <span style="font-size: 1.1rem; letter-spacing: -0.5px;">Mantenimiento</span>
+    </div>
   </header>
 
   <main style="max-width: 100%; padding: 2rem 5%;">
@@ -18,8 +21,7 @@
     <!-- INITIAL PLANT VIEW (paso 1) -->
     <div id="view-plant">
        <div class="card" style="max-width:450px; margin:4rem auto; text-align:center;">
-          <h2 class="card-title" style="border:none; margin-bottom:0.25rem;">Gestión Operativa</h2>
-          <p style="color:var(--primary); font-size:1.6rem; font-weight:700; margin:0 0 2rem;">Serin SA</p>
+          <img src="logo-serin.png" alt="Grupo Serin" style="width: 280px; height: auto; margin-bottom: 2rem; border-radius: 8px; box-shadow: var(--shadow-md);">
           <div class="form-group" style="margin-top:0.5rem;">
             <label style="margin-bottom:1rem; font-size:1rem;">Confirmá tu planta de trabajo de hoy:</label>
             <select id="select-plant" style="font-size:1.1rem; padding:0.75rem; border:2px solid var(--primary); font-weight:bold; cursor:pointer;">

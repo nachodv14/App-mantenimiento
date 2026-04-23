@@ -1,0 +1,25 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Color Corporativo: Gris Carbón -->
+  <!-- Marco: Rediseñado para garantizar espacio lateral -->
+  <g fill="#2d3436">
+    <!-- Barra Superior -->
+    <rect x="50" y="50" width="200" height="22" />
+    <!-- Esquina Superior Izquierda -->
+    <rect x="50" y="50" width="22" height="50" />
+    <!-- Esquina Superior Derecha -->
+    <rect x="228" y="50" width="22" height="50" />
+    
+    <!-- Barra Inferior -->
+    <rect x="50" y="228" width="200" height="22" />
+    <!-- Esquina Inferior Izquierda -->
+    <rect x="50" y="200" width="22" height="50" />
+    <!-- Esquina Inferior Derecha -->
+    <rect x="228" y="200" width="22" height="50" />
+  </g>
+  
+  <!-- Texto "GRUPO" -->
+  <text x="150" y="110" font-family="Arial, sans-serif" font-weight="900" font-size="26" text-anchor="middle" fill="#2d3436" style="letter-spacing: 2px;">GRUPO</text>
+  
+  <!-- Texto "SERIN" - Tamaño reducido y centrado para que NO toque los bordes -->
+  <text x="150" y="195" font-family="Arial, sans-serif" font-weight="900" font-size="70" text-anchor="middle" fill="#2d3436" transform="scale(1, 1.1) translate(0, -5)">SERIN</text>
+</svg>
