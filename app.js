@@ -326,6 +326,14 @@ function addTaskRow(isRequired = false) {
         <textarea class="ot-tareas" placeholder="Detalle los trabajos finos, respuestos utilizados..."></textarea>
       </div>
 
+      <div class="form-group">
+        <label style="font-weight:600; display:flex; justify-content:space-between; align-items:flex-end;">
+          Observaciones / Tareas recomendadas
+          <button type="button" class="btn-voice-obs" style="background:#e5e7eb; border:none; border-radius:4px; padding:0.25rem 0.5rem; cursor:pointer; margin-bottom: 0.25rem;">🎤 Audiodictado</button>
+        </label>
+        <textarea class="ot-observaciones" placeholder="Indique si hay tareas pendientes o recomendaciones para el futuro..."></textarea>
+      </div>
+
       <div class="form-group" style="margin-bottom:1.5rem;">
         <label>Horas Hombre (HH) Totales: <span class="ot-hh" style="font-weight: 700; color: var(--primary);">0</span></label>
       </div>
@@ -410,6 +418,7 @@ function addTaskRow(isRequired = false) {
   setupMic(div.querySelector('.btn-voice'), descTask);
   setupMic(div.querySelector('.btn-voice-dev'), otDesviacion);
   setupMic(div.querySelector('.btn-voice-tar'), otTareas);
+  setupMic(div.querySelector('.btn-voice-obs'), div.querySelector('.ot-observaciones'));
 
   otOperarios.addEventListener('change', (e) => {
     otCompsGrid.innerHTML = '';
@@ -417,8 +426,28 @@ function addTaskRow(isRequired = false) {
     if (c > 1) {
       const dynamicOptionsHtml = getCompanionOptionsHTML();
       for (let i = 1; i < c; i++) {
-        otCompsGrid.innerHTML += `<div class="form-group" style="margin-bottom:0"><label style="font-size:0.85rem">Compañero ${i}</label><select class="ot-companero-select">${dynamicOptionsHtml}</select></div>`;
+        const wrap = document.createElement('div');
+        wrap.className = 'form-group';
+        wrap.style.marginBottom = '0';
+        wrap.innerHTML = `<label style="font-size:0.85rem">Compañero ${i}</label><select class="ot-companero-select">${dynamicOptionsHtml}</select>`;
+        otCompsGrid.appendChild(wrap);
       }
+      
+      const allSels = otCompsGrid.querySelectorAll('.ot-companero-select');
+      const updateDisabledOptions = () => {
+        const selected = Array.from(allSels).map(s => s.value).filter(v => v !== "");
+        allSels.forEach(s => {
+          const currentVal = s.value;
+          Array.from(s.options).forEach(opt => {
+            if (opt.value && opt.value !== currentVal && selected.includes(opt.value)) {
+              opt.disabled = true;
+            } else {
+              opt.disabled = false;
+            }
+          });
+        });
+      };
+      allSels.forEach(s => s.addEventListener('change', updateDisabledOptions));
     }
     updateTiempoTotal();
   });
@@ -652,6 +681,7 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
       taskData.nature = row.querySelector('.ot-naturaleza').value;
       taskData.deviation = row.querySelector('.ot-desviacion').value;
       taskData.tasksDone = row.querySelector('.ot-tareas').value;
+      taskData.recommendations = row.querySelector('.ot-observaciones').value;
       taskData.manHours = (dh * parseInt(taskData.opsCount)).toFixed(2);
       const isDisp = row.querySelector('.chk-disp').checked;
       taskData.affectsDisp = isDisp;
@@ -691,7 +721,7 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
     if (r.hasOT) {
       Object.assign(out, {
         machine: r.machine, nature: r.nature,
-        deviation: r.deviation, tasksDone: r.tasksDone, manHours: r.manHours, affectsDisp: r.affectsDisp,
+        deviation: r.deviation, tasksDone: r.tasksDone, recommendations: r.recommendations, manHours: r.manHours, affectsDisp: r.affectsDisp,
         finalState: r.finalState, startOut: r.startOut, endOut: r.endOut, stopTime: r.stopTime
       });
     }
@@ -903,6 +933,7 @@ function openSupervisorModal(t) {
           <div><strong>Horas Hombre Calc:</strong> ${t.manHours} HH</div><div><strong>Estado Final:</strong> ${t.finalState}</div>
        </div><div style="margin-top:0.5rem;"><strong>Desviación:</strong> ${t.deviation || '-'}</div>
        <div style="margin-top:0.5rem;"><strong>Tareas Explicitas:</strong> ${t.tasksDone || '-'}</div>
+       <div style="margin-top:0.5rem;"><strong>Observaciones / Tareas recomendadas:</strong> ${t.recommendations || '-'}</div>
      `;
     if (t.affectsDisp) {
       html += `<div style="margin-top:0.75rem; color:var(--danger)"><strong>Máquina parada:</strong> Desde ${t.startOut} hasta ${t.endOut} (${t.stopTime}h paradas).</div>`;
