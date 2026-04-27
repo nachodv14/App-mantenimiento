@@ -697,6 +697,7 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
       if (!s.value) { alert("Por favor, selecciona los nombres de todos los compañeros en la tarea."); processFailed = true; return; }
     }
     taskData.companions = Array.from(compSelects).map(s => s.value).filter(v => v).join(', ');
+    taskData.manHours = (dh * parseInt(taskData.opsCount)).toFixed(2); // Calculado para todos los tipos
 
     // Validación de categorías para Edilicio y Ausentismo
     if (tipo === 'EDILICIO' && !catEdilicio) { alert("Por favor selecciona una categoría para el registro Edilicio."); processFailed = true; return; }
@@ -708,9 +709,9 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
       taskData.deviation = row.querySelector('.ot-desviacion').value;
       taskData.tasksDone = row.querySelector('.ot-tareas').value;
       taskData.recommendations = row.querySelector('.ot-observaciones').value;
-      taskData.manHours = (dh * parseInt(taskData.opsCount)).toFixed(2);
+      // taskData.manHours ya está calculado arriba
       const isDisp = row.querySelector('.chk-disp').checked;
-      taskData.affectsDisp = isDisp;
+      taskData.affectsDisp = isDisp ? "SI" : "NO";
       taskData.finalState = Array.from(row.querySelectorAll('input[type="radio"]')).find(r => r.checked)?.value || '';
 
       if (isDisp) {
@@ -747,7 +748,7 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
     if (r.hasOT) {
       Object.assign(out, {
         machine: r.machine, nature: r.nature,
-        deviation: r.deviation, tasksDone: r.tasksDone, recommendations: r.recommendations, manHours: r.manHours, affectsDisp: r.affectsDisp,
+        deviation: r.deviation, recommendations: r.recommendations, manHours: r.manHours, affectsDisp: r.affectsDisp || "NO",
         finalState: r.finalState, startOut: r.startOut, endOut: r.endOut, stopTime: r.stopTime
       });
     }
