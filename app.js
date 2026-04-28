@@ -225,6 +225,12 @@ function addTaskRow(isRequired = false) {
       <span>Renglón ${rowCount}</span>
       ${!isRequired ? `<button type="button" class="btn-remove-task" style="color:var(--danger); background:none; border:none; cursor:pointer; font-weight:600;">&times; Quitar</button>` : ''}
     </h4>
+
+    <!-- Selector de Tipo de Registro -->
+    <div class="form-group" style="margin-bottom:1rem; border-bottom: 1px dashed var(--border); padding-bottom: 1rem;">
+      <label style="font-weight:600;">Tipo de Registro</label>
+      <select class="tipo-registro" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsTipoRegistro}</select>
+    </div>
     
     <div class="form-group" style="margin-bottom:1rem;">
       <label style="font-weight:600; display:flex; justify-content:space-between; align-items:flex-end;">
@@ -259,12 +265,6 @@ function addTaskRow(isRequired = false) {
         <label style="font-weight:600; margin-bottom:0.5rem; display:block;">Cantidad Total de Operarios en esta Tarea</label>
         <select class="ot-operarios" style="max-width:300px; margin-bottom:0.5rem;">${opsHtml}</select>
         <div class="ot-companeros-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;"></div>
-    </div>
-
-    <!-- Selector de Tipo de Registro -->
-    <div class="form-group" style="margin-bottom:1rem; border-bottom: 1px dashed var(--border); padding-bottom: 1rem;">
-      <label style="font-weight:600;">Tipo de Registro</label>
-      <select class="tipo-registro" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsTipoRegistro}</select>
     </div>
 
     <!-- Sección Mantenimiento de Máquina (Default) -->
@@ -828,7 +828,21 @@ function renderOperatorSidebar() {
 document.getElementById('visor-fecha').valueAsDate = new Date();
 document.getElementById('visor-fecha').addEventListener('change', () => { if (supervisorLoggedIn) renderCalendar(); });
 
-const PIXEL_PER_MINUTE = 1.5;
+let PIXEL_PER_MINUTE = 1.5;
+
+document.getElementById('btn-zoom-in').addEventListener('click', () => {
+  if (PIXEL_PER_MINUTE < 3.0) {
+    PIXEL_PER_MINUTE += 0.25;
+    if (supervisorLoggedIn) renderCalendar();
+  }
+});
+
+document.getElementById('btn-zoom-out').addEventListener('click', () => {
+  if (PIXEL_PER_MINUTE > 0.5) {
+    PIXEL_PER_MINUTE -= 0.25;
+    if (supervisorLoggedIn) renderCalendar();
+  }
+});
 
 function renderCalendar() {
   const visorDate = document.getElementById('visor-fecha').value;
