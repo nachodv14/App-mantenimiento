@@ -33,12 +33,17 @@ const btnEnterPlant = document.getElementById('btn-enter-plant');
 
 // Global App State (Local Storage Restored)
 let tasks = JSON.parse(localStorage.getItem('mantenimiento_tasks')) || [];
+let maquinasCaidas = JSON.parse(localStorage.getItem('mantenimiento_maquinas_caidas')) || [];
 let currentPlant = null;
 let supervisorLoggedIn = false;
 let currentInspectingTask = null;
 
 function saveTasks() {
   localStorage.setItem('mantenimiento_tasks', JSON.stringify(tasks));
+}
+
+function saveMaquinasCaidas() {
+  localStorage.setItem('mantenimiento_maquinas_caidas', JSON.stringify(maquinasCaidas));
 }
 
 // init: siempre arrancar desde la pantalla de planta
@@ -113,6 +118,7 @@ btnEnterPlant.addEventListener('click', () => {
   // Restart rows if they changed plants to recalibrate the Select size
   initRows();
   renderOperatorSidebar();
+  renderMaquinasCaidasSidebar();
 });
 
 // Navigation legacy (header buttons removed — kept as no-ops for safety)
@@ -193,6 +199,7 @@ document.getElementById('operario').addEventListener('change', () => {
    document.querySelectorAll('.ot-operarios').forEach(selectOpt => selectOpt.dispatchEvent(new Event('change')));
    updateTiempoTotal();
    renderOperatorSidebar();
+   renderMaquinasCaidasSidebar();
 });
 
 
@@ -351,7 +358,7 @@ function addTaskRow(isRequired = false) {
               </div>
             </div>
           </div>
-          <div class="form-group">
+          <div class="form-group fin-parada-group">
             <label style="font-size:0.8rem">Fin Fuera de Servicio</label>
             <div style="display:flex; flex-direction:column; gap:0.5rem">
               <input type="date" class="parada-f-fecha" style="width:100%;">
@@ -495,26 +502,56 @@ function addTaskRow(isRequired = false) {
     if (isOt && !otTareas.dataset.edited) otTareas.value = descTask.value;
   });
 
-  chkDisp.addEventListener('change', (e) => {
-    if (e.target.checked) { modParada.classList.remove('hidden');[pIF, pIH, pIM, pFF, pFH, pFM].forEach(x => x.required = true); }
-    else { modParada.classList.add('hidden');[pIF, pIH, pIM, pFF, pFH, pFM].forEach(x => x.required = false); }
-  });
+  const finGroup = div.querySelector('.fin-parada-group');
+  const updateParadaValidation = () => {
+    if (!chkDisp.checked) {
+      modParada.classList.add('hidden');
+      [pIF, pIH, pIM, pFF, pFH, pFM].forEach(x => x.required = false);
+    } else {
+      modParada.classList.remove('hidden');
+      [pIF, pIH, pIM].forEach(x => x.required = true);
+      const isFuncional = div.querySelector(`input[name="estado_${rowId}"]:checked`)?.value === 'Funcional';
+      
+      if (isFuncional) {
+        finGroup.style.display = 'block';
+        [pFF, pFH, pFM].forEach(x => x.required = true);
+      } else {
+        finGroup.style.display = 'none';
+        [pFF, pFH, pFM].forEach(x => x.required = false);
+        pFF.value = ''; pFH.value = ''; pFM.value = '';
+      }
+      calcParada();
+    }
+  };
+
+  chkDisp.addEventListener('change', updateParadaValidation);
+  div.querySelectorAll(`input[name="estado_${rowId}"]`).forEach(r => r.addEventListener('change', updateParadaValidation));
 
   const calcParada = () => {
     const pTiempo = div.querySelector('.parada-tiempo');
-    if (pIF.value && pIH.value && pIM.value && pFF.value && pFH.value && pFM.value) {
-      let idt = new Date(`${pIF.value}T${pIH.value}:${pIM.value}`);
-      let fdt = new Date(`${pFF.value}T${pFH.value}:${pFM.value}`);
-      if (fdt >= idt) {
-        let dh = getStopTimeAdjusted(idt, fdt, currentPlant);
-        let totalMins = Math.round(dh * 60);
-        let hrs = Math.floor(totalMins / 60);
-        let mins = totalMins % 60;
-        pTiempo.textContent = `Tiempo de Parada: ${hrs}h ${mins}m`;
+    if (!chkDisp.checked) {
+        pTiempo.textContent = `Tiempo de Parada: 0h 0m`;
         return;
-      }
     }
-    pTiempo.textContent = `Tiempo de Parada: 0h 0m`;
+    const isFuncional = div.querySelector(`input[name="estado_${rowId}"]:checked`)?.value === 'Funcional';
+    
+    if (isFuncional) {
+        if (pIF.value && pIH.value && pIM.value && pFF.value && pFH.value && pFM.value) {
+          let idt = new Date(`${pIF.value}T${pIH.value}:${pIM.value}`);
+          let fdt = new Date(`${pFF.value}T${pFH.value}:${pFM.value}`);
+          if (fdt >= idt) {
+            let dh = getStopTimeAdjusted(idt, fdt, currentPlant);
+            let totalMins = Math.round(dh * 60);
+            let hrs = Math.floor(totalMins / 60);
+            let mins = totalMins % 60;
+            pTiempo.textContent = `Tiempo de Parada: ${hrs}h ${mins}m`;
+            return;
+          }
+        }
+        pTiempo.textContent = `Tiempo de Parada: 0h 0m`;
+    } else {
+        pTiempo.textContent = `Tiempo de Parada: Pendiente (Máquina No Funcional)`;
+    }
   };
   [pIF, pIH, pIM, pFF, pFH, pFM].forEach(el => el.addEventListener('change', calcParada));
 
@@ -575,6 +612,7 @@ function diffHours(start, end) {
 document.getElementById('fecha').addEventListener('change', () => {
   updateTiempoTotal();
   renderOperatorSidebar();
+  renderMaquinasCaidasSidebar();
 });
 
 function updateTiempoTotal() {
@@ -716,14 +754,40 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
 
       if (isDisp) {
         const pIH = row.querySelector('.parada-i-h').value; const pIM = row.querySelector('.parada-i-m').value;
-        const pFH = row.querySelector('.parada-f-h').value; const pFM = row.querySelector('.parada-f-m').value;
-        const pIF = row.querySelector('.parada-i-fecha').value; const pFF = row.querySelector('.parada-f-fecha').value;
+        const pIF = row.querySelector('.parada-i-fecha').value;
         let di = new Date(`${pIF}T${pIH}:${pIM}`);
-        let df = new Date(`${pFF}T${pFH}:${pFM}`);
-        if (df < di) { alert(`Error en fechas de parada.`); processFailed = true; return; }
         taskData.startOut = `${pIF} ${pIH}:${pIM}`;
-        taskData.endOut = `${pFF} ${pFH}:${pFM}`;
-        taskData.stopTime = getStopTimeAdjusted(di, df, currentPlant).toFixed(2);
+        
+        if (taskData.finalState === 'Funcional') {
+          const oldIndex = maquinasCaidas.findIndex(m => m.machine === triggerMachineCode && m.plant === currentPlant);
+          if (oldIndex > -1) {
+             let oldData = maquinasCaidas[oldIndex];
+             di = new Date(oldData.startOutISO);
+             taskData.startOut = oldData.startOut;
+             maquinasCaidas.splice(oldIndex, 1);
+             saveMaquinasCaidas();
+          }
+          const pFH = row.querySelector('.parada-f-h').value; const pFM = row.querySelector('.parada-f-m').value;
+          const pFF = row.querySelector('.parada-f-fecha').value;
+          let df = new Date(`${pFF}T${pFH}:${pFM}`);
+          if (df < di) { alert(`Error en fechas de parada de la máquina ${triggerMachineCode}. El fin es anterior al inicio.`); processFailed = true; return; }
+          taskData.endOut = `${pFF} ${pFH}:${pFM}`;
+          taskData.stopTime = getStopTimeAdjusted(di, df, currentPlant).toFixed(2);
+        } else {
+          const oldIndex = maquinasCaidas.findIndex(m => m.machine === triggerMachineCode && m.plant === currentPlant);
+          if (oldIndex === -1) {
+             maquinasCaidas.push({
+               machine: triggerMachineCode,
+               plant: currentPlant,
+               startOutISO: di.toISOString(),
+               startOut: taskData.startOut,
+               reportedBy: document.getElementById('operario').value
+             });
+             saveMaquinasCaidas();
+          }
+          taskData.endOut = "";
+          taskData.stopTime = "Pendiente";
+        }
       }
     }
     validRows.push(taskData);
@@ -771,6 +835,7 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
   initRows(); document.getElementById('fecha').valueAsDate = new Date();
   updateTiempoTotal();
   renderOperatorSidebar();
+  renderMaquinasCaidasSidebar();
 });
 
 // --- OPERATOR SIDEBAR RENDERER ---
@@ -1037,3 +1102,88 @@ document.getElementById('btn-modal-reject').addEventListener('click', (e) => {
        targetBtn.textContent = prevText; targetBtn.disabled = false;
    });
 });
+
+// --- MAQUINAS CAIDAS SIDEBAR RENDERER ---
+function renderMaquinasCaidasSidebar() {
+  const listDiv = document.getElementById('out-of-service-list');
+  if(!listDiv) return;
+  if (!currentPlant) {
+    listDiv.innerHTML = '<div style="text-align:center; color:#dc2626; font-size:0.9rem; padding:1.5rem 0;">Aguardando selección de planta...</div>';
+    return;
+  }
+  
+  const caidas = maquinasCaidas.filter(m => m.plant === currentPlant);
+  if (caidas.length === 0) {
+    listDiv.innerHTML = '<div style="text-align:center; color:#dc2626; font-size:0.9rem; padding:1.5rem 0;">No hay máquinas caídas registradas.</div>';
+    return;
+  }
+  
+  listDiv.innerHTML = '';
+  caidas.forEach((m, idx) => {
+    const d = new Date(m.startOutISO);
+    const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    
+    let html = `
+      <div style="background:#fff; border:1px solid #fecaca; border-left:4px solid #dc2626; border-radius:4px; padding:0.75rem;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+           <strong style="color:#dc2626; font-size:1rem;">Máquina ${m.machine}</strong>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-main); margin-bottom:0.25rem;"><strong>Caída desde:</strong> ${dateStr}</div>
+        <div style="font-size:0.85rem; color:var(--text-main); margin-bottom:0.5rem;"><strong>Reportó:</strong> ${m.reportedBy}</div>
+        <button type="button" class="btn btn-poner-funcional" data-idx="${idx}" style="background:#10b981; color:#fff; border:none; padding:0.4rem; font-size:0.85rem; width:100%; cursor:pointer; border-radius:4px;">+ Poner Funcional (Generar OT)</button>
+      </div>
+    `;
+    listDiv.innerHTML += html;
+  });
+
+  listDiv.querySelectorAll('.btn-poner-funcional').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = e.target.getAttribute('data-idx');
+      const mData = caidas[idx];
+      ponerMaquinaFuncional(mData);
+    });
+  });
+}
+
+function ponerMaquinaFuncional(mData) {
+  addTaskRow(false);
+  const rows = document.querySelectorAll('.task-row');
+  const lastRow = rows[rows.length - 1];
+  const rowIdNumber = lastRow.id.split('_')[1];
+  
+  const tipoSelect = lastRow.querySelector('.tipo-registro');
+  tipoSelect.value = 'MAQUINA';
+  tipoSelect.dispatchEvent(new Event('change'));
+  
+  const maqSelect = lastRow.querySelector('.ot-maquina-trigger');
+  maqSelect.value = mData.machine;
+  maqSelect.dispatchEvent(new Event('change'));
+  
+  const chkDisp = lastRow.querySelector('.chk-disp');
+  chkDisp.checked = true;
+  chkDisp.dispatchEvent(new Event('change'));
+  
+  const d = new Date(mData.startOutISO);
+  lastRow.querySelector('.parada-i-fecha').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  lastRow.querySelector('.parada-i-h').value = String(d.getHours()).padStart(2,'0');
+  
+  const mins = d.getMinutes();
+  const roundedMins = Math.round(mins / 10) * 10;
+  lastRow.querySelector('.parada-i-m').value = String(roundedMins === 60 ? 50 : roundedMins).padStart(2,'0');
+  
+  // Bloquear inputs para que no cambien el inicio real
+  lastRow.querySelector('.parada-i-fecha').readOnly = true;
+  lastRow.querySelector('.parada-i-h').style.pointerEvents = 'none';
+  lastRow.querySelector('.parada-i-h').style.background = '#f3f4f6';
+  lastRow.querySelector('.parada-i-m').style.pointerEvents = 'none';
+  lastRow.querySelector('.parada-i-m').style.background = '#f3f4f6';
+
+  const funcRadio = lastRow.querySelector(`input[name="estado_row_${rowIdNumber}"][value="Funcional"]`);
+  if (funcRadio) {
+     funcRadio.checked = true;
+     funcRadio.dispatchEvent(new Event('change'));
+  }
+  
+  alert(`Se generó un nuevo renglón de OT para la máquina ${mData.machine}.\nPor favor, completa la hora de "Fin Fuera de Servicio" y describe las tareas realizadas para repararla.`);
+  lastRow.scrollIntoView({ behavior: 'smooth' });
+}
