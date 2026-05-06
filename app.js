@@ -489,9 +489,48 @@ function addTaskRow(isRequired = false) {
       modOt.classList.remove('hidden');
       div.querySelector('.ot-naturaleza').required = true;
       if (!otTareas.dataset.edited) otTareas.value = descTask.value;
+
+      // Detección de Máquina Caída
+      const mData = maquinasCaidas.find(m => m.machine === e.target.value && m.plant === currentPlant);
+      if (mData) {
+         const d = new Date(mData.startOutISO);
+         const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+         alert(`AVISO: La máquina ${mData.machine} se encuentra actualmente FUERA DE SERVICIO desde el ${dateStr}.\n\nSe arrastrará la fecha de inicio de parada automáticamente.`);
+         
+         chkDisp.checked = true;
+         chkDisp.dispatchEvent(new Event('change'));
+         
+         pIF.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+         pIH.value = String(d.getHours()).padStart(2,'0');
+         const mins = d.getMinutes();
+         const roundedMins = Math.round(mins / 10) * 10;
+         pIM.value = String(roundedMins === 60 ? 50 : roundedMins).padStart(2,'0');
+         
+         pIF.readOnly = true;
+         pIH.style.pointerEvents = 'none';
+         pIH.style.background = '#f3f4f6';
+         pIM.style.pointerEvents = 'none';
+         pIM.style.background = '#f3f4f6';
+         
+         // Desmarcar radios de estado para forzar la elección al operario
+         div.querySelectorAll(`input[name="estado_${rowId}"]`).forEach(r => r.checked = false);
+         updateParadaValidation();
+      } else {
+         // Desbloquear si no está caída (por si cambió de selección)
+         pIF.readOnly = false;
+         pIH.style.pointerEvents = 'auto';
+         pIH.style.background = '';
+         pIM.style.pointerEvents = 'auto';
+         pIM.style.background = '';
+      }
     } else {
       modOt.classList.add('hidden');
       div.querySelector('.ot-naturaleza').required = false;
+      pIF.readOnly = false;
+      pIH.style.pointerEvents = 'auto';
+      pIH.style.background = '';
+      pIM.style.pointerEvents = 'auto';
+      pIM.style.background = '';
     }
     triggerRecalc();
   });
