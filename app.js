@@ -15,6 +15,17 @@ const operatorDict = {
   "PIL": ['Kern'], "PY": [], "RIV": []  // Si se configuran luego, van aquí
 };
 
+const supervisorDict = {
+  'pvega': { pass: 'Serin', plant: 'RAM' },
+  'dbustos': { pass: 'Serin', plant: 'RAM' },
+  'snavarro': { pass: 'Serin', plant: 'SL1' },
+  'garce': { pass: 'Serin', plant: 'CBA' },
+  'jchamorro': { pass: 'Serin', plant: 'PY' },
+  'dkern': { pass: 'Serin', plant: 'PIL' },
+  'jblanco': { pass: 'Serin', plant: 'RIV' },
+  'asarchioni': { pass: 'Serin', plant: 'SL2' } // Se asume SL2 por defecto para el usuario original
+};
+
 // Options for custom 10-min step time dropdowns
 const optH = `<option value="">HH</option>` + Array.from({ length: 24 }).map((_, i) => `<option value="${String(i).padStart(2, '0')}">${String(i).padStart(2, '0')}</option>`).join('');
 const optM = `<option value="">MM</option><option value="00">00</option><option value="10">10</option><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option>`;
@@ -165,9 +176,18 @@ loginSaved.addEventListener('change', () => {
 
 loginForm.addEventListener('submit', (e) => {
   e.preventDefault();
-  const u = inputLoginUser.value.trim();
+  const u = inputLoginUser.value.trim().toLowerCase(); // Hacemos tolerante a mayúsculas
   const p = inputLoginPass.value;
-  if (u === 'asarchioni' && p === 'Serin') {
+  
+  const supInfo = supervisorDict[u];
+  
+  if (supInfo && supInfo.pass === p) {
+    if (supInfo.plant !== currentPlant && supInfo.plant !== 'ALL') {
+       document.getElementById('login_error').textContent = `El usuario ${u} no tiene permisos para visualizar la planta ${currentPlant}.`;
+       document.getElementById('login_error').style.display = 'block';
+       return;
+    }
+    
     if (chkRemember.checked) {
       const profiles = JSON.parse(localStorage.getItem('mantenimiento_sup_profiles') || '[]');
       const exists = profiles.find(pr => pr.user === u);
