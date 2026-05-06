@@ -320,14 +320,6 @@ function addTaskRow(isRequired = false) {
 
       <div class="form-group">
         <label style="font-weight:600; display:flex; justify-content:space-between; align-items:flex-end;">
-          Tareas Realizadas
-          <button type="button" class="btn-voice-tar" style="background:#e5e7eb; border:none; border-radius:4px; padding:0.25rem 0.5rem; cursor:pointer; margin-bottom: 0.25rem;">🎤 Audiodictado</button>
-        </label>
-        <textarea class="ot-tareas" placeholder="Detalle los trabajos finos, respuestos utilizados..."></textarea>
-      </div>
-
-      <div class="form-group">
-        <label style="font-weight:600; display:flex; justify-content:space-between; align-items:flex-end;">
           Observaciones / Tareas recomendadas
           <button type="button" class="btn-voice-obs" style="background:#e5e7eb; border:none; border-radius:4px; padding:0.25rem 0.5rem; cursor:pointer; margin-bottom: 0.25rem;">🎤 Audiodictado</button>
         </label>
@@ -400,7 +392,6 @@ function addTaskRow(isRequired = false) {
 
   const descTask = div.querySelector('.desc-task');
   const otDesviacion = div.querySelector('.ot-desviacion');
-  const otTareas = div.querySelector('.ot-tareas');
 
   const setupMic = (btn, targetInput) => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -417,7 +408,6 @@ function addTaskRow(isRequired = false) {
 
   setupMic(div.querySelector('.btn-voice'), descTask);
   setupMic(div.querySelector('.btn-voice-dev'), otDesviacion);
-  setupMic(div.querySelector('.btn-voice-tar'), otTareas);
   setupMic(div.querySelector('.btn-voice-obs'), div.querySelector('.ot-observaciones'));
 
   otOperarios.addEventListener('change', (e) => {
@@ -488,7 +478,6 @@ function addTaskRow(isRequired = false) {
     if (isOt && tipoSel.value === 'MAQUINA') {
       modOt.classList.remove('hidden');
       div.querySelector('.ot-naturaleza').required = true;
-      if (!otTareas.dataset.edited) otTareas.value = descTask.value;
 
       // Detección de Máquina Caída
       const mData = maquinasCaidas.find(m => m.machine === e.target.value && m.plant === currentPlant);
@@ -535,10 +524,8 @@ function addTaskRow(isRequired = false) {
     triggerRecalc();
   });
 
-  otTareas.addEventListener('input', () => { otTareas.dataset.edited = 'true'; });
   descTask.addEventListener('input', () => {
-    const isOt = triggerMaquina.value !== "";
-    if (isOt && !otTareas.dataset.edited) otTareas.value = descTask.value;
+    // previously copied to otTareas, now removed
   });
 
   const finGroup = div.querySelector('.fin-parada-group');
@@ -784,7 +771,6 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
       taskData.machine = triggerMachineCode;
       taskData.nature = row.querySelector('.ot-naturaleza').value;
       taskData.deviation = row.querySelector('.ot-desviacion').value;
-      taskData.tasksDone = row.querySelector('.ot-tareas').value;
       taskData.recommendations = row.querySelector('.ot-observaciones').value;
       // taskData.manHours ya está calculado arriba
       const isDisp = row.querySelector('.chk-disp').checked;
