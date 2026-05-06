@@ -202,8 +202,19 @@ loginForm.addEventListener('submit', (e) => {
     viewSup.classList.remove('hidden');
     renderCalendar();
   } else {
+    document.getElementById('login_error').textContent = 'Credenciales incorrectas.';
     document.getElementById('login_error').style.display = 'block';
   }
+});
+
+document.getElementById('btn-login-go-home').addEventListener('click', () => {
+    viewLogin.classList.add('hidden');
+    viewPlant.classList.remove('hidden');
+    currentPlant = null;
+    sessionStorage.removeItem('mantenimiento_current_plant');
+    document.getElementById('login_error').style.display = 'none';
+    inputLoginPass.value = '';
+    inputLoginUser.value = '';
 });
 
 function getCompanionOptionsHTML() {

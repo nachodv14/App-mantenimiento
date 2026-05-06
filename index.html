@@ -86,7 +86,10 @@
           <div class="form-group">
             <p id="login_error" style="color: var(--danger); font-size: 0.875rem; display: none; text-align: center;">Credenciales incorrectas.</p>
           </div>
-          <button type="submit" class="btn btn-primary">Ingresar</button>
+          <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            <button type="submit" class="btn btn-primary">Ingresar</button>
+            <button type="button" id="btn-login-go-home" class="btn" style="background:none; border:1px solid var(--border); color:var(--text-muted);">Volver al inicio</button>
+          </div>
         </form>
       </div>
     </div>
