@@ -51,6 +51,15 @@ const machineDict = {
     "FUS01 - Camion Fuso 8TN",
     "T04 - Grupo electrogeno",
     "PUL08 - Pulmon de aire"
+  ],
+  "RIV": [
+    "R50 - Puente grua 6 TN",
+    "R51 - Puente grua 8 TN",
+    "P11 - Compresor",
+    "Q05 - Guillotina de chapas sinusoidal",
+    "S12 - Autoelevador 2.5TN",
+    "XB2 - Balanza amarilla 5TN - AHS-l",
+    "X56 - Balanza 5TN Hanito"
   ]
 };
 
