@@ -9,6 +9,25 @@ const machineDict = {
   ],
   "SL1": [
     "TEJ01 - Tejedora Bergandi F500", "TEJ02 - Tejedora Vitari MG3", "TEJ03 - Tejedora Servet generico", "TEJ04 - Tejedora Vitari MG1", "TEJ05 - Tejedora Servet generico", "TEJ06 - Tejedora Vitari MG2", "TEJ07 - Tejedora Servet generico", "TEJ08 - Tejedora Servet generico", "TEJ09 - Tejedora Servet generico", "TEJ12 - Tejedora 760-76.2mm", "TEJ13 - Tejedora 630-63.5mm", "R35 - Puente grua 3TN", "R37 - Puente grua3TN - Nave 3 Sur", "R39 - Puente grua FORVIS 5TN", "R40 - Puente grua MSV 7TN", "R41 - Puente grua Jaso 5TN - Nave 1", "R42 - Puente grua Jaso 3,2TN - Nave 2 Norte", "R43 - Puente grua Jaso 5TN", "R44 - Puente grua Jaso 3,2TN - Nave 3", "R45 - Puente grua Jaso 5TN - Nave 3 Norte", "S09 - Autoelevador Toyota 3,5TN", "S14 - Autoelevador Xinchai 3TN", "S16 - Autoelevador Liugong 2.5 TN", "SA02 - Autoelevador alq. Michigan", "P08 - Compresor Sullair 4509", "P09 - Compresor Sullair 4509", "P12 - Compresor de aire FMT", "H08 - Schnell Reta Enderezadora", "H09 - Mep Bitronic 16-2 Enderezadora", "Q03 - Guillotina de chapas sinusoidal", "Q07 - Guillotina de chapas trapesoidal", "K13 - Soldadora a tope varillas", "EM02 - Empaqueradora Feiyu YC-420B", "MEP02 - Malladora Mep P-WELD-HA 24 Hilos", "CLA01 - Clavos Enkotec M101", "ESP01 - Espiraladora Enkotec TR01", "ALA01 - Alimentador de alambre", "SEC02 - Secador Sullair", "X23 - Balanza AHS - 5TN - AHS - II R - NARANJA", "X26 - Balanza AHS - 5TN -AHS - II R - NARANJA", "X27 - Balanza AHS - 5TN - AHS - I R - AMARILLA", "X28 - Balanza AHS - 5TN - AHS - II R MINI CRANE", "X29 - Balanza AHS - 100KG - AHS - I M - AMARILLA", "X60 - Balanza ASH - 2TN - ASH - I - AMARILLA", "X59 - Balanza Systel - Bumer 30 V2 - 31KG", "X55 - Balanza DRE-1 - 100KG - PLATEADA", "X101 - Bascula camiones Datta 100 TN", "X103 - Bascula camiones Datta  80 TN", "X30 - Balanza AHS - 5TN - AHS - II R - Naranja", "X53 - Balanza AHS - 7,5TN - AHS - I R - Amarilla", "X58 - Balanza AHS-I - 7,5TN - Amarilla", "X54 - Balanza AHS - 5TN - AHS - I R - Pañol - Amarilla", "G09 - Dobladora de hierro", "PUL06 - Pulmon de aire", "PUL07 - Pulmon de aire", "FIL01 - Sist. de filtro y carcasa de ingreso de agua a planta", "AU01 - Auto Volkswagen GOL 1.6"
+  ],
+  "PIL": [
+    "R46 - Puente grua Jaso 6,3TN",
+    "R47 - Puente grua Jaso 6,3TN",
+    "R48 - Puente grua Jaso 6,3TN",
+    "R49 - Puente grua Jaso 6,3TN",
+    "P10 - Compresor Fema Santochi VOL330 5,5HP 330L",
+    "Q4 - Guillotina sinusoidal",
+    "Q6 - Guillotina de chapas trapezoidal",
+    "S11 - Auto elevador Yale 2,5TN",
+    "T3 - Grupo electrogeno Weg GTA",
+    "G8 - Dobladora de hierro WAF",
+    "G10 - Dobladora de columnas neumatica",
+    "X47 - Balanza Nor1 A&L Integral Trade 5TN",
+    "X48 - Balanza A&L Integral Trade AHS II Intec 5TN",
+    "X49 - Balanza A&L Integral Trade 7,5TN",
+    "X50 - Balanza sur2 A&L Integral Trade 5TN",
+    "X51 - Balanza de piso Serin EL05B 3TN",
+    "X102 - Bascula camiones Gama 80TN"
   ]
 };
 
