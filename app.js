@@ -1,7 +1,27 @@
 // Constants
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxcCq6xrMkjUhCLaEPtAUtPvLJEaFpDXyowin-WgOOcFefzRgjU8s6EaS4AcgVL029R/exec";
 
-const optionsMaquinas = `<option value="">Seleccione el codigo de la máquina...</option><option value="R31">R31</option><option value="R32">R32</option><option value="R33">R33</option><option value="R34">R34</option><option value="R36">R36</option><option value="R38">R38</option><option value="P05">P05</option><option value="P06">P06</option><option value="PE01">PE01</option><option value="PE02">PE02</option><option value="M01">M01</option><option value="M03">M03</option><option value="M05">M05</option><option value="M06">M06</option><option value="M07">M07</option><option value="M08">M08</option><option value="M09">M09</option><option value="M10">M10</option><option value="M11">M11</option><option value="SEC03">SEC03</option><option value="S08">S08</option><option value="S10">S10</option><option value="SA04">SA04</option><option value="Q03">Q03</option><option value="FL02">FL02</option><option value="X40">X40</option><option value="X42">X42</option>`;
+const machineDict = {
+  "SL2": [
+    "R31", "R32", "R33", "R34", "R36", "R38", "P05", "P06", "PE01", "PE02", 
+    "M01", "M03", "M05", "M06", "M07", "M08", "M09", "M10", "M11", "SEC03", 
+    "S08", "S10", "SA04", "Q03", "FL02", "X40", "X42"
+  ],
+  "SL1": [
+    "TEJ01 - Tejedora Bergandi F500", "TEJ02 - Tejedora Vitari MG3", "TEJ03 - Tejedora Servet generico", "TEJ04 - Tejedora Vitari MG1", "TEJ05 - Tejedora Servet generico", "TEJ06 - Tejedora Vitari MG2", "TEJ07 - Tejedora Servet generico", "TEJ08 - Tejedora Servet generico", "TEJ09 - Tejedora Servet generico", "TEJ12 - Tejedora 760-76.2mm", "TEJ13 - Tejedora 630-63.5mm", "R35 - Puente grua 3TN", "R37 - Puente grua3TN - Nave 3 Sur", "R39 - Puente grua FORVIS 5TN", "R40 - Puente grua MSV 7TN", "R41 - Puente grua Jaso 5TN - Nave 1", "R42 - Puente grua Jaso 3,2TN - Nave 2 Norte", "R43 - Puente grua Jaso 5TN", "R44 - Puente grua Jaso 3,2TN - Nave 3", "R45 - Puente grua Jaso 5TN - Nave 3 Norte", "S09 - Autoelevador Toyota 3,5TN", "S14 - Autoelevador Xinchai 3TN", "S16 - Autoelevador Liugong 2.5 TN", "SA02 - Autoelevador alq. Michigan", "P08 - Compresor Sullair 4509", "P09 - Compresor Sullair 4509", "P12 - Compresor de aire FMT", "H08 - Schnell Reta Enderezadora", "H09 - Mep Bitronic 16-2 Enderezadora", "Q03 - Guillotina de chapas sinusoidal", "Q07 - Guillotina de chapas trapesoidal", "K13 - Soldadora a tope varillas", "EM02 - Empaqueradora Feiyu YC-420B", "MEP02 - Malladora Mep P-WELD-HA 24 Hilos", "CLA01 - Clavos Enkotec M101", "ESP01 - Espiraladora Enkotec TR01", "ALA01 - Alimentador de alambre", "SEC02 - Secador Sullair", "X23 - Balanza AHS - 5TN - AHS - II R - NARANJA", "X26 - Balanza AHS - 5TN -AHS - II R - NARANJA", "X27 - Balanza AHS - 5TN - AHS - I R - AMARILLA", "X28 - Balanza AHS - 5TN - AHS - II R MINI CRANE", "X29 - Balanza AHS - 100KG - AHS - I M - AMARILLA", "X60 - Balanza ASH - 2TN - ASH - I - AMARILLA", "X59 - Balanza Systel - Bumer 30 V2 - 31KG", "X55 - Balanza DRE-1 - 100KG - PLATEADA", "X101 - Bascula camiones Datta 100 TN", "X103 - Bascula camiones Datta  80 TN", "X30 - Balanza AHS - 5TN - AHS - II R - Naranja", "X53 - Balanza AHS - 7,5TN - AHS - I R - Amarilla", "X58 - Balanza AHS-I - 7,5TN - Amarilla", "X54 - Balanza AHS - 5TN - AHS - I R - Pañol - Amarilla", "G09 - Dobladora de hierro", "PUL06 - Pulmon de aire", "PUL07 - Pulmon de aire", "FIL01 - Sist. de filtro y carcasa de ingreso de agua a planta", "AU01 - Auto Volkswagen GOL 1.6"
+  ]
+};
+
+function getMachineOptionsHTML(plant) {
+  const machines = machineDict[plant] || [];
+  let html = `<option value="">Seleccione el código de la máquina...</option>`;
+  machines.forEach(m => {
+    // Tomamos la primera parte antes del guion como value (código)
+    let val = m.includes('-') ? m.split('-')[0].trim() : m;
+    html += `<option value="${val}">${m}</option>`;
+  });
+  return html;
+}
 const optionsNaturaleza = `<option value="">Seleccione...</option><option value="Inspección">Inspección</option><option value="Preventivo Programado">Preventivo Programado</option><option value="Preventivo Condicional">Preventivo Condicional</option><option value="Preventivo semanal">Preventivo semanal</option><option value="Preventivo mensual">Preventivo mensual</option><option value="Preventivo trimestral">Preventivo trimestral</option><option value="Preventivo semestral">Preventivo semestral</option><option value="Preventivo Anual">Preventivo Anual</option><option value="Mejoras">Mejoras</option><option value="Falla">Falla</option><option value="Montaje">Montaje</option>`;
 const optionsEdilicio = `<option value="">Seleccione Categoría...</option><option value="Orden y limpieza">Orden y limpieza</option><option value="Reunion, capacitacion o asamblea">Reunion, capacitacion o asamblea</option><option value="Planta general">Planta general</option><option value="Taller o pañol">Taller o pañol</option><option value="Asistencia a Logistica">Asistencia a Logistica</option><option value="Asistencia a Produccion">Asistencia a Produccion</option>`;
 const optionsAusentismo = `<option value="">Seleccione Motivo...</option><option value="Carpeta medica">Carpeta medica</option><option value="Vacaciones">Vacaciones</option><option value="Salidas personales o retiros">Salidas personales o retiros</option><option value="Feriados">Feriados</option>`;
@@ -309,7 +329,7 @@ function addTaskRow(isRequired = false) {
     <div class="section-maquina">
       <div class="form-group" style="background:#eef6fc; padding:1.25rem; border-radius:6px; margin-bottom:1rem; border:1px solid #bcdcf9;">
         <label style="color:var(--primary); font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Máquina Intervenida</label>
-        <select class="ot-maquina-trigger" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsMaquinas}</select>
+        <select class="ot-maquina-trigger" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${getMachineOptionsHTML(currentPlant)}</select>
       </div>
     </div>
 
