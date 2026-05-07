@@ -12,7 +12,7 @@ const operatorDict = {
   "SL1": ['Azcurra', 'Beltran', 'Prado', 'Reyes'],
   "RAM": ['Abella', 'Ferrara', 'Rivero', 'Marun'],
   "CBA": ['Contrera', 'Miranda', 'Aguirre', 'Guardia'],
-  "PIL": ['Kern'], "PY": [], "RIV": []  // Si se configuran luego, van aquí
+  "PIL": ['Kern'], "PY": ['Burgos', 'Cantero', 'Rolon'], "RIV": []
 };
 
 const supervisorDict = {
