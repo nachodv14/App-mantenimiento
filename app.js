@@ -60,16 +60,206 @@ const machineDict = {
     "S12 - Autoelevador 2.5TN",
     "XB2 - Balanza amarilla 5TN - AHS-l",
     "X56 - Balanza 5TN Hanito"
-  ]
+  ],
+  "CBA": {
+    "Deposito": [
+      "G07 - Dobladora hierro longitudinal 6m",
+      "Q01 - Cortadora de chapa acanalada",
+      "Q02 - Cortadora de chapa trapezoidal",
+      "R07 - Puente Grúa 5TN",
+      "R08 - Puente Grúa 5TN",
+      "R09 - Puente Grúa 8TN",
+      "R10 - Puente Grúa 8TN",
+      "R11 - Puente Grúa 8TN",
+      "R12 - Puente Grúa 8TN",
+      "R13 - Puente Grúa 8TN",
+      "R14 - Puente Grúa 8TN",
+      "R15 - Puente Grúa 5TN",
+      "R16 - Puente Grúa 6TN",
+      "R17 - Puente Grúa 5TN",
+      "R18 - Puente Grúa 5TN",
+      "R19 - Puente Grúa 6.3TN",
+      "R23 - Puente Grúa 6.3TN",
+      "S02 - Autoelevador Yale",
+      "U01 - Separadora de varillas",
+      "B02 - Sierra manual",
+      "X06 - Balanza AHS-1 5TN",
+      "X07 - Balanza AHS-1 7,5TN",
+      "X08 - Balanza AHS-1 5TN",
+      "X09 - Balanza 7,5TN",
+      "X10 - Balanza AHS-1 5TN",
+      "X11 - Balanza 7,5TN",
+      "X12 - Balanza AHS-1 5TN",
+      "X13 - Balanza AHS-1 7,5TN",
+      "X14 - Balanza AHS-2 5TN",
+      "X15 - Balanza 7,5TN",
+      "X16 - Balanza AHS-1 5TN",
+      "X17 - Balanza AHS-1 5TN",
+      "X18 - Balanza AHS-1 5TN",
+      "XN3S - Balanza hibrida carro 3TN",
+      "XN3N - Balanza hibrida carro 3TN",
+      "X21 - Balanza AHS-1 5TN",
+      "X22 - Balanza AHS-1 7,5 TN",
+      "SR04 - Plegadora neumática",
+      "XN4S - Balanza PISO 3TN"
+    ],
+    "I+D": [
+      "K09 - Soldadora MIG ESAB 250",
+      "UR08 - Sierra SIN FIN"
+    ],
+    "Mto": [
+      "K14 - Soldadora MIG Tigger",
+      "XB01 - Balanza amarilla 5TN - AHS-l"
+    ],
+    "Nave 6": [
+      "R02 - Puente Grúa 5TN"
+    ],
+    "Planta": [
+      "P01 - Compresor a tornillo 30HP",
+      "P02 - Compresor a pistón 20HP",
+      "P03 - Compresor a tornillo 75HP",
+      "T01 - Grupo electrógeno BOUNOUS 310 KVA",
+      "X100 - Bascula 100 TN"
+    ],
+    "Producción": [
+      "A01 - Balancín",
+      "A02 - Balancín",
+      "B01 - Sierra automática Cosen",
+      "B03 - Sierra 45º",
+      "C01 - Guillotina varillas",
+      "C02 (inactiva) - Guillotina varillas",
+      "C03 - Guillotina varillas",
+      "C04 - Guillotina varillas",
+      "C05 - Guillotina chapas",
+      "E01 - Balancín troquelado acanalado",
+      "E02 - Balancín troquelado trapezoidal",
+      "F01 - Plegadora chapas",
+      "G01 - Dobladoras hierros",
+      "G02 - Dobladoras hierros",
+      "G03 - Dobladoras hierros",
+      "G04 - Dobladoras hierros",
+      "G05 - Dobladoras hierros",
+      "H01 - Schnell Formula estribadora automática",
+      "H02 - Schnell Coil estribadora automática",
+      "H03 - Schnell CM PRO 1600 Pilotera",
+      "H04 - Schnell ACU 6 Estribadora automática",
+      "H07 - Schnell Reta 12 Enderezadora",
+      "I01 - Taladro Grande de PIE",
+      "J01 - Torcionadora de hierros",
+      "K01 - Soldadora MIG Kempi 2500",
+      "K02 - Soldadora MIG Kempi 3200",
+      "K03 - Soldadora MIG Fenisol 300 (grande)",
+      "K04 - Soldadora MIG Kempi 2500",
+      "K05 - Soldadora MIG Kempi 2500",
+      "K06 - Soldadora MIG Fenisol (chica)",
+      "K07 - Soldadora MIG Kempi 2500",
+      "K10 - Soldadora MIG Tauro 450",
+      "K11 - Soldadora MIG Tauro 450",
+      "K15 - Soldadora MIG Kami 3500",
+      "K16 - Soldadora MIG Kami 4500",
+      "PL01 - Planchadora y corte de chapas",
+      "R´01 - Punzonadora de planchuelas",
+      "R03 - Puente Grúa 5TN",
+      "R04 - Puente Grúa 5TN",
+      "R05 - Puente Grúa 5TN",
+      "R06 - Puente Grúa 5TN",
+      "R20 - Puente Grúa 3TN",
+      "R21 - Puente Grúa 15TN",
+      "R22 - Puente Grúa 15TN",
+      "S04 - Autoelevador Toyota 2.5TN",
+      "X03 - Balanza 5TN",
+      "X04 - Balanza AHS-2 5TN",
+      "X05 - Balanza AHS-2 5TN",
+      "X24 - Balanza AHS-1 5TN",
+      "X25 - Balanza AHS-1 5TN",
+      "X57 - Balanza AYLCS 15 TN"
+    ],
+    "Servet": [
+      "S03 - Autoelevador Hangcha Xinchai",
+      "XSR1 - Balanza AHS-1 5TN",
+      "XSR2 - Balanza fraccionado alambre 50 KG",
+      "SR01 - Fraccionadora alambre Angeli",
+      "SR02 - Maquina procesado alambre púa",
+      "SR03 - Maquina procesado alambre púa",
+      "SR05 - Guillotina varilla mecánica",
+      "KSR6 - MIG Tauro 250A",
+      "SR07 - Fraccionadora alambre Angeli",
+      "SR09 - Fraccionadora alambre trompita",
+      "SR10 - Fraccionadora alambre 2 cabezal",
+      "SR11 - Fraccionadora alambre trompa G.",
+      "SR12 - Fraccionadora alambre trompita",
+      "SR13 - Fraccionadora alambre trompa G.(nueva)",
+      "SR14 - Sunchadora de banco fleje PET",
+      "SR16 - Conformadora de concertina",
+      "SR17 - Conformadora de concertina",
+      "SR18 - Balancín troquelado para concertina",
+      "SR19 - Sunchadora de banco fleje PET",
+      "SR21 - Maquina procesado alambre púa",
+      "SR22 - Maquina procesado alambre púa",
+      "SR28 - Fraccionadora de alambre trompa de elefante",
+      "SR29 - Prensa de rollo de alambre vertical para 300KG",
+      "SR30 - Prensa de rollo de alambre horizontal para 300KG"
+    ],
+    "SGV": [
+      "SG02 - MIG electrodos Cba 350A",
+      "SG04 - Compresor Schull 7,5 HP"
+    ],
+    "Urbantek": [
+      "R01 - Puente Grúa 5TN",
+      "UR01 - Sierra circular doble cabezal AL",
+      "UR02 - Fresadora soldadura PVC",
+      "UR03 - Soldadora termofusión doble cabezal",
+      "UR04 - Desaguadora",
+      "UR05 - Fresadora 3 cabezal (copiadora)",
+      "UR07 - Sierra circular doble cabezal PVC",
+      "UR09 - Vinculadora neumática Ozgenc",
+      "UR10 - Sierra de mesa",
+      "UR11 - Junquilladora Elumatec",
+      "UR12 - Pulmón neumático",
+      "UR13 - Soldadora PVC doble cabezal Ozgenc",
+      "UR14 - Centro mecanizado y corte perfilería Ozgenc",
+      "UR15 - Soldadora PVC 4 cabezales Ozgenc",
+      "UR16 - Limpiadora Ozgenc",
+      "UR17 - Junquilladora Ozgenc",
+      "UR18 - Ingletadora de 10\"",
+      "UR19 - Ventosa eléctrica de 4 sopapas",
+      "UR20 - Sierra sin fin",
+      "UR21 - Sierra doble cabezal",
+      "XUR01 - Balanza de gancho 5TN"
+    ],
+    "S/U": [
+      "S17 - Autoelevador Goodsense 2.5TN",
+      "S15 - Autoelevador Lonking"
+    ]
+  }
 };
 
-function getMachineOptionsHTML(plant) {
-  const machines = machineDict[plant] || [];
+function getMachineOptionsHTML(plant, sector = null) {
+  let machines = [];
+  if (plant === 'CBA') {
+    if (sector && machineDict['CBA'][sector]) {
+      machines = machineDict['CBA'][sector];
+    } else {
+      return `<option value="">Seleccione primero un sector...</option>`;
+    }
+  } else {
+    machines = machineDict[plant] || [];
+  }
+
   let html = `<option value="">Seleccione el código de la máquina...</option>`;
   machines.forEach(m => {
     // Tomamos la primera parte antes del guion como value (código)
     let val = m.includes('-') ? m.split('-')[0].trim() : m;
     html += `<option value="${val}">${m}</option>`;
+  });
+  return html;
+}
+
+function getSectorOptionsHTML() {
+  const sectors = Object.keys(machineDict['CBA'] || {}).sort();
+  let html = `<option value="">Seleccione el sector...</option>`;
+  sectors.forEach(s => {
+    html += `<option value="${s}">${s}</option>`;
   });
   return html;
 }
@@ -380,6 +570,13 @@ function addTaskRow(isRequired = false) {
     <div class="section-maquina">
       <div class="form-group" style="background:#eef6fc; padding:1.25rem; border-radius:6px; margin-bottom:1rem; border:1px solid #bcdcf9;">
         <label style="color:var(--primary); font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Máquina Intervenida</label>
+        
+        ${currentPlant === 'CBA' ? `
+          <select class="ot-sector-trigger" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px; margin-bottom:0.75rem;">
+            ${getSectorOptionsHTML()}
+          </select>
+        ` : ''}
+
         <select class="ot-maquina-trigger" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${getMachineOptionsHTML(currentPlant)}</select>
       </div>
     </div>
@@ -555,6 +752,14 @@ function addTaskRow(isRequired = false) {
   const secMaquina = div.querySelector('.section-maquina');
   const secEdilicio = div.querySelector('.section-edilicio');
   const secAusentismo = div.querySelector('.section-ausentismo');
+
+  const triggerSector = div.querySelector('.ot-sector-trigger');
+  if (triggerSector) {
+    triggerSector.addEventListener('change', (e) => {
+      triggerMaquina.innerHTML = getMachineOptionsHTML(currentPlant, e.target.value);
+      triggerMaquina.dispatchEvent(new Event('change'));
+    });
+  }
 
   tipoSel.addEventListener('change', () => {
     const val = tipoSel.value;
@@ -1282,6 +1487,21 @@ function ponerMaquinaFuncional(mData) {
   tipoSelect.value = 'MAQUINA';
   tipoSelect.dispatchEvent(new Event('change'));
   
+  if (currentPlant === 'CBA') {
+    let foundSector = null;
+    for (const [sector, machs] of Object.entries(machineDict['CBA'])) {
+      if (machs.some(m => (m.includes('-') ? m.split('-')[0].trim() : m) === mData.machine)) {
+        foundSector = sector;
+        break;
+      }
+    }
+    const sectorSelect = lastRow.querySelector('.ot-sector-trigger');
+    if (sectorSelect && foundSector) {
+      sectorSelect.value = foundSector;
+      sectorSelect.dispatchEvent(new Event('change'));
+    }
+  }
+
   const maqSelect = lastRow.querySelector('.ot-maquina-trigger');
   maqSelect.value = mData.machine;
   maqSelect.dispatchEvent(new Event('change'));
