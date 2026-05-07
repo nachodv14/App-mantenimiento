@@ -28,6 +28,29 @@ const machineDict = {
     "X50 - Balanza sur2 A&L Integral Trade 5TN",
     "X51 - Balanza de piso Serin EL05B 3TN",
     "X102 - Bascula camiones Gama 80TN"
+  ],
+  "PY": [
+    "TR01 - Trefiladora Eurolls 3P",
+    "TR05 - Trefiladora Druids 11P",
+    "TEJ10 - Tejedora Servet",
+    "TEJ11 - Tejedora Servet",
+    "H05 - Schnell Reta 12",
+    "SR23 - Maquina procesado alambre pua",
+    "SR24 - Maquina procesado alambre pua",
+    "SR25 - Maquina procesado alambre pua",
+    "SR26 - Procesado alambre pua",
+    "CLA01 - Clavos Wafios N41",
+    "PU01 - Pulidora Wafios PT1",
+    "EM01 - Empaquetadora Xingfei",
+    "P13 - Compresor a tornillo EMAX",
+    "S13 - Autoelevador Hangcha",
+    "SEC03 - Secador EMAX",
+    "RT01 - Rectificadora WAFIOS MsE500",
+    "DRUIDS02 - Linea galvanizado Druids",
+    "R24 - Puente grua 6,3TN",
+    "FUS01 - Camion Fuso 8TN",
+    "T04 - Grupo electrogeno",
+    "PUL08 - Pulmon de aire"
   ]
 };
 
