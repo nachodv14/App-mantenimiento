@@ -141,11 +141,11 @@ const machineDict = {
       "X21 - Balanza AHS-1 5TN",
       "X22 - Balanza AHS-1 7,5 TN",
       "SR04 - Plegadora neumática",
-      "XN4S - Balanza PISO 3TN"
+      "XN4S - Balanza Piso 3TN"
     ],
     "I+D": [
       "K09 - Soldadora MIG ESAB 250",
-      "UR08 - Sierra SIN FIN"
+      "UR08 - Sierra sin fin"
     ],
     "Mto": [
       "K14 - Soldadora MIG Tigger",
@@ -158,7 +158,7 @@ const machineDict = {
       "P01 - Compresor a tornillo 30HP",
       "P02 - Compresor a pistón 20HP",
       "P03 - Compresor a tornillo 75HP",
-      "T01 - Grupo electrógeno BOUNOUS 310 KVA",
+      "T01 - Grupo electrógeno Bounous 310 KVA",
       "X100 - Bascula 100 TN"
     ],
     "Producción": [
@@ -184,7 +184,7 @@ const machineDict = {
       "H03 - Schnell CM PRO 1600 Pilotera",
       "H04 - Schnell ACU 6 Estribadora automática",
       "H07 - Schnell Reta 12 Enderezadora",
-      "I01 - Taladro Grande de PIE",
+      "I01 - Taladro Grande de pie",
       "J01 - Torcionadora de hierros",
       "K01 - Soldadora MIG Kempi 2500",
       "K02 - Soldadora MIG Kempi 3200",
