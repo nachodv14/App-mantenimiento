@@ -3,9 +3,32 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbxcCq6xrMkjUhCLaEPtAUtP
 
 const machineDict = {
   "SL2": [
-    "R31", "R32", "R33", "R34", "R36", "R38", "P05", "P06", "PE01", "PE02", 
-    "M01", "M03", "M05", "M06", "M07", "M08", "M09", "M10", "M11", "SEC03", 
-    "S08", "S10", "SA04", "Q03", "FL02", "X40", "X42"
+    "R31 - Puente grúa 3TN",
+    "R32 - Puente grúa 3TN",
+    "R33 - Puente grúa 15TN",
+    "R34 - Puente grúa Forvis 5TN",
+    "R36 - Puente grúa 5TN",
+    "R38 - Puente grúa Jaso 20TN",
+    "FL02 - Flejadora",
+    "P05 - Compresor CSB tornillo 8 BAR Ceccato",
+    "P06 - Schulz SRP 3030 30 HP",
+    "PE01 - Perfiladora chapa sinusoidal - OND 18",
+    "PE02 - Perfiladora chapa trapezoidal - TP 101",
+    "M01 - Conformadora Gallega MEP 2\" / 2mm Termathool 200KW",
+    "M03 - Conformadora de caños",
+    "M05 - Conformadora de perfil C",
+    "M06 - Conformadora 1 1/2\" / 2mm con soldadora Termathool 100 KW",
+    "M07 - Conformadora de tubos Olimpia 80",
+    "M08 - Conformadora de perfiles Dry Wall Double Rows Roll - Omega",
+    "M09 - Conformadora de perfiles Dry Wall Montante",
+    "M10 - Conformadora de perfiles Dry Wall Solera U",
+    "M11 - Conformadora de perfiles Dry Wall Triple Rows Roll - Cantonera",
+    "SEC03 - Secador de aire - SRS 190 - Schulz",
+    "S08 - Autoelevador motor Fiat 3 cilindros",
+    "S10 - Autoelevador Maximal 25M 2,5TN",
+    "SA04 - Autoelevador alquilado",
+    "X40 - Balanza - Pilon - Integral Trade 021208 - 20TN",
+    "X42 - Balanza - Pilon - Integral Trade 065123 - 3TN"
   ],
   "SL1": [
     "TEJ01 - Tejedora Bergandi F500", "TEJ02 - Tejedora Vitari MG3", "TEJ03 - Tejedora Servet generico", "TEJ04 - Tejedora Vitari MG1", "TEJ05 - Tejedora Servet generico", "TEJ06 - Tejedora Vitari MG2", "TEJ07 - Tejedora Servet generico", "TEJ08 - Tejedora Servet generico", "TEJ09 - Tejedora Servet generico", "TEJ12 - Tejedora 760-76.2mm", "TEJ13 - Tejedora 630-63.5mm", "R35 - Puente grua 3TN", "R37 - Puente grua3TN - Nave 3 Sur", "R39 - Puente grua FORVIS 5TN", "R40 - Puente grua MSV 7TN", "R41 - Puente grua Jaso 5TN - Nave 1", "R42 - Puente grua Jaso 3,2TN - Nave 2 Norte", "R43 - Puente grua Jaso 5TN", "R44 - Puente grua Jaso 3,2TN - Nave 3", "R45 - Puente grua Jaso 5TN - Nave 3 Norte", "S09 - Autoelevador Toyota 3,5TN", "S14 - Autoelevador Xinchai 3TN", "S16 - Autoelevador Liugong 2.5 TN", "SA02 - Autoelevador alq. Michigan", "P08 - Compresor Sullair 4509", "P09 - Compresor Sullair 4509", "P12 - Compresor de aire FMT", "H08 - Schnell Reta Enderezadora", "H09 - Mep Bitronic 16-2 Enderezadora", "Q03 - Guillotina de chapas sinusoidal", "Q07 - Guillotina de chapas trapesoidal", "K13 - Soldadora a tope varillas", "EM02 - Empaqueradora Feiyu YC-420B", "MEP02 - Malladora Mep P-WELD-HA 24 Hilos", "CLA01 - Clavos Enkotec M101", "ESP01 - Espiraladora Enkotec TR01", "ALA01 - Alimentador de alambre", "SEC02 - Secador Sullair", "X23 - Balanza AHS - 5TN - AHS - II R - NARANJA", "X26 - Balanza AHS - 5TN -AHS - II R - NARANJA", "X27 - Balanza AHS - 5TN - AHS - I R - AMARILLA", "X28 - Balanza AHS - 5TN - AHS - II R MINI CRANE", "X29 - Balanza AHS - 100KG - AHS - I M - AMARILLA", "X60 - Balanza ASH - 2TN - ASH - I - AMARILLA", "X59 - Balanza Systel - Bumer 30 V2 - 31KG", "X55 - Balanza DRE-1 - 100KG - PLATEADA", "X101 - Bascula camiones Datta 100 TN", "X103 - Bascula camiones Datta  80 TN", "X30 - Balanza AHS - 5TN - AHS - II R - Naranja", "X53 - Balanza AHS - 7,5TN - AHS - I R - Amarilla", "X58 - Balanza AHS-I - 7,5TN - Amarilla", "X54 - Balanza AHS - 5TN - AHS - I R - Pañol - Amarilla", "G09 - Dobladora de hierro", "PUL06 - Pulmon de aire", "PUL07 - Pulmon de aire", "FIL01 - Sist. de filtro y carcasa de ingreso de agua a planta", "AU01 - Auto Volkswagen GOL 1.6"
