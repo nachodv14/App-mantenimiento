@@ -1,5 +1,5 @@
 // Constants
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw9tdwrCim80PnRRMbuCli_1CpzV4ZtVTuLsY4RCYU5WbyfptI3SsoAKVv4_6Af1zhA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwNollSq7D-EYekloM94WS_s-xixcw00NwasNLTBg_s6Gu2aCXTbWIhO8pzMnCGxqUD/exec";
 
 const machineDict = {
   "SL2": [
@@ -583,7 +583,7 @@ let rowCount = 0;
 
 document.getElementById('fecha').valueAsDate = new Date();
 
-function addTaskRow(isRequired = false) {
+function addTaskRow(isRequired = false, initialData = null) {
   rowCount++;
   const rowId = 'row_' + rowCount;
   const div = document.createElement('div');
@@ -598,6 +598,20 @@ function addTaskRow(isRequired = false) {
   for (let i = 1; i <= plantOps.length; i++) {
     if (i === 1) opsHtml += `<option value="1">1 (Solo yo)</option>`;
     else opsHtml += `<option value="${i}">${i}</option>`;
+  }
+
+  // Lógica de autocompletado en cadena:
+  let defH = "HH", defM = "MM";
+  if (!initialData) {
+      const rows = tareasContainer.querySelectorAll('.task-row');
+      if (rows.length > 0) {
+          const lastRow = rows[rows.length - 1];
+          const lastH = lastRow.querySelector('.time-hasta-h').value;
+          const lastM = lastRow.querySelector('.time-hasta-m').value;
+          if (lastH && lastM && lastH !== 'HH' && lastM !== 'MM') {
+              defH = lastH; defM = lastM;
+          }
+      }
   }
 
   div.innerHTML = `
@@ -617,7 +631,7 @@ function addTaskRow(isRequired = false) {
         Descripción de la tarea realizada
         <button type="button" class="btn-voice" style="background:#e5e7eb; border:none; border-radius:4px; padding:0.25rem 0.5rem; cursor:pointer; margin-bottom: 0.25rem;">🎤 Audiodictado</button>
       </label>
-      <textarea class="desc-task" rows="2" placeholder="Describa el trabajo o presione el micrófono..." ${isRequired ? 'required' : ''}></textarea>
+      <textarea class="desc-task" rows="2" placeholder="Describa el trabajo o presione el micrófono..." ${isRequired ? 'required' : ''}>${initialData ? initialData.description : ''}</textarea>
     </div>
     
     <div class="grid-2" style="margin-bottom:1rem;">
@@ -934,12 +948,82 @@ function addTaskRow(isRequired = false) {
         [pFF, pFH, pFM].forEach(x => x.required = false);
         pFF.value = ''; pFH.value = ''; pFM.value = '';
       }
-      calcParada();
+        calcParada();
     }
   };
 
   chkDisp.addEventListener('change', updateParadaValidation);
-  div.querySelectorAll(`input[name="estado_${rowId}"]`).forEach(r => r.addEventListener('change', updateParadaValidation));
+  if (initialData) {
+      div.querySelector('.time-desde-h').value = initialData.from.split(':')[0];
+      div.querySelector('.time-desde-m').value = initialData.from.split(':')[1];
+      div.querySelector('.time-hasta-h').value = taskDataToVal(initialData.to, 'h');
+      div.querySelector('.time-hasta-m').value = taskDataToVal(initialData.to, 'm');
+      div.querySelector('.tipo-registro').value = initialData.type;
+      div.querySelector('.tipo-registro').dispatchEvent(new Event('change'));
+      
+      if (initialData.type === 'EDILICIO') {
+          div.querySelector('.cat-edilicio').value = initialData.category;
+      } else if (initialData.type === 'AUSENTISMO') {
+          div.querySelector('.motivo-ausentismo').value = initialData.category;
+      }
+      
+      div.querySelector('.ot-operarios').value = initialData.opsCount || 1;
+      div.querySelector('.ot-operarios').dispatchEvent(new Event('change'));
+      
+      if (initialData.companions) {
+          const comps = initialData.companions.split(',').map(c => c.trim());
+          const selects = div.querySelectorAll('.ot-companero-select');
+          selects.forEach((sel, idx) => {
+              if (comps[idx]) sel.value = comps[idx];
+          });
+      }
+
+      if (initialData.hasOT) {
+          const maqSelect = div.querySelector('.ot-maquina-trigger');
+          if (currentPlant === 'CBA') {
+              for (const sector in machineDict['CBA']) {
+                  if (machineDict['CBA'][sector].some(m => m.startsWith(initialData.machine))) {
+                      div.querySelector('.ot-sector-trigger').value = sector;
+                      div.querySelector('.ot-sector-trigger').dispatchEvent(new Event('change'));
+                      break;
+                  }
+              }
+          }
+          maqSelect.value = initialData.machine;
+          maqSelect.dispatchEvent(new Event('change'));
+          div.querySelector('.ot-naturaleza').value = initialData.nature;
+          
+          div.querySelectorAll(`input[name="estado_${rowId}"]`).forEach(r => {
+              if (r.value === initialData.finalState) r.checked = true;
+          });
+
+          chkDisp.checked = initialData.affectsDisp === true || initialData.affectsDisp === "SI" || initialData.affectsDisp === "TRUE";
+          chkDisp.dispatchEvent(new Event('change'));
+          
+          if (chkDisp.checked) {
+              const dParts = initialData.startOut.split(' ');
+              div.querySelector('.parada-i-fecha').value = dParts[0];
+              div.querySelector('.parada-i-h').value = dParts[1].split(':')[0];
+              div.querySelector('.parada-i-m').value = dParts[1].split(':')[1];
+              
+              if (initialData.endOut) {
+                  const fParts = initialData.endOut.split(' ');
+                  div.querySelector('.parada-f-fecha').value = fParts[0];
+                  div.querySelector('.parada-f-h').value = fParts[1].split(':')[0];
+                  div.querySelector('.parada-f-m').value = fParts[1].split(':')[1];
+              }
+          }
+          div.querySelector('.ot-desviacion').value = initialData.deviation || '';
+          div.querySelector('.ot-observaciones').value = initialData.recommendations || '';
+      }
+  } else {
+      div.querySelector('.time-desde-h').value = defH;
+      div.querySelector('.time-desde-m').value = defM;
+  }
+
+  div.querySelectorAll('select, input, textarea').forEach(el => {
+    el.addEventListener('change', updateTiempoTotal);
+  });
 
   const calcParada = () => {
     const pTiempo = div.querySelector('.parada-tiempo');
@@ -972,7 +1056,15 @@ function addTaskRow(isRequired = false) {
   if (!isRequired) div.querySelector('.btn-remove-task').addEventListener('click', () => { div.remove(); triggerRecalc(); });
 
   tareasContainer.appendChild(div);
+  return div;
 }
+
+function taskDataToVal(timeStr, type) {
+    if (!timeStr || !timeStr.includes(':')) return type === 'h' ? 'HH' : 'MM';
+    return type === 'h' ? timeStr.split(':')[0] : timeStr.split(':')[1];
+}
+
+
 
 function getStopTimeAdjusted(di, df, plant) {
   if (plant !== 'SL2') return (df - di) / (1000 * 60 * 60);
@@ -1277,13 +1369,21 @@ function renderOperatorSidebar() {
         listDiv.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:1.5rem 0;">Aún no tienes tareas cargadas en esta jornada.</div>';
     } else {
         myTasks.sort((a,b) => a.from.localeCompare(b.from)).forEach(t => {
+           const isRejected = t.evalStatus === 'RECHAZADA';
            let theHtml = `
-             <div style="background:#f9fafb; border:1px solid #e5e7eb; border-left:4px solid ${t.hasOT ? '#0284c7' : (t.type === 'AUSENTISMO' ? '#be123c' : '#10b981')}; border-radius:4px; padding:0.75rem;">
+             <div style="background:${isRejected ? '#fff1f2' : '#f9fafb'}; border:1px solid ${isRejected ? '#fecdd3' : '#e5e7eb'}; border-left:4px solid ${isRejected ? '#be123c' : (t.hasOT ? '#0284c7' : (t.type === 'AUSENTISMO' ? '#be123c' : '#10b981'))}; border-radius:4px; padding:0.75rem; position:relative;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
                    <strong style="color:var(--text-main); font-size:0.95rem;">${t.from} a ${t.to} (${t.totalTime}h)</strong>
+                   <div style="display:flex; gap:0.5rem;">
+                      <button onclick="editOperatorTask('${t.id}')" title="Editar" style="background:none; border:none; cursor:pointer; color:var(--primary); font-size:1.1rem; line-height:1;">✎</button>
+                      <button onclick="deleteOperatorTask('${t.id}')" title="Eliminar" style="background:none; border:none; cursor:pointer; color:var(--danger); font-size:1.1rem; line-height:1;">🗑</button>
+                   </div>
                 </div>
                 <div style="margin-bottom:0.25rem; font-size:0.9rem; color:var(--text-main);">${t.description}</div>
            `;
+           if(isRejected) {
+              theHtml += `<div style="font-size:0.8rem; color:#be123c; margin-top:0.5rem; background:#fee2e2; padding:0.4rem; border-radius:4px; border:1px solid #fecdd3;"><strong>MOTIVO RECHAZO:</strong> ${t.evalObs || 'Sin observaciones'}</div>`;
+           }
            if(t.hasOT) {
               theHtml += `<div style="font-size:0.8rem; color:var(--primary); margin-top:0.25rem;"><strong>OT Máquina:</strong> ${t.machine}</div>`;
            } else if(t.type === 'EDILICIO' || t.type === 'AUSENTISMO') {
@@ -1296,6 +1396,66 @@ function renderOperatorSidebar() {
            listDiv.innerHTML += theHtml;
         });
     }
+}
+
+function deleteOperatorTask(id) {
+    if(!confirm("¿Seguro que deseas eliminar esta tarea permanentemente?")) return;
+    
+    // Si está en la cola local, borrarla de ahí
+    if(localQueueTasks.find(t => t.id === id)) {
+        localQueueTasks = localQueueTasks.filter(t => t.id !== id);
+        saveLocalQueues();
+        renderOperatorSidebar();
+        updateTiempoTotal();
+        return;
+    }
+
+    // Si está en la nube, mandar orden de borrado
+    fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'delete_pending', id: id })
+    }).then(res => res.json())
+    .then(() => {
+        syncDataBackground();
+    }).catch(err => {
+        alert("Error de red al eliminar. Intente nuevamente.");
+    });
+}
+
+function editOperatorTask(id) {
+    const allTasks = getActiveTasks();
+    const task = allTasks.find(t => t.id === id);
+    if(!task) return;
+
+    if(!confirm("La tarea volverá al formulario para que la edites. Al guardar se generará un nuevo registro y el anterior se borrará de la lista. ¿Continuar?")) return;
+
+    // Poblar el formulario
+    document.getElementById('fecha').value = task.date;
+    document.getElementById('turno').value = task.shift;
+    
+    tareasContainer.innerHTML = '';
+    rowCount = 0;
+    
+    addTaskRow(true, task);
+    
+    // Eliminar la tarea original (local o nube) para que no quede duplicada al guardar la nueva
+    if(localQueueTasks.find(t => t.id === id)) {
+        localQueueTasks = localQueueTasks.filter(t => t.id !== id);
+        saveLocalQueues();
+        renderOperatorSidebar();
+        updateTiempoTotal();
+    } else {
+        fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'delete_pending', id: id })
+        }).then(() => {
+            syncDataBackground();
+        });
+    }
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // --- SUPERVISOR GOOGLE CALENDAR LOGIC ---
@@ -1490,16 +1650,23 @@ document.getElementById('btn-modal-approve').addEventListener('click', () => api
 
 document.getElementById('btn-modal-reject').addEventListener('click', (e) => {
    if(!currentInspectingTask) return;
-   if(!confirm("⚠️ ADVERTENCIA\n\n¿Seguro que deseas ELIMINAR esta tarea de la hoja de 'Pendientes' de Google Sheets permanentemente?")) return;
+   const obs = document.getElementById('modal-obs').value.trim();
+   if(!obs) {
+       alert("Para devolver una tarea al operario para corregir, DEBES escribir el motivo en el cuadro de observaciones.");
+       document.getElementById('modal-obs').focus();
+       return;
+   }
+   
+   if(!confirm("¿Seguro que deseas DEVOLVER esta tarea al operario para su corrección?")) return;
    
    const targetBtn = e.target;
    const prevText = targetBtn.textContent;
-   targetBtn.textContent = 'Borrando...'; targetBtn.disabled = true;
+   targetBtn.textContent = 'Devolviendo...'; targetBtn.disabled = true;
 
    fetch(GAS_URL, {
        method: 'POST',
        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-       body: JSON.stringify({ action: 'reject_pending', id: currentInspectingTask.id })
+       body: JSON.stringify({ action: 'reject_pending', id: currentInspectingTask.id, obs: obs })
    })
    .then(res => res.json())
    .then(() => {
@@ -1672,7 +1839,10 @@ function parseCloudPending(rows) {
     totalTime: parseFloat(r[7]), description: r[8], type: r[9], category: r[10], machine: r[11],
     nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
     affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
-    companions: r[21], status: 'PENDING'
+    companions: r[21], 
+    evalStatus: r[22] || 'PENDING',
+    evalObs: r[23] || '',
+    status: 'PENDING'
   }));
 }
 
