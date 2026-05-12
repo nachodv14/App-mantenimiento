@@ -953,6 +953,10 @@ function addTaskRow(isRequired = false, initialData = null) {
   };
 
   chkDisp.addEventListener('change', updateParadaValidation);
+  div.querySelectorAll(`input[name="estado_${rowId}"]`).forEach(r => {
+    r.addEventListener('change', updateParadaValidation);
+  });
+  updateParadaValidation();
   if (initialData) {
       div.querySelector('.time-desde-h').value = initialData.from.split(':')[0];
       div.querySelector('.time-desde-m').value = initialData.from.split(':')[1];
