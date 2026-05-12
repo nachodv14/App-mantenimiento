@@ -1842,16 +1842,31 @@ setInterval(syncDataBackground, 300000);
 window.addEventListener('load', syncDataBackground);
 
 function parseCloudPending(rows) {
-  return rows.map(r => ({
-    id: r[0], plant: r[1], date: r[2], shift: r[3], operator: r[4], from: r[5], to: r[6],
-    totalTime: parseFloat(r[7]), description: r[8], type: r[9], category: r[10], machine: r[11],
-    nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
-    affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
-    companions: r[21], 
-    evalStatus: r[22] || 'PENDING',
-    evalObs: r[23] || '',
-    status: 'PENDING'
-  }));
+  return rows.map(r => {
+    let rawDate = r[2];
+    let normalizedDate = "";
+    if (rawDate) {
+        let d = new Date(rawDate);
+        if (!isNaN(d.getTime())) {
+            let y = d.getFullYear();
+            let m = String(d.getMonth() + 1).padStart(2, '0');
+            let day = String(d.getDate()).padStart(2, '0');
+            normalizedDate = `${y}-${m}-${day}`;
+        } else {
+            normalizedDate = String(rawDate).split('T')[0];
+        }
+    }
+    return {
+      id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], from: r[5], to: r[6],
+      totalTime: parseFloat(r[7]), description: r[8], type: r[9], category: r[10], machine: r[11],
+      nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
+      affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
+      companions: r[21], 
+      evalStatus: r[22] || 'PENDING',
+      evalObs: r[23] || '',
+      status: 'PENDING'
+    };
+  });
 }
 
 function parseCloudMaquinas(rows) {
@@ -1861,13 +1876,28 @@ function parseCloudMaquinas(rows) {
 }
 
 function parseCloudApproved(rows) {
-  return rows.map(r => ({
-    id: r[0], plant: r[1], date: r[2], shift: r[3], operator: r[4], from: r[5], to: r[6],
-    totalTime: parseFloat(r[7]), description: r[8], type: r[9], category: r[10], machine: r[11],
-    nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
-    affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
-    companions: r[21], obsSup: r[22], status: 'APPROVED'
-  }));
+  return rows.map(r => {
+    let rawDate = r[2];
+    let normalizedDate = "";
+    if (rawDate) {
+        let d = new Date(rawDate);
+        if (!isNaN(d.getTime())) {
+            let y = d.getFullYear();
+            let m = String(d.getMonth() + 1).padStart(2, '0');
+            let day = String(d.getDate()).padStart(2, '0');
+            normalizedDate = `${y}-${m}-${day}`;
+        } else {
+            normalizedDate = String(rawDate).split('T')[0];
+        }
+    }
+    return {
+      id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], from: r[5], to: r[6],
+      totalTime: parseFloat(r[7]), description: r[8], type: r[9], category: r[10], machine: r[11],
+      nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
+      affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
+      companions: r[21], obsSup: r[22], status: 'APPROVED'
+    };
+  });
 }
 
 // --------------------------------------------------------
