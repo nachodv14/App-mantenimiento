@@ -11,7 +11,10 @@ function doPost(e) {
     var sheetAprob = ss.getSheetByName("Aprobados");
     var sheetCaidas = ss.getSheetByName("MaquinasCaidas");
 
-    if (!sheetCaidas) sheetCaidas = ss.insertSheet("MaquinasCaidas");
+    if (!sheetCaidas) {
+      sheetCaidas = ss.insertSheet("MaquinasCaidas");
+      sheetCaidas.appendRow(["ID", "Planta", "Máquina", "InicioISO", "ReportadoPor"]);
+    }
 
     var response = { status: "OK" };
 
