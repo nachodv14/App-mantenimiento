@@ -326,10 +326,10 @@ function getSectorOptionsHTML() {
   });
   return html;
 }
-const optionsNaturaleza = `<option value="">Seleccione...</option><option value="Inspección">Inspección</option><option value="Preventivo Programado">Preventivo Programado</option><option value="Preventivo Condicional">Preventivo Condicional</option><option value="Preventivo semanal">Preventivo semanal</option><option value="Preventivo mensual">Preventivo mensual</option><option value="Preventivo trimestral">Preventivo trimestral</option><option value="Preventivo semestral">Preventivo semestral</option><option value="Preventivo Anual">Preventivo Anual</option><option value="Mejoras">Mejoras</option><option value="Falla">Falla</option><option value="Montaje">Montaje</option>`;
-const optionsEdilicio = `<option value="">Seleccione Categoría...</option><option value="Orden y limpieza">Orden y limpieza</option><option value="Reunion, capacitacion o asamblea">Reunion, capacitacion o asamblea</option><option value="Planta general">Planta general</option><option value="Taller o pañol">Taller o pañol</option><option value="Asistencia a Logistica">Asistencia a Logistica</option><option value="Asistencia a Produccion">Asistencia a Produccion</option>`;
-const optionsAusentismo = `<option value="">Seleccione Motivo...</option><option value="Carpeta medica">Carpeta medica</option><option value="Vacaciones">Vacaciones</option><option value="Salidas personales o retiros">Salidas personales o retiros</option><option value="Feriados">Feriados</option>`;
-const optionsTipoRegistro = `<option value="MAQUINA">Mantenimiento de Máquina (OT)</option><option value="EDILICIO">Mantenimiento Edilicio / Varios</option><option value="AUSENTISMO">Ausentismo / No productivo</option>`;
+const optionsNaturaleza = `<option value="">Seleccione...</option><option value="Inspección">Inspección</option><option value="Preventivo programado">Preventivo programado</option><option value="Preventivo condicional">Preventivo condicional</option><option value="Preventivo semanal">Preventivo semanal</option><option value="Preventivo mensual">Preventivo mensual</option><option value="Preventivo trimestral">Preventivo trimestral</option><option value="Preventivo semestral">Preventivo semestral</option><option value="Preventivo anual">Preventivo anual</option><option value="Mejoras">Mejoras</option><option value="Falla">Falla</option><option value="Montaje">Montaje</option>`;
+const optionsEdilicio = `<option value="">Seleccione categoría...</option><option value="Orden y limpieza">Orden y limpieza</option><option value="Reunión, capacitación o asamblea">Reunión, capacitación o asamblea</option><option value="Planta general">Planta general</option><option value="Taller o pañol">Taller o pañol</option><option value="Asistencia a logística">Asistencia a logística</option><option value="Asistencia a producción">Asistencia a producción</option>`;
+const optionsAusentismo = `<option value="">Seleccione motivo...</option><option value="Carpeta médica">Carpeta médica</option><option value="Vacaciones">Vacaciones</option><option value="Salidas personales o retiros">Salidas personales o retiros</option><option value="Feriados">Feriados</option>`;
+const optionsTipoRegistro = `<option value="MAQUINA">Mantenimiento de máquina (OT)</option><option value="EDILICIO">Mantenimiento edilicio / varios</option><option value="AUSENTISMO">Ausentismo / no productivo</option>`;
 
 const operatorDict = {
   "SL2": ['Baigorria', 'Saldaña', 'Gonzalez Aguero', 'Gutierrez', 'Aberastain'],
@@ -459,7 +459,7 @@ btnEnterPlant.addEventListener('click', () => {
 
   const opSelect = document.getElementById('operario');
   const plantOps = operatorDict[currentPlant] || [];
-  opSelect.innerHTML = `<option value="">Seleccione Operario...</option>` + plantOps.map(op => `<option value="${op}">${op}</option>`).join('');
+  opSelect.innerHTML = `<option value="">Seleccione operario...</option>` + plantOps.map(op => `<option value="${op}">${op}</option>`).join('');
 
   // Al confirmar planta, mostrar pantalla de rol
   viewPlant.classList.add('hidden');
@@ -620,9 +620,9 @@ function addTaskRow(isRequired = false, initialData = null) {
       ${!isRequired ? `<button type="button" class="btn-remove-task" style="color:var(--danger); background:none; border:none; cursor:pointer; font-weight:600;">&times; Quitar</button>` : ''}
     </h4>
 
-    <!-- Selector de Tipo de Registro -->
+    <!-- Selector de tipo de registro -->
     <div class="form-group" style="margin-bottom:1rem; border-bottom: 1px dashed var(--border); padding-bottom: 1rem;">
-      <label style="font-weight:600;">Tipo de Registro</label>
+      <label style="font-weight:600;">Tipo de registro</label>
       <select class="tipo-registro" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsTipoRegistro}</select>
     </div>
     
@@ -654,17 +654,17 @@ function addTaskRow(isRequired = false, initialData = null) {
         <small class="row-tiempo" style="color:var(--text-muted); font-weight:500;">Tiempo de la tarea: 0h 0m</small>
     </div>
 
-    <!-- Módulo de Compañeros de Tarea Local al Renglon -->
+    <!-- Módulo de compañeros de tarea local al renglón -->
     <div class="form-group" style="background:#f3f4f6; padding:1rem; border-radius:4px; margin-bottom:1rem; border:1px solid #d1d5db;">
-        <label style="font-weight:600; margin-bottom:0.5rem; display:block;">Cantidad Total de Operarios en esta Tarea</label>
+        <label style="font-weight:600; margin-bottom:0.5rem; display:block;">Cantidad total de operarios en esta tarea</label>
         <select class="ot-operarios" style="max-width:300px; margin-bottom:0.5rem;">${opsHtml}</select>
         <div class="ot-companeros-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;"></div>
     </div>
 
-    <!-- Sección Mantenimiento de Máquina (Default) -->
+    <!-- Sección mantenimiento de máquina (default) -->
     <div class="section-maquina">
       <div class="form-group" style="background:#eef6fc; padding:1.25rem; border-radius:6px; margin-bottom:1rem; border:1px solid #bcdcf9;">
-        <label style="color:var(--primary); font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Máquina Intervenida</label>
+        <label style="color:var(--primary); font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Máquina intervenida</label>
         
         ${currentPlant === 'CBA' ? `
           <select class="ot-sector-trigger" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px; margin-bottom:0.75rem;">
@@ -676,18 +676,18 @@ function addTaskRow(isRequired = false, initialData = null) {
       </div>
     </div>
 
-    <!-- Sección Edilicio / Varios -->
+    <!-- Sección edilicio / varios -->
     <div class="section-edilicio hidden">
       <div class="form-group" style="background:#f0fdf4; padding:1.25rem; border-radius:6px; margin-bottom:1rem; border:1px solid #bbf7d0;">
-        <label style="color:#15803d; font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Categoría Edilicio / Varios</label>
+        <label style="color:#15803d; font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Categoría edilicio / varios</label>
         <select class="cat-edilicio" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsEdilicio}</select>
       </div>
     </div>
 
-    <!-- Sección Ausentismo -->
+    <!-- Sección ausentismo -->
     <div class="section-ausentismo hidden">
       <div class="form-group" style="background:#fff1f2; padding:1.25rem; border-radius:6px; margin-bottom:1rem; border:1px solid #fecdd3;">
-        <label style="color:#be123c; font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Motivo Ausentismo / No Productivo</label>
+        <label style="color:#be123c; font-weight:700; display:block; margin-bottom:0.5rem; font-size:1.05rem;">Motivo ausentismo / no productivo</label>
         <select class="motivo-ausentismo" style="width:100%; padding:0.6rem; border-color:var(--border); font-size:1rem; border-radius:4px;">${optionsAusentismo}</select>
       </div>
     </div>
@@ -695,18 +695,18 @@ function addTaskRow(isRequired = false, initialData = null) {
     <!-- Módulo OT interno de la fila (se muestra solo si se selecciona máquina) -->
     <div class="modulo-ot hidden" style="margin-top: 1rem; padding-top: 1rem; border-top: 2px dashed #bcdcf9;">
       <h5 style="margin-bottom:1rem; color:var(--primary); font-size:1rem; display:flex; justify-content:space-between;">
-        <span>Detalles Complementarios para la OT</span>
+        <span>Detalles complementarios para la OT</span>
         <span style="font-size:0.8rem; background:#eef6fc; padding:0.2rem 0.4rem; border-radius:4px; color:var(--primary-hover);">RPMT0002</span>
       </h5>
 
       <div class="form-group">
-        <label>Naturaleza del Mantenimiento</label>
+        <label>Naturaleza del mantenimiento</label>
         <select class="ot-naturaleza">${optionsNaturaleza}</select>
       </div>
 
       <div class="form-group">
         <label style="font-weight:600; display:flex; justify-content:space-between; align-items:flex-end;">
-          Desviación Detectada
+          Desviación detectada
           <button type="button" class="btn-voice-dev" style="background:#e5e7eb; border:none; border-radius:4px; padding:0.25rem 0.5rem; cursor:pointer; margin-bottom: 0.25rem;">🎤 Audiodictado</button>
         </label>
         <textarea class="ot-desviacion" placeholder="Detalle el problema detectado o pulse el micrófono..."></textarea>
@@ -714,7 +714,7 @@ function addTaskRow(isRequired = false, initialData = null) {
 
       <div class="form-group">
         <label style="font-weight:600; display:flex; justify-content:space-between; align-items:flex-end;">
-          Observaciones / Tareas recomendadas
+          Observaciones / tareas recomendadas
           <button type="button" class="btn-voice-obs" style="background:#e5e7eb; border:none; border-radius:4px; padding:0.25rem 0.5rem; cursor:pointer; margin-bottom: 0.25rem;">🎤 Audiodictado</button>
         </label>
         <textarea class="ot-observaciones" placeholder="Indique si hay tareas pendientes o recomendaciones para el futuro..."></textarea>
@@ -733,10 +733,10 @@ function addTaskRow(isRequired = false, initialData = null) {
       </div>
 
       <div class="modulo-parada hidden card" style="background:#fffcf2; border:1px solid #fde047; box-shadow:none; padding:1rem; margin-top:1rem;">
-        <div style="margin-bottom: 1rem;"><strong>Registro de Parada:</strong></div>
+        <div style="margin-bottom: 1rem;"><strong>Registro de parada:</strong></div>
         <div class="grid-2">
           <div class="form-group">
-            <label style="font-size:0.8rem">Inicio Fuera de Servicio</label>
+            <label style="font-size:0.8rem">Inicio fuera de servicio</label>
             <div style="display:flex; flex-direction:column; gap:0.5rem">
               <input type="date" class="parada-i-fecha" style="width:100%;">
               <div style="display:flex; align-items:center; gap:2px; width:100%;">
@@ -745,7 +745,7 @@ function addTaskRow(isRequired = false, initialData = null) {
             </div>
           </div>
           <div class="form-group fin-parada-group">
-            <label style="font-size:0.8rem">Fin Fuera de Servicio</label>
+            <label style="font-size:0.8rem">Fin fuera de servicio</label>
             <div style="display:flex; flex-direction:column; gap:0.5rem">
               <input type="date" class="parada-f-fecha" style="width:100%;">
               <div style="display:flex; align-items:center; gap:2px; width:100%;">
@@ -760,7 +760,7 @@ function addTaskRow(isRequired = false, initialData = null) {
       </div>
 
       <div class="form-group" style="margin-top: 1.5rem;">
-        <label style="font-weight:600;">Estado Final de la Máquina</label>
+        <label style="font-weight:600;">Estado final de la máquina</label>
         <div style="display: flex; gap: 1.5rem; margin-top: 0.75rem;">
           <label style="font-weight: normal; cursor:pointer;"><input type="radio" name="estado_${rowId}" value="Funcional" checked> Funcional</label>
           <label style="font-weight: normal; cursor:pointer;"><input type="radio" name="estado_${rowId}" value="No Funcional"> No Funcional</label>
@@ -1603,13 +1603,13 @@ function openSupervisorModal(t) {
   `;
   if (t.hasOT) {
     html += `
-       <h4 style="color:var(--primary); margin-bottom:0.5rem; text-decoration:underline;">Orden de Trabajo</h4>
+       <h4 style="color:var(--primary); margin-bottom:0.5rem; text-decoration:underline;">Orden de trabajo</h4>
        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
           <div><strong>Máquina:</strong> ${t.machine}</div><div><strong>Naturaleza:</strong> ${t.nature}</div>
-          <div><strong>Horas Hombre Calc:</strong> ${t.manHours} HH</div><div><strong>Estado Final:</strong> ${t.finalState}</div>
+          <div><strong>Horas hombre calc:</strong> ${t.manHours} HH</div><div><strong>Estado final:</strong> ${t.finalState}</div>
        </div><div style="margin-top:0.5rem;"><strong>Desviación:</strong> ${t.deviation || '-'}</div>
-       <div style="margin-top:0.5rem;"><strong>Tareas Explicitas:</strong> ${t.tasksDone || '-'}</div>
-       <div style="margin-top:0.5rem;"><strong>Observaciones / Tareas recomendadas:</strong> ${t.recommendations || '-'}</div>
+       <div style="margin-top:0.5rem;"><strong>Tareas explícitas:</strong> ${t.tasksDone || '-'}</div>
+       <div style="margin-top:0.5rem;"><strong>Observaciones / tareas recomendadas:</strong> ${t.recommendations || '-'}</div>
      `;
     if (t.affectsDisp) {
       html += `<div style="margin-top:0.75rem; color:var(--danger)"><strong>Máquina parada:</strong> Desde ${t.startOut} hasta ${t.endOut} (${t.stopTime}h paradas).</div>`;
@@ -1898,7 +1898,7 @@ function renderHistory() {
                     <th style="padding:0.5rem; border:1px solid var(--border);">Operario</th>
                     <th style="padding:0.5rem; border:1px solid var(--border);">Horario</th>
                     <th style="padding:0.5rem; border:1px solid var(--border);">Descripción</th>
-                    <th style="padding:0.5rem; border:1px solid var(--border);">Máquina/Tipo</th>
+                    <th style="padding:0.5rem; border:1px solid var(--border);">Máquina/tipo</th>
                     <th style="padding:0.5rem; border:1px solid var(--border); text-align:center;">Acción</th>
                   </tr>
                 </thead>
