@@ -582,11 +582,15 @@ const btnAddTask = document.getElementById('btn-add-task');
 let rowCount = 0;
 
 document.getElementById('fecha').valueAsDate = new Date();
+document.getElementById('fecha').addEventListener('change', () => {
+   renderOperatorSidebar();
+});
 
 function addTaskRow(isRequired = false, initialData = null) {
   rowCount++;
   const rowId = 'row_' + rowCount;
   const div = document.createElement('div');
+  div.id = rowId;
   div.className = 'task-row card';
   div.style.background = '#f9fafb';
   div.style.padding = '1.5rem';
@@ -882,7 +886,7 @@ function addTaskRow(isRequired = false, initialData = null) {
       div.querySelector('.ot-naturaleza').required = true;
 
       // Detección de Máquina Caída
-      const mData = maquinasCaidas.find(m => m.machine === e.target.value && m.plant === currentPlant);
+      const mData = getActiveMaquinasCaidas().find(m => m.machine === e.target.value && m.plant === currentPlant);
       if (mData) {
          const d = new Date(mData.startOutISO);
          const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -1692,7 +1696,7 @@ function renderMaquinasCaidasSidebar() {
     return;
   }
   
-  const caidas = maquinasCaidas.filter(m => m.plant === currentPlant);
+  const caidas = getActiveMaquinasCaidas().filter(m => m.plant === currentPlant);
   if (caidas.length === 0) {
     listDiv.innerHTML = '<div style="text-align:center; color:#dc2626; font-size:0.9rem; padding:1.5rem 0;">No hay máquinas caídas registradas.</div>';
     return;
