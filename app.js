@@ -1842,6 +1842,7 @@ setInterval(syncDataBackground, 300000);
 window.addEventListener('load', syncDataBackground);
 
 function parseCloudPending(rows) {
+  const ausentismoMotivos = ["Carpeta médica", "Vacaciones", "Salidas personales o retiros", "Feriados"];
   return rows.map(r => {
     let rawDate = r[2];
     let normalizedDate = "";
@@ -1856,14 +1857,23 @@ function parseCloudPending(rows) {
             normalizedDate = String(rawDate).split('T')[0];
         }
     }
+    
+    const cat = r[10] || "";
+    const maq = r[11] || "";
+    let inferredType = "EDILICIO";
+    if (maq) inferredType = "MAQUINA";
+    else if (ausentismoMotivos.includes(cat)) inferredType = "AUSENTISMO";
+
     return {
-      id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], from: r[5], to: r[6],
-      totalTime: parseFloat(r[7]), description: r[8], type: r[9], category: r[10], machine: r[11],
+      id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], 
+      companions: r[5],
+      from: r[6], to: r[7], totalTime: parseFloat(r[8]),
+      description: r[9],
+      type: inferredType, category: cat, machine: maq,
       nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
       affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
-      companions: r[21], 
-      evalStatus: r[22] || 'PENDING',
-      evalObs: r[23] || '',
+      evalStatus: r[21] || 'PENDING',
+      evalObs: r[22] || '',
       status: 'PENDING'
     };
   });
@@ -1876,6 +1886,7 @@ function parseCloudMaquinas(rows) {
 }
 
 function parseCloudApproved(rows) {
+  const ausentismoMotivos = ["Carpeta médica", "Vacaciones", "Salidas personales o retiros", "Feriados"];
   return rows.map(r => {
     let rawDate = r[2];
     let normalizedDate = "";
@@ -1890,12 +1901,22 @@ function parseCloudApproved(rows) {
             normalizedDate = String(rawDate).split('T')[0];
         }
     }
+
+    const cat = r[10] || "";
+    const maq = r[11] || "";
+    let inferredType = "EDILICIO";
+    if (maq) inferredType = "MAQUINA";
+    else if (ausentismoMotivos.includes(cat)) inferredType = "AUSENTISMO";
+
     return {
-      id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], from: r[5], to: r[6],
-      totalTime: parseFloat(r[7]), description: r[8], type: r[9], category: r[10], machine: r[11],
+      id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4],
+      companions: r[5],
+      from: r[6], to: r[7], totalTime: parseFloat(r[8]),
+      description: r[9],
+      type: inferredType, category: cat, machine: maq,
       nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
       affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
-      companions: r[21], obsSup: r[22], status: 'APPROVED'
+      obsSup: r[21], status: 'APPROVED'
     };
   });
 }
