@@ -1471,7 +1471,7 @@ function editOperatorTask(id) {
 document.getElementById('visor-fecha').valueAsDate = new Date();
 document.getElementById('visor-fecha').addEventListener('change', () => { if (supervisorLoggedIn) renderCalendar(); });
 
-let PIXEL_PER_MINUTE = 1.5;
+let PIXEL_PER_MINUTE = 1.2; // Ajustado de 1.5 a 1.2 para vista más compacta
 
 document.getElementById('btn-zoom-in').addEventListener('click', () => {
   if (PIXEL_PER_MINUTE < 3.0) {
@@ -1586,6 +1586,29 @@ function drawCalendarGrid(visorDate) {
   if (opsForCol.length === 0) {
     opsDiv.innerHTML = `<div style="text-align:center; padding: 2rem; width:100%;">Esta planta no tiene operarios configurados en la lista de recursos humanos.</div>`;
   }
+
+  // Auto-scroll inteligente: Ir a la primera tarea del día o a las 07:00 AM
+  setTimeout(() => {
+    const wrapper = document.getElementById('calendar-wrapper');
+    if (wrapper) {
+      const allDayTasks = getActiveTasks().filter(t => t.date === visorDate && t.plant === currentPlant && t.status === 'PENDING');
+      let scrollMin = 420; // 07:00 AM por defecto
+      
+      if (allDayTasks.length > 0) {
+        const taskStarts = allDayTasks.map(t => {
+          const p = t.from.split(':');
+          return parseInt(p[0]) * 60 + parseInt(p[1]);
+        });
+        scrollMin = Math.min(...taskStarts) - 30; // Margen de 30 min arriba de la primera tarea
+      }
+      
+      if (scrollMin < 0) scrollMin = 0;
+      wrapper.scrollTo({
+        top: scrollMin * PIXEL_PER_MINUTE,
+        behavior: 'smooth'
+      });
+    }
+  }, 150);
 }
 
 // MODAL LOGIC
