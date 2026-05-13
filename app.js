@@ -1838,8 +1838,32 @@ function syncDataBackground() {
 
 // Iniciar auto-sync cada 5 minutos
 setInterval(syncDataBackground, 300000);
-// Y sincronizar al abrir la app
-window.addEventListener('load', syncDataBackground);
+
+// Y sincronizar al abrir la app + Restaurar estado anterior
+window.addEventListener('load', () => {
+  // Intentar restaurar planta previa
+  const savedPlant = sessionStorage.getItem('mantenimiento_current_plant');
+  if (savedPlant) {
+      currentPlant = savedPlant;
+      document.getElementById('planta_seleccionada').value = savedPlant;
+      
+      // Pasar a la vista de rol automáticamente
+      document.getElementById('view-plant').classList.add('hidden');
+      document.getElementById('view-role').classList.remove('hidden');
+      
+      // Poblar operarios de esa planta
+      const opSelect = document.getElementById('operario');
+      const plantOps = operatorDict[currentPlant] || [];
+      opSelect.innerHTML = `<option value="">Seleccione operario...</option>` + plantOps.map(op => `<option value="${op}">${op}</option>`).join('');
+      
+      // Renderizar sidebars con datos en cache local inmediatamente
+      renderOperatorSidebar();
+      renderMaquinasCaidasSidebar();
+  }
+  
+  // Sincronizar con la nube para actualizar cache
+  syncDataBackground();
+});
 
 function parseCloudPending(rows) {
   const ausentismoMotivos = ["Carpeta médica", "Vacaciones", "Salidas personales o retiros", "Feriados"];
