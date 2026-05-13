@@ -25,11 +25,11 @@ function doPost(e) {
       if (data.newPending && data.newPending.length > 0) {
         data.newPending.forEach(function(t) {
           sheetPend.appendRow([
-            t.id, t.plant, t.date, t.shift, t.operator, t.companions || "", 
-            t.from, t.to, t.totalTime, t.description,
-            t.category || "", t.machine || "", t.nature || "", t.deviation || "", t.recommendations || "",
+            t.id, t.plant, t.date, t.shift, t.operator, t.from, t.to,
+            t.totalTime, t.description, "", t.category || "", t.machine || "",
+            t.nature || "", t.deviation || "", t.recommendations || "",
             t.manHours, t.affectsDisp, t.startOut || "", t.endOut || "",
-            t.stopTime || "0", t.finalState || ""
+            t.stopTime || "0", t.finalState || "", t.companions || ""
           ]);
         });
       }
@@ -49,10 +49,10 @@ function doPost(e) {
         });
       }
 
-      // Devolvemos 23 columnas de Pendientes (21: Estado Final, 22: Status, 23: Obs Rechazo)
-      response.allPending = getSheetData(sheetPend, 23);
+      // Devolvemos 24 columnas de Pendientes (23: Status, 24: Obs Rechazo)
+      response.allPending = getSheetData(sheetPend, 24);
       response.allMaquinasCaidas = getSheetData(sheetCaidas, 5);
-      response.recentApproved = getRecentData(sheetAprob, 22, 200);
+      response.recentApproved = getRecentData(sheetAprob, 23, 200);
     }
 
     // ==========================================
@@ -62,8 +62,8 @@ function doPost(e) {
       var rows = sheetPend.getDataRange().getValues();
       for (var i = 1; i < rows.length; i++) {
         if (rows[i][0] === data.id) {
-          var rowData = rows[i].slice(0, 21); // Solo las 21 columnas de datos base (ID hasta Estado Final)
-          rowData.push(data.obs || "");       // Col 22: OBS_SUPERVISOR
+          var rowData = rows[i].slice(0, 22); // 22 columnas base
+          rowData.push(data.obs || "");       // Col 23: OBS_SUPERVISOR
           sheetAprob.appendRow(rowData);
           sheetPend.deleteRow(i + 1);
           break;
@@ -78,8 +78,8 @@ function doPost(e) {
       var rows = sheetPend.getDataRange().getValues();
       for (var i = 1; i < rows.length; i++) {
         if (rows[i][0] === data.id) {
-          sheetPend.getRange(i + 1, 22).setValue("RECHAZADA");
-          sheetPend.getRange(i + 1, 23).setValue(data.obs || "");
+          sheetPend.getRange(i + 1, 23).setValue("RECHAZADA");
+          sheetPend.getRange(i + 1, 24).setValue(data.obs || "");
           break;
         }
       }
@@ -105,7 +105,7 @@ function doPost(e) {
       var rows = sheetAprob.getDataRange().getValues();
       for (var i = rows.length - 1; i >= 1; i--) {
         if (rows[i][0] === data.id) {
-          var restoredData = rows[i].slice(0, 21);
+          var restoredData = rows[i].slice(0, 22);
           sheetPend.appendRow(restoredData);
           sheetAprob.deleteRow(i + 1);
           break;

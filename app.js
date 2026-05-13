@@ -1,5 +1,13 @@
 // Constants
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwNollSq7D-EYekloM94WS_s-xixcw00NwasNLTBg_s6Gu2aCXTbWIhO8pzMnCGxqUD/exec";
+const APP_VERSION = '1.3.0'; // Incrementar cuando cambie la estructura de columnas en Sheets
+
+// Verificación de versión para limpiar caché corrupto tras cambios en Sheets
+if (localStorage.getItem('mantenimiento_app_version') !== APP_VERSION) {
+    localStorage.clear();
+    localStorage.setItem('mantenimiento_app_version', APP_VERSION);
+    console.log("Caché limpiado por actualización de versión.");
+}
 
 const machineDict = {
   "SL2": [
@@ -1492,15 +1500,44 @@ function renderCalendar() {
   drawCalendarGrid(visorDate);
 }
 
+function normalizeTime(t) {
+  if (!t) return "00:00";
+  if (t instanceof Date) {
+    return String(t.getHours()).padStart(2, '0') + ":" + String(t.getMinutes()).padStart(2, '0');
+  }
+  let s = String(t);
+  // Si es un ISO string (ej: 2023-10-27T06:00:00Z)
+  if (s.includes('T')) {
+    let d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
+    }
+  }
+  // Si es un string simple "HH:MM" o "HH:MM:SS"
+  const match = s.match(/(\d{1,2}):(\d{2})/);
+  if (match) {
+    return match[1].padStart(2, '0') + ":" + match[2];
+  }
+  return s;
+}
+
 function drawCalendarGrid(visorDate) {
   const axis = document.getElementById('calendar-time-axis');
   const opsDiv = document.getElementById('calendar-operators');
   axis.innerHTML = ''; opsDiv.innerHTML = '';
+  
+  const CAL_HEADER_H = 45; // Altura fija para los encabezados de operarios
 
-  axis.style.height = (24 * 60 * PIXEL_PER_MINUTE) + 'px';
+  axis.style.height = (CAL_HEADER_H + 24 * 60 * PIXEL_PER_MINUTE) + 'px';
+  
+  // Agregamos un "espaciador" sticky al eje para que coincida con los encabezados de operarios
+  const axisSpacer = document.createElement('div');
+  axisSpacer.style.cssText = `position:sticky; top:0; z-index:11; height:${CAL_HEADER_H}px; background:#fffcf2; border-bottom:3px solid var(--border);`;
+  axis.appendChild(axisSpacer);
+
   for (let h = 0; h < 24; h++) {
     const lbl = document.createElement('div');
-    lbl.style.cssText = `position:absolute; top:${h * 60 * PIXEL_PER_MINUTE}px; left:0; width:100%; border-top:1px solid #d1d5db; color:var(--text-muted); font-size:0.75rem; text-align:right; padding-right:4px; height:${60 * PIXEL_PER_MINUTE}px; box-sizing:border-box;`;
+    lbl.style.cssText = `position:absolute; top:${CAL_HEADER_H + h * 60 * PIXEL_PER_MINUTE}px; left:0; width:100%; border-top:1px solid #d1d5db; color:var(--text-muted); font-size:0.75rem; text-align:right; padding-right:4px; height:${60 * PIXEL_PER_MINUTE}px; box-sizing:border-box;`;
     lbl.innerHTML = `<span style="position:relative; top:-8px; background:#fffcf2; padding:0 2px;">${String(h).padStart(2, '0')}:00</span>`;
     axis.appendChild(lbl);
   }
@@ -1538,16 +1575,26 @@ function drawCalendarGrid(visorDate) {
     const header = document.createElement('div');
     const opIdx = opColorIndex[opName] ?? 0;
     const opColor = OPERATOR_PALETTE[opIdx];
-    header.style.cssText = `position:sticky; top:0; z-index:10; background:${opColor.bg}; text-align:center; font-weight:bold; padding:0.5rem; border-bottom:3px solid ${opColor.border}; box-shadow: 0 2px 4px rgba(0,0,0,0.08); color:${opColor.border};`;
+    header.style.cssText = `position:sticky; top:0; z-index:10; background:${opColor.bg}; text-align:center; font-weight:bold; padding:0.5rem; border-bottom:3px solid ${opColor.border}; box-shadow: 0 2px 4px rgba(0,0,0,0.08); color:${opColor.border}; height:${CAL_HEADER_H}px; box-sizing:border-box; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;`;
     header.textContent = opName;
 
     const timeline = document.createElement('div');
     timeline.style.cssText = `position:relative; width:100%; height:${24 * 60 * PIXEL_PER_MINUTE}px; background:rgba(255,255,255,0.5);`;
 
     opTasks.forEach(t => {
-      const tStart = t.from.split(':');
-      const tMin = parseInt(tStart[0]) * 60 + parseInt(tStart[1]);
-      const tDurMin = Math.round(parseFloat(t.totalTime) * 60);
+      const fromStr = normalizeTime(t.from);
+      const toStr   = normalizeTime(t.to);
+      
+      const tStart = fromStr.split(':');
+      const tEnd   = toStr.split(':');
+      
+      const tMinStart = parseInt(tStart[0]) * 60 + parseInt(tStart[1]);
+      let tMinEnd   = parseInt(tEnd[0]) * 60 + parseInt(tEnd[1]);
+      
+      // Manejo de cruce de medianoche (ej: 23:00 a 01:00)
+      if (tMinEnd <= tMinStart) tMinEnd += 1440;
+      
+      const tDurMin = tMinEnd - tMinStart;
 
       const block = document.createElement('div');
 
@@ -1558,10 +1605,11 @@ function drawCalendarGrid(visorDate) {
       const colorBg    = OPERATOR_PALETTE[ownerIdx].bg;
 
       block.style.cssText = `
-            position:absolute; top:${tMin * PIXEL_PER_MINUTE}px; left:2%; width:96%; height:${tDurMin * PIXEL_PER_MINUTE}px;
+            position:absolute; top:${tMinStart * PIXEL_PER_MINUTE}px; left:2%; width:96%; height:${tDurMin * PIXEL_PER_MINUTE}px;
             background:${colorBg}; border:1px solid ${colorBorder}; border-left:4px solid ${colorBorder};
-            border-radius:4px; padding:4px; font-size:0.75rem; overflow:hidden; cursor:pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition:transform 0.1s; display:flex; flex-direction:column;
+            border-radius:6px; padding:4px 6px; font-size:0.75rem; overflow:hidden; cursor:pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06); transition:transform 0.1s; display:flex; flex-direction:column;
+            min-height: ${Math.max(20, tDurMin * PIXEL_PER_MINUTE)}px;
          `;
       if (tDurMin < 30) block.style.flexDirection = 'row';
 
@@ -1570,7 +1618,7 @@ function drawCalendarGrid(visorDate) {
       block.addEventListener('click', () => openSupervisorModal(t));
 
       block.innerHTML = `
-            <strong style="color:${colorBorder}; margin-right:4px;">${t.from}-${t.to}</strong>
+            <strong style="color:${colorBorder}; margin-right:4px;">${fromStr}-${toStr}</strong>
             <span style="white-space:nowrap; text-overflow:ellipsis; overflow:hidden; display:block;">
                ${t.type === 'MAQUINA' ? (t.machine + ': ' + t.description) : (t.category + ': ' + t.description)}
             </span>
@@ -1604,7 +1652,7 @@ function drawCalendarGrid(visorDate) {
       
       if (scrollMin < 0) scrollMin = 0;
       wrapper.scrollTo({
-        top: scrollMin * PIXEL_PER_MINUTE,
+        top: (CAL_HEADER_H + scrollMin * PIXEL_PER_MINUTE),
         behavior: 'smooth'
       });
     }
@@ -1619,32 +1667,51 @@ document.getElementById('btn-modal-close-icon').addEventListener('click', () => 
 function openSupervisorModal(t) {
   currentInspectingTask = t;
   const content = document.getElementById('modal-content');
-  obsField.value = t.obsSup || '';
+  obsField.value = t.evalObs || ''; 
 
   let html = `
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
-       <div><strong>Operario:</strong> ${t.operator} ${t.companions ? `(y ${t.companions})` : ''}</div>
+       <div><strong>Operario:</strong> ${t.operator}</div>
+       <div><strong>Acompañantes:</strong> ${t.companions || 'Ninguno'}</div>
        <div><strong>Sede/Planta:</strong> <span class="tag">${t.plant}</span></div>
-       <div><strong>Horario:</strong> ${t.from} a ${t.to} (${t.totalTime}h)</div>
+       <div><strong>Horario:</strong> ${normalizeTime(t.from)} a ${normalizeTime(t.to)} (${t.totalTime}h)</div>
        <div><strong>Turno:</strong> ${t.shift}</div>
     </div>
-    <div style="background:#f3f4f6; padding:0.75rem; border-radius:4px; margin-bottom:1rem;">
-       <strong>Descripción:</strong><br/> ${t.description}
+    <div style="background:#f3f4f6; padding:0.75rem; border-radius:8px; border:1px solid var(--border); margin-bottom:1rem;">
+       <div style="margin-bottom:0.25rem;"><strong>Descripción del trabajo:</strong></div>
+       <div style="white-space:pre-wrap;">${t.description}</div>
     </div>
   `;
-  if (t.hasOT) {
-    html += `
-       <h4 style="color:var(--primary); margin-bottom:0.5rem; text-decoration:underline;">Orden de trabajo</h4>
-       <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-          <div><strong>Máquina:</strong> ${t.machine}</div><div><strong>Naturaleza:</strong> ${t.nature}</div>
-          <div><strong>Horas hombre calc:</strong> ${t.manHours} HH</div><div><strong>Estado final:</strong> ${t.finalState}</div>
-       </div><div style="margin-top:0.5rem;"><strong>Desviación:</strong> ${t.deviation || '-'}</div>
-       <div style="margin-top:0.5rem;"><strong>Tareas explícitas:</strong> ${t.tasksDone || '-'}</div>
-       <div style="margin-top:0.5rem;"><strong>Observaciones / tareas recomendadas:</strong> ${t.recommendations || '-'}</div>
-     `;
+  if (t.type === 'MAQUINA') {
+    let paradaInfo = '';
     if (t.affectsDisp) {
-      html += `<div style="margin-top:0.75rem; color:var(--danger)"><strong>Máquina parada:</strong> Desde ${t.startOut} hasta ${t.endOut} (${t.stopTime}h paradas).</div>`;
+      const formatOutDate = (dStr) => {
+        if (!dStr) return '';
+        const d = new Date(dStr);
+        if (isNaN(d.getTime())) return dStr;
+        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      };
+      paradaInfo = `<div style="margin-top:0.75rem; color:var(--danger); padding:0.5rem; background:rgba(239,68,68,0.05); border-radius:4px;">
+                <strong>MÁQUINA PARADA:</strong> Desde ${formatOutDate(t.startOut)} hasta ${formatOutDate(t.endOut)} (${t.stopTime}h paradas).
+              </div>`;
     }
+
+    html += `
+       <h4 style="color:var(--primary); margin-bottom:0.5rem; text-decoration:underline;">Orden de Trabajo</h4>
+       <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; background:#fff7ed; padding:0.75rem; border-radius:8px; border:1px solid #ffedd5;">
+          <div><strong>Máquina:</strong> ${t.machine}</div>
+          <div><strong>Naturaleza:</strong> ${t.nature}</div>
+          <div><strong>Estado Final:</strong> ${t.finalState}</div>
+          <div><strong>Horas Hombre:</strong> ${t.manHours} HH</div>
+          <div style="grid-column: span 2;"><strong>Desviación:</strong> ${t.deviation || '-'}</div>
+          <div style="grid-column: span 2;"><strong>Observaciones/Recomendadas:</strong> ${t.recommendations || '-'}</div>
+       </div>
+       ${paradaInfo}
+     `;
+  } else {
+    html += `<div style="padding:0.75rem; background:#f0f9ff; border-radius:8px; border:1px solid #e0f2fe;">
+               <strong>Categoría/Motivo:</strong> ${t.category}
+             </div>`;
   }
   content.innerHTML = html;
   modalSup.classList.remove('hidden');
@@ -1913,14 +1980,14 @@ function parseCloudPending(rows) {
 
     return {
       id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], 
-      companions: r[5],
-      from: r[6], to: r[7], totalTime: parseFloat(r[8]),
-      description: r[9],
+      from: normalizeTime(r[5]), to: normalizeTime(r[6]), totalTime: parseFloat(r[7]),
+      description: r[8],
       type: inferredType, category: cat, machine: maq,
       nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
       affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
-      evalStatus: r[21] || 'PENDING',
-      evalObs: r[22] || '',
+      companions: r[21],
+      evalStatus: r[22] || 'PENDING',
+      evalObs: r[23] || '',
       status: 'PENDING'
     };
   });
@@ -1957,13 +2024,13 @@ function parseCloudApproved(rows) {
 
     return {
       id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4],
-      companions: r[5],
-      from: r[6], to: r[7], totalTime: parseFloat(r[8]),
-      description: r[9],
+      from: normalizeTime(r[5]), to: normalizeTime(r[6]), totalTime: parseFloat(r[7]),
+      description: r[8],
       type: inferredType, category: cat, machine: maq,
       nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
       affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
-      obsSup: r[21], status: 'APPROVED'
+      companions: r[21],
+      obsSup: r[22], status: 'APPROVED'
     };
   });
 }
