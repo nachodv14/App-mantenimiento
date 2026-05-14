@@ -1,6 +1,6 @@
 // Constants
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwNollSq7D-EYekloM94WS_s-xixcw00NwasNLTBg_s6Gu2aCXTbWIhO8pzMnCGxqUD/exec";
-const APP_VERSION = '1.4.0'; // Incrementar cuando cambie la estructura de columnas en Sheets
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzEfdQIMUAahAi1oZ35_7j1T2OFiGwRr3c4NIu7yJxw3gAevtDzXbia1y9VbqSLgTW5/exec";
+const APP_VERSION = '1.5.0'; // Incrementar cuando cambie la estructura de columnas en Sheets
 
 // Verificación de versión para limpiar caché corrupto tras cambios en Sheets
 if (localStorage.getItem('mantenimiento_app_version') !== APP_VERSION) {
@@ -1303,7 +1303,8 @@ document.getElementById('form-operator').addEventListener('submit', (e) => {
                plant: currentPlant,
                startOutISO: di.toISOString(),
                startOut: taskData.startOut,
-               reportedBy: document.getElementById('operario').value
+               reportedBy: document.getElementById('operario').value,
+               deviation: taskData.deviation
              });
              saveLocalQueues();
           }
@@ -1975,25 +1976,63 @@ function parseCloudPending(rows) {
     if (maq) inferredType = "MAQUINA";
     else if (ausentismoMotivos.includes(cat)) inferredType = "AUSENTISMO";
 
-    return {
-      id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], 
-      companions: r[5],
-      from: normalizeTime(r[6]), to: normalizeTime(r[7]), totalTime: parseFloat(r[8]),
-      description: r[9],
-      type: inferredType, category: cat, machine: maq,
-      nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
-      affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
-      evalStatus: r[21] || 'PENDING',
-      evalObs: r[22] || '',
-      status: 'PENDING'
-    };
+    // Adaptive Parser: Detectamos si la fila usa el formato VIEJO o el NUEVO
+    // En el formato NUEVO, r[7] es 'Hasta' (un string de hora ej: "14:30")
+    // En el formato VIEJO, r[7] es 'Tiempo Total' (un número ej: 2.5)
+    let isNewFormat = false;
+    let val7 = String(r[7]);
+    if (val7.includes(':') || val7.includes('T')) {
+        isNewFormat = true;
+    }
+
+    if (isNewFormat) {
+      // FORMATO NUEVO (Compañeros en pos 5)
+      return {
+        id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], 
+        companions: r[5],
+        from: normalizeTime(r[6]), to: normalizeTime(r[7]), totalTime: parseFloat(r[8]),
+        description: r[9],
+        type: inferredType, category: cat, machine: maq,
+        nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
+        affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
+        evalStatus: r[21] || 'PENDING',
+        evalObs: r[22] || '',
+        status: 'PENDING'
+      };
+    } else {
+      // FORMATO VIEJO (Compañeros al final, Tipo en pos 9)
+      return {
+        id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], 
+        from: normalizeTime(r[5]), to: normalizeTime(r[6]), totalTime: parseFloat(r[7]),
+        description: r[8],
+        type: inferredType, category: r[10], machine: r[11],
+        nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
+        affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
+        companions: r[21],
+        evalStatus: r[22] || 'PENDING',
+        evalObs: r[23] || '',
+        status: 'PENDING'
+      };
+    }
   });
 }
 
 function parseCloudMaquinas(rows) {
-  return rows.map(r => ({
-    id: r[0], plant: r[1], machine: r[2], startOutISO: r[3], reportedBy: r[4]
-  }));
+  return rows.map(r => {
+    if (r.length <= 5) {
+      // FORMATO VIEJO: ID, Planta, Máquina, InicioISO, ReportadoPor
+      return { id: r[0], plant: r[1], machine: r[2], startOutISO: r[3], reportedBy: r[4] };
+    } else {
+      // FORMATO NUEVO: ID, Planta, Máquina, Fecha, Hora, Desviación, ReportadoPor
+      // Reconstruimos startOutISO para mantener compatibilidad con el resto de la app
+      let iso = "";
+      if (r[3] && r[4]) {
+         const parts = r[3].split('/');
+         if(parts.length === 3) iso = `${parts[2]}-${parts[1]}-${parts[0]}T${r[4]}:00.000Z`;
+      }
+      return { id: r[0], plant: r[1], machine: r[2], startOutISO: iso, deviation: r[5], reportedBy: r[6] };
+    }
+  });
 }
 
 function parseCloudApproved(rows) {
@@ -2019,16 +2058,35 @@ function parseCloudApproved(rows) {
     if (maq) inferredType = "MAQUINA";
     else if (ausentismoMotivos.includes(cat)) inferredType = "AUSENTISMO";
 
-    return {
-      id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4],
-      companions: r[5],
-      from: normalizeTime(r[6]), to: normalizeTime(r[7]), totalTime: parseFloat(r[8]),
-      description: r[9],
-      type: inferredType, category: cat, machine: maq,
-      nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
-      affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
-      obsSup: r[21], status: 'APPROVED'
-    };
+    let isNewFormat = false;
+    let val7 = String(r[7]);
+    if (val7.includes(':') || val7.includes('T')) {
+        isNewFormat = true;
+    }
+
+    if (isNewFormat) {
+      return {
+        id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4],
+        companions: r[5],
+        from: normalizeTime(r[6]), to: normalizeTime(r[7]), totalTime: parseFloat(r[8]),
+        description: r[9],
+        type: inferredType, category: cat, machine: maq,
+        nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
+        affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
+        obsSup: r[21], status: 'APPROVED'
+      };
+    } else {
+      return {
+        id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4],
+        from: normalizeTime(r[5]), to: normalizeTime(r[6]), totalTime: parseFloat(r[7]),
+        description: r[8],
+        type: inferredType, category: r[10], machine: r[11],
+        nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
+        affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
+        companions: r[21],
+        obsSup: r[22], status: 'APPROVED'
+      };
+    }
   });
 }
 

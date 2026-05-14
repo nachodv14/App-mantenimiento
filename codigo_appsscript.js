@@ -45,13 +45,16 @@ function doPost(e) {
 
       if (data.newMaquinasCaidas && data.newMaquinasCaidas.length > 0) {
         data.newMaquinasCaidas.forEach(function(m) {
-          sheetCaidas.appendRow([m.id, m.plant, m.machine, m.startOutISO, m.reportedBy]);
+          var d = new Date(m.startOutISO);
+          var fecha = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + "/" + d.getFullYear();
+          var hora = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+          sheetCaidas.appendRow([m.id, m.plant, m.machine, fecha, hora, m.deviation || "", m.reportedBy]);
         });
       }
 
       // Devolvemos 23 columnas de Pendientes (21 base + 2 de status)
       response.allPending = getSheetData(sheetPend, 23);
-      response.allMaquinasCaidas = getSheetData(sheetCaidas, 5);
+      response.allMaquinasCaidas = getSheetData(sheetCaidas, 7); // Ahora son 7 columnas
       response.recentApproved = getRecentData(sheetAprob, 22, 200);
     }
 
