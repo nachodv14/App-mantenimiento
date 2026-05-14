@@ -1417,26 +1417,21 @@ function renderOperatorSidebar() {
 function deleteOperatorTask(id) {
     if(!confirm("¿Seguro que deseas eliminar esta tarea permanentemente?")) return;
     
-    // Si está en la cola local, borrarla de ahí
     if(localQueueTasks.find(t => t.id === id)) {
         localQueueTasks = localQueueTasks.filter(t => t.id !== id);
         saveLocalQueues();
-        renderOperatorSidebar();
-        updateTiempoTotal();
-        return;
+    } else {
+        cloudPending = cloudPending.filter(t => t.id !== id);
+        saveCloudCache();
+        
+        fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'delete_pending', id: id })
+        }).then(() => syncDataBackground()).catch(e => console.error(e));
     }
-
-    // Si está en la nube, mandar orden de borrado
-    fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'delete_pending', id: id })
-    }).then(res => res.json())
-    .then(() => {
-        syncDataBackground();
-    }).catch(err => {
-        alert("Error de red al eliminar. Intente nuevamente.");
-    });
+    renderOperatorSidebar();
+    updateTiempoTotal();
 }
 
 function editOperatorTask(id) {
@@ -1455,22 +1450,24 @@ function editOperatorTask(id) {
     
     addTaskRow(true, task);
     
-    // Eliminar la tarea original (local o nube) para que no quede duplicada al guardar la nueva
+    // Eliminar la tarea original (local o nube) inmediatamente para que la validación
+    // de horarios no detecte una "superposición" falsa consigo misma mientras el usuario edita.
     if(localQueueTasks.find(t => t.id === id)) {
         localQueueTasks = localQueueTasks.filter(t => t.id !== id);
         saveLocalQueues();
-        renderOperatorSidebar();
-        updateTiempoTotal();
     } else {
+        cloudPending = cloudPending.filter(t => t.id !== id);
+        saveCloudCache();
+        
         fetch(GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'delete_pending', id: id })
-        }).then(() => {
-            syncDataBackground();
-        });
+        }).then(() => syncDataBackground()).catch(e => console.error(e));
     }
     
+    renderOperatorSidebar();
+    updateTiempoTotal();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
