@@ -2020,18 +2020,34 @@ function parseCloudPending(rows) {
 
 function parseCloudMaquinas(rows) {
   return rows.map(r => {
-    if (r.length <= 5) {
-      // FORMATO VIEJO: ID, Planta, Máquina, InicioISO, ReportadoPor
-      return { id: r[0], plant: r[1], machine: r[2], startOutISO: r[3], reportedBy: r[4] };
-    } else {
-      // FORMATO NUEVO: ID, Planta, Máquina, Fecha, Hora, Desviación, ReportadoPor
-      // Reconstruimos startOutISO para mantener compatibilidad con el resto de la app
+    // Si r[6] existe, es el formato nuevo (7 columnas)
+    if (r[6]) {
+      // FORMATO NUEVO: 0:ID, 1:Planta, 2:Máquina, 3:Fecha, 4:Hora, 5:Desviación, 6:ReportadoPor
       let iso = "";
-      if (r[3] && r[4]) {
-         const parts = r[3].split('/');
-         if(parts.length === 3) iso = `${parts[2]}-${parts[1]}-${parts[0]}T${r[4]}:00.000Z`;
+      let dateStr = String(r[3]);
+      let timeStr = String(r[4]);
+      
+      // Si Google Sheets convirtió la hora a Date (ej: "1899-12-30T14:30:00.000Z")
+      if (timeStr.includes('T')) {
+          timeStr = timeStr.split('T')[1].substring(0,5);
       }
+
+      // Si Google Sheets convirtió la fecha a Date (ej: "2026-05-14T03:00:00.000Z")
+      if (dateStr.includes('T')) {
+         let datePart = dateStr.split('T')[0];
+         iso = `${datePart}T${timeStr}:00.000Z`;
+      } else if (dateStr.includes('/')) {
+         const parts = dateStr.split('/');
+         if (parts.length === 3) iso = `${parts[2]}-${parts[1]}-${parts[0]}T${timeStr}:00.000Z`;
+      } else {
+         // Fallback
+         iso = new Date().toISOString();
+      }
+      
       return { id: r[0], plant: r[1], machine: r[2], startOutISO: iso, deviation: r[5], reportedBy: r[6] };
+    } else {
+      // FORMATO VIEJO: 0:ID, 1:Planta, 2:Máquina, 3:InicioISO, 4:ReportadoPor, 5:(Vacio), 6:(Vacio)
+      return { id: r[0], plant: r[1], machine: r[2], startOutISO: r[3], deviation: "", reportedBy: r[4] };
     }
   });
 }
