@@ -1,6 +1,6 @@
 // Constants
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzEfdQIMUAahAi1oZ35_7j1T2OFiGwRr3c4NIu7yJxw3gAevtDzXbia1y9VbqSLgTW5/exec";
-const APP_VERSION = '1.5.0'; // Incrementar cuando cambie la estructura de columnas en Sheets
+const APP_VERSION = '1.6.0'; // Incrementar cuando cambie la estructura de columnas en Sheets
 
 // Verificación de versión para limpiar caché corrupto tras cambios en Sheets
 if (localStorage.getItem('mantenimiento_app_version') !== APP_VERSION) {
@@ -1986,21 +1986,22 @@ function parseCloudPending(rows) {
     }
 
     if (isNewFormat) {
-      // FORMATO NUEVO (Compañeros en pos 5)
+      // FORMATO EXACTO DEL USUARIO (basado en su lista A-X)
       return {
         id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], 
         companions: r[5],
         from: normalizeTime(r[6]), to: normalizeTime(r[7]), totalTime: parseFloat(r[8]),
-        description: r[9],
-        type: inferredType, category: cat, machine: maq,
-        nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
-        affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
-        evalStatus: r[21] || 'PENDING',
+        manHours: parseFloat(r[9]),
+        description: r[10],
+        type: r[11] || inferredType, category: r[12], machine: r[13],
+        nature: r[14], deviation: r[15], recommendations: r[16], 
+        affectsDisp: r[17] === true || r[17] === 'SI' || r[17] === 'TRUE', startOut: r[18], endOut: r[19], stopTime: r[20], finalState: r[21],
         evalObs: r[22] || '',
+        evalStatus: r[23] || 'PENDING',
         status: 'PENDING'
       };
     } else {
-      // FORMATO VIEJO (Compañeros al final, Tipo en pos 9)
+      // FORMATO VIEJO
       return {
         id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], 
         from: normalizeTime(r[5]), to: normalizeTime(r[6]), totalTime: parseFloat(r[7]),
@@ -2009,8 +2010,8 @@ function parseCloudPending(rows) {
         nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
         affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
         companions: r[21],
-        evalStatus: r[22] || 'PENDING',
         evalObs: r[23] || '',
+        evalStatus: r[22] || 'PENDING',
         status: 'PENDING'
       };
     }
@@ -2066,14 +2067,15 @@ function parseCloudApproved(rows) {
 
     if (isNewFormat) {
       return {
-        id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4],
+        id: r[0], plant: r[1], date: normalizedDate, shift: r[3], operator: r[4], 
         companions: r[5],
         from: normalizeTime(r[6]), to: normalizeTime(r[7]), totalTime: parseFloat(r[8]),
-        description: r[9],
-        type: inferredType, category: cat, machine: maq,
-        nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
-        affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
-        obsSup: r[21], status: 'APPROVED'
+        manHours: parseFloat(r[9]),
+        description: r[10],
+        type: r[11] || inferredType, category: r[12], machine: r[13],
+        nature: r[14], deviation: r[15], recommendations: r[16], 
+        affectsDisp: r[17] === true || r[17] === 'SI' || r[17] === 'TRUE', startOut: r[18], endOut: r[19], stopTime: r[20], finalState: r[21],
+        obsSup: r[22], status: 'APPROVED'
       };
     } else {
       return {
@@ -2084,7 +2086,7 @@ function parseCloudApproved(rows) {
         nature: r[12], deviation: r[13], recommendations: r[14], manHours: parseFloat(r[15]),
         affectsDisp: r[16] === true || r[16] === 'SI' || r[16] === 'TRUE', startOut: r[17], endOut: r[18], stopTime: r[19], finalState: r[20],
         companions: r[21],
-        obsSup: r[22], status: 'APPROVED'
+        obsSup: r[23] || r[22], status: 'APPROVED'
       };
     }
   });

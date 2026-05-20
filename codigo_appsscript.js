@@ -26,9 +26,9 @@ function doPost(e) {
         data.newPending.forEach(function(t) {
           sheetPend.appendRow([
             t.id, t.plant, t.date, t.shift, t.operator, t.companions || "", 
-            t.from, t.to, t.totalTime, t.description,
-            t.category || "", t.machine || "", t.nature || "", t.deviation || "", t.recommendations || "",
-            t.manHours, t.affectsDisp, t.startOut || "", t.endOut || "",
+            t.from, t.to, t.totalTime, t.manHours, t.description,
+            t.type || "", t.category || "", t.machine || "", t.nature || "", t.deviation || "", t.recommendations || "",
+            t.affectsDisp, t.startOut || "", t.endOut || "",
             t.stopTime || "0", t.finalState || ""
           ]);
         });
@@ -52,10 +52,10 @@ function doPost(e) {
         });
       }
 
-      // Devolvemos 23 columnas de Pendientes (21 base + 2 de status)
-      response.allPending = getSheetData(sheetPend, 23);
+      // Devolvemos 24 columnas (hasta la X: STATUS)
+      response.allPending = getSheetData(sheetPend, 24);
       response.allMaquinasCaidas = getSheetData(sheetCaidas, 7); // Ahora son 7 columnas
-      response.recentApproved = getRecentData(sheetAprob, 22, 200);
+      response.recentApproved = getRecentData(sheetAprob, 24, 200);
     }
 
     // ==========================================
@@ -65,8 +65,9 @@ function doPost(e) {
       var rows = sheetPend.getDataRange().getValues();
       for (var i = 1; i < rows.length; i++) {
         if (rows[i][0] === data.id) {
-          var rowData = rows[i].slice(0, 21); // 21 columnas base
-          rowData.push(data.obs || "");       // Col 22: OBS_SUPERVISOR
+          var rowData = rows[i].slice(0, 22); // A-V (0-21)
+          rowData.push(data.obs || "");       // W (22): OBS SUPERVISOR
+          rowData.push("APROBADA");           // X (23): STATUS
           sheetAprob.appendRow(rowData);
           sheetPend.deleteRow(i + 1);
           break;
@@ -81,8 +82,8 @@ function doPost(e) {
       var rows = sheetPend.getDataRange().getValues();
       for (var i = 1; i < rows.length; i++) {
         if (rows[i][0] === data.id) {
-          sheetPend.getRange(i + 1, 22).setValue("RECHAZADA");
-          sheetPend.getRange(i + 1, 23).setValue(data.obs || "");
+          sheetPend.getRange(i + 1, 23).setValue(data.obs || ""); // W (23): Obs
+          sheetPend.getRange(i + 1, 24).setValue("RECHAZADA");    // X (24): Status
           break;
         }
       }
