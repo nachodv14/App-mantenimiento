@@ -11,10 +11,10 @@ export default function OperarioView() {
   const [fecha, setFecha] = useState("");
   const [operario, setOperario] = useState("");
   const [turno, setTurno] = useState("");
-  
+
   const [operariosList, setOperariosList] = useState([]);
   const [options, setOptions] = useState({ machines: [], recordTypes: [], natureTypes: [], buildingCategories: [], absenceReasons: [] });
-  
+
   const [tasks, setTasks] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -38,16 +38,19 @@ export default function OperarioView() {
         .then(res => res.json())
         .then(data => {
           setOptions(data);
-          // Inicializar el primer renglón una vez cargadas las opciones
-          addTask();
+          // Inicializar el primer renglón solo si no hay ninguno
+          setTasks(prev => prev.length === 0 ? [{
+            record_type: '', description: '', start_time_h: '', start_time_m: '', end_time_h: '', end_time_m: '',
+            machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional', companions: []
+          }] : prev);
         });
     }
   }, [router]);
 
   const addTask = () => {
     setTasks(prev => [...prev, {
-      record_type: '', description: '', start_time: '', end_time: '',
-      machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional'
+      record_type: '', description: '', start_time_h: '', start_time_m: '', end_time_h: '', end_time_m: '',
+      machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional', companions: []
     }]);
   };
 
@@ -64,8 +67,15 @@ export default function OperarioView() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
+      // Procesar tiempos para el backend
+      const formattedTasks = tasks.map(t => ({
+        ...t,
+        start_time: `${t.start_time_h}:${t.start_time_m}`,
+        end_time: `${t.end_time_h}:${t.end_time_m}`
+      }));
+
       const response = await fetch('/api/tareas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,10 +84,10 @@ export default function OperarioView() {
           task_date: fecha,
           shift: turno,
           operator_id: operario,
-          tasks: tasks
+          tasks: formattedTasks
         })
       });
-      
+
       const resData = await response.json();
       if (response.ok) {
         alert("¡Jornada guardada con éxito!");
@@ -107,7 +117,7 @@ export default function OperarioView() {
 
       <main style={{ maxWidth: "100%", padding: "2rem 5%" }}>
         <div style={{ maxWidth: "1400px", margin: "0 auto", display: "flex", gap: "1.5rem", alignItems: "flex-start", flexWrap: "nowrap" }}>
-          
+
           {/* Panel Lateral: Historial y Máquinas */}
           <div style={{ flex: 1, minWidth: "280px", maxWidth: "380px", position: "sticky", top: "1rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div className="card" style={{ margin: 0 }}>
@@ -136,7 +146,7 @@ export default function OperarioView() {
                 <span style={{ fontSize: "0.875rem", color: "var(--text-muted)", background: "var(--bg-color)", padding: "0.25rem 0.5rem", borderRadius: "4px", fontWeight: 600 }}>Planta: {plant}</span>
               </div>
             </h2>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="grid-2">
                 <div className="form-group">
@@ -152,7 +162,7 @@ export default function OperarioView() {
                   </select>
                 </div>
               </div>
-              
+
               <div className="form-group" style={{ marginBottom: "2rem" }}>
                 <label>Operario principal</label>
                 <select required value={operario} onChange={(e) => setOperario(e.target.value)}>
@@ -167,35 +177,38 @@ export default function OperarioView() {
               {/* Contenedor Dinámico de Tareas */}
               <div id="tareas-container">
                 {tasks.map((task, index) => (
-                  <TaskRow 
-                    key={index} 
-                    index={index} 
-                    task={task} 
-                    updateTask={updateTask} 
-                    removeTask={removeTask} 
-                    options={options} 
+                  <TaskRow
+                    key={index}
+                    index={index}
+                    task={task}
+                    updateTask={updateTask}
+                    removeTask={removeTask}
+                    options={options}
+                    plant={plant}
+                    operariosList={operariosList}
+                    currentOperator={operario}
                   />
                 ))}
               </div>
 
               <div className="form-group" style={{ marginTop: "2rem", marginBottom: "2rem" }}>
-                 <button 
-                    type="button" 
-                    onClick={addTask}
-                    className="btn" 
-                    style={{ width: "100%", background: "#2563eb", color: "#fff", border: "none", padding: "1rem", fontSize: "1.15rem", fontWeight: 700, borderRadius: "0.75rem", cursor: "pointer" }}
-                 >
-                    ➕ AGREGAR OTRA TAREA A ESTA JORNADA
-                 </button>
+                <button
+                  type="button"
+                  onClick={addTask}
+                  className="btn"
+                  style={{ width: "100%", background: "#2563eb", color: "#fff", border: "none", padding: "1rem", fontSize: "1.15rem", fontWeight: 700, borderRadius: "0.75rem", cursor: "pointer" }}
+                >
+                  ➕ AGREGAR OTRA TAREA A ESTA JORNADA
+                </button>
               </div>
 
-              <button 
-                type="submit" 
-                className="btn btn-success" 
+              <button
+                type="submit"
+                className="btn btn-success"
                 disabled={isSubmitting}
                 style={{ width: "100%", fontSize: "1.15rem", padding: "1rem", fontWeight: 700, borderRadius: "0.75rem", cursor: "pointer" }}
               >
-                 {isSubmitting ? "GUARDANDO..." : "💾 FINALIZAR Y GUARDAR JORNADA"}
+                {isSubmitting ? "GUARDANDO..." : "💾 FINALIZAR Y GUARDAR JORNADA"}
               </button>
             </form>
           </div>
