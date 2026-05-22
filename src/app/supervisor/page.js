@@ -8,57 +8,29 @@ export default function SupervisorView() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   
-  // Login State
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-
   // Dashboard State
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
 
   useEffect(() => {
-    // Si ya había una sesión
-    const savedUser = sessionStorage.getItem("mantenimiento_supervisor");
+    const savedUser = sessionStorage.getItem("mantenimiento_user");
     if (savedUser) {
       const u = JSON.parse(savedUser);
-      setUser(u);
-      fetchTasks(u.plant);
-    }
-  }, []);
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setErrorMsg("");
-    setIsLoggingIn(true);
-
-    try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
-      
-      if (res.ok && data.success) {
-        sessionStorage.setItem("mantenimiento_supervisor", JSON.stringify(data.user));
-        setUser(data.user);
-        fetchTasks(data.user.plant);
+      if (u.role === 'supervisor') {
+        setUser(u);
+        fetchTasks(u.plant);
       } else {
-        setErrorMsg(data.message || "Error al iniciar sesión");
+        router.push('/');
       }
-    } catch (err) {
-      setErrorMsg("Error de red");
-    } finally {
-      setIsLoggingIn(false);
+    } else {
+      router.push('/');
     }
-  };
+  }, [router]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem("mantenimiento_supervisor");
-    setUser(null);
-    setTasks([]);
+    sessionStorage.removeItem("mantenimiento_user");
+    sessionStorage.removeItem("mantenimiento_current_plant");
+    router.push('/');
   };
 
   const fetchTasks = async (plant) => {
@@ -95,38 +67,7 @@ export default function SupervisorView() {
   };
 
   if (!user) {
-    return (
-      <main style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-color)' }}>
-        <div className="card" style={{ maxWidth: '400px', width: '100%' }}>
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <img src="/logo-serin.png" alt="Serin" style={{ width: '150px', borderRadius: '4px', marginBottom: '1rem' }} />
-            <h2 style={{ color: 'var(--primary)', margin: 0 }}>Acceso Supervisores</h2>
-          </div>
-          
-          <form onSubmit={handleLogin}>
-            {errorMsg && (
-              <div style={{ padding: '0.75rem', background: '#fee2e2', color: '#991b1b', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.9rem', textAlign: 'center' }}>
-                {errorMsg}
-              </div>
-            )}
-            <div className="form-group">
-              <label>Usuario</label>
-              <input type="text" required value={username} onChange={e => setUsername(e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label>Contraseña</label>
-              <input type="password" required value={password} onChange={e => setPassword(e.target.value)} />
-            </div>
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }} disabled={isLoggingIn}>
-              {isLoggingIn ? 'Iniciando...' : 'Ingresar'}
-            </button>
-          </form>
-          <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-            <Link href="/" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>← Volver al inicio</Link>
-          </div>
-        </div>
-      </main>
-    );
+    return <div style={{ padding: "2rem", textAlign: "center" }}>Cargando panel de supervisor...</div>;
   }
 
   return (

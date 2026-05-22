@@ -1,140 +1,97 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [plant, setPlant] = useState("");
-  const [step, setStep] = useState(1);
-  const [plantasList, setPlantasList] = useState([]);
   const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // Cargar la lista de plantas desde la DB
-    fetch('/api/plantas')
-      .then(res => res.json())
-      .then(data => {
-        if (data.plants) setPlantasList(data.plants);
-      })
-      .catch(err => console.error("Error cargando plantas:", err));
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-    const savedPlant = sessionStorage.getItem("mantenimiento_current_plant");
-    if (savedPlant) {
-      setPlant(savedPlant);
-      setStep(2);
-    }
-  }, []);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
 
-  const handlePlantSelect = (selectedPlant) => {
-    setPlant(selectedPlant);
-    sessionStorage.setItem("mantenimiento_current_plant", selectedPlant);
-    setStep(2);
-  };
+      const data = await res.json();
 
-  const handleRoleSelect = (role) => {
-    if (role === "operario") {
-      router.push("/operario");
-    } else {
-      router.push("/supervisor");
+      if (!res.ok) {
+        setError(data.error || "Credenciales inválidas");
+        setLoading(false);
+        return;
+      }
+
+      // Guardar info en sessionStorage
+      sessionStorage.setItem("mantenimiento_user", JSON.stringify(data.user));
+      if (data.user.plant) {
+        sessionStorage.setItem("mantenimiento_current_plant", data.user.plant);
+      }
+
+      // Redirigir según rol
+      if (data.user.role === 'admin') {
+        router.push("/admin");
+      } else if (data.user.role === 'supervisor') {
+        router.push("/supervisor");
+      } else {
+        router.push("/operario");
+      }
+    } catch (err) {
+      setError("Error de conexión");
+      setLoading(false);
     }
   };
 
   return (
-    <>
-      <header>
-        <div 
-          className="brand" 
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} 
-          onClick={() => {
-            sessionStorage.removeItem("mantenimiento_current_plant");
-            setStep(1);
-            setPlant("");
-          }} 
-          title="Volver al inicio"
-        >
-          <img src="/logo-serin.png" alt="Grupo Serin" style={{ height: "32px", width: "auto", borderRadius: "4px" }} />
-          <span>MantenimientoApp</span>
-        </div>
-      </header>
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", background: "#f0f2f5" }}>
+      <div className="card" style={{ width: "100%", maxWidth: "400px", padding: "2rem" }}>
+        <h2 style={{ textAlign: "center", marginBottom: "1.5rem", color: "var(--primary)", fontSize: "1.5rem" }}>
+          Ingreso a Mantenimiento
+        </h2>
 
-      <main>
-        {step === 1 && (
-          <div className="card" style={{ maxWidth: "450px", margin: "2rem auto", textAlign: "center" }}>
-            <img 
-              src="/logo-serin.png" 
-              alt="Grupo Serin" 
-              style={{ width: "220px", height: "auto", margin: "0 auto 2rem auto", borderRadius: "8px", boxShadow: "var(--shadow-md)", display: "block" }} 
+        {error && <div style={{ background: "#fee2e2", color: "#dc2626", padding: "0.75rem", borderRadius: "6px", marginBottom: "1rem", fontSize: "0.9rem", textAlign: "center" }}>{error}</div>}
+
+        <form onSubmit={handleLogin}>
+          <div className="form-group" style={{ marginBottom: "1rem" }}>
+            <label style={{ fontWeight: 600 }}>Usuario</label>
+            <input
+              type="text"
+              required
+              style={{ width: "100%", padding: "0.75rem", borderRadius: "6px", border: "1px solid #d1d5db" }}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Ej: op_juan_a1b2 / admin"
             />
-            
-            <div className="form-group" style={{ textAlign: "left" }}>
-              <label style={{ fontSize: "1rem", textAlign: "center", display: "block", marginBottom: "1rem" }}>
-                Confirmá tu planta de trabajo de hoy:
-              </label>
-              <select
-                value={plant}
-                onChange={(e) => setPlant(e.target.value)}
-                style={{ marginBottom: "1.5rem" }}
-              >
-                <option value="">Seleccione Planta...</option>
-                {plantasList.length === 0 && <option disabled>Cargando plantas...</option>}
-                {plantasList.map(p => (
-                  <option key={p} value={p}>Planta {p}</option>
-                ))}
-              </select>
-              
-              <button
-                className="btn btn-primary"
-                onClick={() => plant && handlePlantSelect(plant)}
-                disabled={!plant}
-              >
-                Continuar
-              </button>
-            </div>
           </div>
-        )}
-
-        {step === 2 && (
-          <div className="card" style={{ maxWidth: "500px", margin: "2rem auto", textAlign: "center" }}>
-            <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
-              Planta seleccionada: <strong style={{ color: "var(--primary)" }}>{plant}</strong>
-            </p>
-            <h2 className="card-title" style={{ borderBottom: "none", marginBottom: "2rem" }}>
-              Seleccioná tu rol para continuar:
-            </h2>
-            
-            <div className="grid-2">
-              <button
-                onClick={() => handleRoleSelect("operario")}
-                className="btn btn-primary"
-                style={{ padding: "2rem 1rem", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}
-              >
-                <span style={{ fontSize: "2rem" }}>🔧</span>
-                Soy Operario
-              </button>
-              
-              <button
-                onClick={() => handleRoleSelect("supervisor")}
-                className="btn"
-                style={{ padding: "2rem 1rem", border: "2px solid var(--primary)", color: "var(--primary)", backgroundColor: "transparent", display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}
-              >
-                <span style={{ fontSize: "2rem" }}>📋</span>
-                Soy Supervisor
-              </button>
-            </div>
-            
-            <button
-              style={{ marginTop: "2rem", background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", textDecoration: "underline" }}
-              onClick={() => {
-                sessionStorage.removeItem("mantenimiento_current_plant");
-                setStep(1);
-                setPlant("");
-              }}
-            >
-              ← Cambiar planta
-            </button>
+          <div className="form-group" style={{ marginBottom: "2rem" }}>
+            <label style={{ fontWeight: 600 }}>Contraseña</label>
+            <input
+              type="password"
+              required
+              style={{ width: "100%", padding: "0.75rem", borderRadius: "6px", border: "1px solid #d1d5db" }}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
           </div>
-        )}
-      </main>
-    </>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={loading}
+            style={{ width: "100%", padding: "1rem", fontSize: "1.1rem", borderRadius: "6px", background: "var(--primary)", color: "white", border: "none", cursor: "pointer" }}
+          >
+            {loading ? "Ingresando..." : "Ingresar"}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }

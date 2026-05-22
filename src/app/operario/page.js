@@ -9,7 +9,7 @@ export default function OperarioView() {
   const router = useRouter();
   const [plant, setPlant] = useState("");
   const [fecha, setFecha] = useState("");
-  const [operario, setOperario] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
   const [turno, setTurno] = useState("");
 
   const [operariosList, setOperariosList] = useState([]);
@@ -26,7 +26,13 @@ export default function OperarioView() {
       setPlant(savedPlant);
       setFecha(new Date().toISOString().split('T')[0]);
 
-      // Cargar operarios
+      const userRaw = sessionStorage.getItem("mantenimiento_user");
+      if (userRaw) {
+        const user = JSON.parse(userRaw);
+        setCurrentUser(user);
+      }
+
+      // Cargar operarios (para los acompañantes)
       fetch(`/api/operarios?plant=${savedPlant}`)
         .then(res => res.json())
         .then(data => {
@@ -76,16 +82,19 @@ export default function OperarioView() {
         end_time: `${t.end_time_h}:${t.end_time_m}`
       }));
 
+      // Formato para enviar al backend
+      const payload = {
+        plant,
+        task_date: fecha,
+        shift: turno,
+        operator_id: currentUser?.id,
+        tasks: formattedTasks
+      };
+
       const response = await fetch('/api/tareas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          plant,
-          task_date: fecha,
-          shift: turno,
-          operator_id: operario,
-          tasks: formattedTasks
-        })
+        body: JSON.stringify(payload)
       });
 
       const resData = await response.json();
@@ -104,15 +113,27 @@ export default function OperarioView() {
     }
   };
 
+  const handleLogout = () => {
+    sessionStorage.removeItem("mantenimiento_user");
+    sessionStorage.removeItem("mantenimiento_current_plant");
+    router.push('/');
+  };
+
   if (!plant) return <p style={{ padding: "2rem", textAlign: "center" }}>Cargando...</p>;
 
   return (
     <>
-      <header>
-        <Link href="/" className="brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', textDecoration: 'none' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 5%', background: '#fff', borderBottom: '1px solid #e5e7eb' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <img src="/logo-serin.png" alt="Grupo Serin" style={{ height: "32px", borderRadius: "4px" }} />
-          <span>MantenimientoApp</span>
-        </Link>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Planta {plant}</h3>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Operario: {currentUser.full_name}</span>
+          </div>
+        </div>
+        <button onClick={handleLogout} style={{ padding: '0.5rem 1rem', background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
+          Salir
+        </button>
       </header>
 
       <main style={{ maxWidth: "100%", padding: "2rem 5%" }}>
@@ -165,13 +186,9 @@ export default function OperarioView() {
 
               <div className="form-group" style={{ marginBottom: "2rem" }}>
                 <label>Operario principal</label>
-                <select required value={operario} onChange={(e) => setOperario(e.target.value)}>
-                  <option value="">Seleccione Operario...</option>
-                  {operariosList.length === 0 && <option disabled>No hay operarios cargados para esta planta</option>}
-                  {operariosList.map(op => (
-                    <option key={op.id} value={op.id}>{op.full_name}</option>
-                  ))}
-                </select>
+                <div style={{ padding: "0.75rem", background: "#f3f4f6", borderRadius: "6px", border: "1px solid #d1d5db", fontWeight: 600 }}>
+                  {currentUser ? currentUser.full_name : "Cargando..."}
+                </div>
               </div>
 
               {/* Contenedor Dinámico de Tareas */}
@@ -186,7 +203,7 @@ export default function OperarioView() {
                     options={options}
                     plant={plant}
                     operariosList={operariosList}
-                    currentOperator={operario}
+                    currentOperator={currentUser?.id}
                   />
                 ))}
               </div>

@@ -8,9 +8,9 @@ export async function GET(request) {
   try {
     let result;
     if (plant) {
-      result = await query('SELECT * FROM operators WHERE plant = $1 AND is_active = true ORDER BY full_name ASC;', [plant]);
+      result = await query("SELECT * FROM users WHERE role = 'operario' AND plant = $1 AND is_active = true ORDER BY full_name ASC;", [plant]);
     } else {
-      result = await query('SELECT * FROM operators WHERE is_active = true ORDER BY full_name ASC;');
+      result = await query("SELECT * FROM users WHERE role = 'operario' AND is_active = true ORDER BY full_name ASC;");
     }
     
     return NextResponse.json({ operators: result.rows, status: 'success' });
