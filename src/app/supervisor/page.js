@@ -6,154 +6,190 @@ import Link from "next/link";
 
 export default function SupervisorView() {
   const router = useRouter();
-  const [plant, setPlant] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState("");
-  const [pass, setPass] = useState("");
-  const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
+  
+  // Login State
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Dashboard State
+  const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
 
   useEffect(() => {
-    const savedPlant = sessionStorage.getItem("mantenimiento_current_plant");
-    if (!savedPlant) {
-      router.push("/");
-    } else {
-      setPlant(savedPlant);
+    // Si ya había una sesión
+    const savedUser = sessionStorage.getItem("mantenimiento_supervisor");
+    if (savedUser) {
+      const u = JSON.parse(savedUser);
+      setUser(u);
+      fetchTasks(u.plant);
     }
-  }, [router]);
+  }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (user && pass) {
-      setIsLoggedIn(true);
-      setError("");
-    } else {
-      setError("Credenciales incorrectas.");
+    setErrorMsg("");
+    setIsLoggingIn(true);
+
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        sessionStorage.setItem("mantenimiento_supervisor", JSON.stringify(data.user));
+        setUser(data.user);
+        fetchTasks(data.user.plant);
+      } else {
+        setErrorMsg(data.message || "Error al iniciar sesión");
+      }
+    } catch (err) {
+      setErrorMsg("Error de red");
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
-  if (!plant) return <p style={{ padding: "2rem", textAlign: "center" }}>Cargando...</p>;
+  const handleLogout = () => {
+    sessionStorage.removeItem("mantenimiento_supervisor");
+    setUser(null);
+    setTasks([]);
+  };
 
-  if (!isLoggedIn) {
+  const fetchTasks = async (plant) => {
+    setLoadingTasks(true);
+    try {
+      const res = await fetch(`/api/tareas/pending?plant=${plant}`);
+      const data = await res.json();
+      if (data.tasks) {
+        setTasks(data.tasks);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
+  const updateTaskStatus = async (id, status) => {
+    try {
+      const res = await fetch(`/api/tareas/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) {
+        // Remover la tarea aprobada/rechazada de la lista visual
+        setTasks(prev => prev.filter(t => t.id !== id));
+      } else {
+        alert("Hubo un error al actualizar la tarea");
+      }
+    } catch (err) {
+      alert("Error de red al actualizar la tarea");
+    }
+  };
+
+  if (!user) {
     return (
-      <>
-        <header>
-          <Link 
-            href="/" 
-            className="brand" 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', textDecoration: 'none' }} 
-            title="Volver al inicio"
-          >
-            <img src="/logo-serin.png" alt="Grupo Serin" style={{ height: "32px", width: "auto", borderRadius: "4px" }} />
-            <span>MantenimientoApp</span>
-          </Link>
-        </header>
-
-        <main style={{ maxWidth: "100%", padding: "2rem 5%" }}>
-          <div className="card" style={{ maxWidth: "400px", margin: "2rem auto" }}>
-            <h2 className="card-title">Acceso de Supervisor</h2>
-            <form onSubmit={handleLogin} autoComplete="off">
-              
-              <div className="form-group">
-                <label>Usuario</label>
-                <input 
-                  type="text" 
-                  required 
-                  autoComplete="off"
-                  value={user}
-                  onChange={(e) => setUser(e.target.value)}
-                />
-              </div>
-              <div className="form-group">
-                <label>Contraseña</label>
-                <input 
-                  type="password" 
-                  required 
-                  autoComplete="off"
-                  value={pass}
-                  onChange={(e) => setPass(e.target.value)}
-                />
-              </div>
-              <div className="form-group" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "-0.5rem", marginBottom: "1.5rem" }}>
-                <input type="checkbox" id="login_remember" style={{ width: "auto", cursor: "pointer" }} />
-                <label htmlFor="login_remember" style={{ margin: 0, fontWeight: "normal", fontSize: "0.875rem", cursor: "pointer" }}>
-                  Guardar este usuario para la próxima vez
-                </label>
-              </div>
-              
-              {error && (
-                <div className="form-group">
-                  <p style={{ color: "var(--danger)", fontSize: "0.875rem", textAlign: "center" }}>{error}</p>
-                </div>
-              )}
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <button type="submit" className="btn btn-primary">Ingresar</button>
-                <Link href="/" className="btn" style={{ background: "none", border: "1px solid var(--border)", color: "var(--text-muted)", textDecoration: "none" }}>
-                  Volver al inicio
-                </Link>
-              </div>
-            </form>
+      <main style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-color)' }}>
+        <div className="card" style={{ maxWidth: '400px', width: '100%' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <img src="/logo-serin.png" alt="Serin" style={{ width: '150px', borderRadius: '4px', marginBottom: '1rem' }} />
+            <h2 style={{ color: 'var(--primary)', margin: 0 }}>Acceso Supervisores</h2>
           </div>
-        </main>
-      </>
+          
+          <form onSubmit={handleLogin}>
+            {errorMsg && (
+              <div style={{ padding: '0.75rem', background: '#fee2e2', color: '#991b1b', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.9rem', textAlign: 'center' }}>
+                {errorMsg}
+              </div>
+            )}
+            <div className="form-group">
+              <label>Usuario</label>
+              <input type="text" required value={username} onChange={e => setUsername(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>Contraseña</label>
+              <input type="password" required value={password} onChange={e => setPassword(e.target.value)} />
+            </div>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }} disabled={isLoggingIn}>
+              {isLoggingIn ? 'Iniciando...' : 'Ingresar'}
+            </button>
+          </form>
+          <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+            <Link href="/" style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>← Volver al inicio</Link>
+          </div>
+        </div>
+      </main>
     );
   }
 
   return (
     <>
-      <header>
-        <Link 
-          href="/" 
-          className="brand" 
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', textDecoration: 'none' }} 
-          title="Volver al inicio"
-        >
-          <img src="/logo-serin.png" alt="Grupo Serin" style={{ height: "32px", width: "auto", borderRadius: "4px" }} />
-          <span>MantenimientoApp</span>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Link href="/" className="brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', textDecoration: 'none' }}>
+          <img src="/logo-serin.png" alt="Grupo Serin" style={{ height: "32px", borderRadius: "4px" }} />
+          <span>MantenimientoApp <small style={{ fontWeight: 'normal', color: '#cbd5e1' }}>| Panel Supervisor</small></span>
         </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#fff' }}>
+          <span style={{ fontSize: '0.9rem' }}>Planta: <strong>{user.plant}</strong></span>
+          <button onClick={handleLogout} className="btn" style={{ background: 'transparent', border: '1px solid #fff', color: '#fff', padding: '0.4rem 1rem' }}>Cerrar sesión</button>
+        </div>
       </header>
 
-      <main style={{ maxWidth: "100%", padding: "2rem 5%" }}>
-        <div style={{ width: "100%", maxWidth: "1600px", margin: "0 auto" }}>
-          <div className="card">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)", paddingBottom: "1rem", marginBottom: "0.5rem" }}>
-              <h2 className="card-title" style={{ margin: 0, border: "none", padding: 0 }}>Calendario de tareas pendientes</h2>
-              <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-                 <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                    <label style={{ fontWeight: "bold", color: "var(--text-muted)", fontSize: "0.85rem", marginRight: "0.25rem" }}>Zoom</label>
-                    <button className="btn" style={{ width: "28px", height: "28px", padding: 0, fontSize: "1.2rem", background: "#fff", border: "1px solid var(--border)", color: "var(--text-main)" }}>-</button>
-                    <button className="btn" style={{ width: "28px", height: "28px", padding: 0, fontSize: "1.2rem", background: "#fff", border: "1px solid var(--border)", color: "var(--text-main)" }}>+</button>
-                 </div>
-                 <label style={{ fontWeight: "bold", color: "var(--text-muted)" }}>Fecha:</label>
-                 <input type="date" style={{ padding: "0.4rem", fontSize: "1rem", borderColor: "var(--border)", borderRadius: "4px", width: "auto" }} />
-                 <button className="btn" style={{ width: "auto", padding: "0.4rem 0.9rem", fontSize: "0.9rem", background: "#3b82f6", border: "none", color: "#fff" }}>
-                   Historial aprobadas
-                 </button>
-                 <button 
-                   onClick={() => setIsLoggedIn(false)}
-                   className="btn" 
-                   style={{ width: "auto", padding: "0.4rem 0.9rem", fontSize: "0.9rem", background: "none", border: "1px solid var(--border)", color: "var(--text-muted)" }}
-                 >
-                   ← Volver (Logout)
-                 </button>
-              </div>
-            </div>
-            
-            <div style={{ overflow: "auto", maxHeight: "65vh", background: "#fffcf2", padding: "0.5rem", borderRadius: "var(--radius)", border: "1px solid #fde047", minHeight: "400px" }}>
-              <div style={{ display: "flex", minWidth: "900px", position: "relative" }}>
-                 <div style={{ width: "60px", flexShrink: 0, position: "relative", borderRight: "2px solid var(--border)" }}>
-                    <div style={{ position: "absolute", top: "100px", right: "4px", fontSize: "0.75rem", color: "var(--text-muted)", background: "#fffcf2" }}>08:00</div>
-                 </div>
-                 <div style={{ flex: 1, display: "flex", position: "relative", paddingLeft: "0.5rem", gap: "0.5rem" }}>
-                    <div style={{ flex: 1, minWidth: "150px", borderLeft: "1px dashed var(--border)", position: "relative" }}>
-                      <div style={{ background: "var(--bg-color)", textAlign: "center", padding: "0.5rem", fontWeight: "bold", borderBottom: "2px solid var(--primary)", position: "sticky", top: 0, zIndex: 10 }}>Operario 1</div>
-                      <div style={{ position: "absolute", top: "120px", left: "2px", right: "2px", background: "#dbeafe", border: "1px solid #3b82f6", borderRadius: "4px", padding: "4px", fontSize: "0.75rem" }}>08:30 Tarea X</div>
-                    </div>
-                 </div>
-              </div>
-            </div>
-          </div>
+      <main style={{ maxWidth: "1200px", padding: "2rem", margin: "0 auto" }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <h2>Tareas Pendientes de Revisión</h2>
+          <button onClick={() => fetchTasks(user.plant)} className="btn btn-primary" disabled={loadingTasks}>
+            {loadingTasks ? 'Actualizando...' : '↻ Refrescar'}
+          </button>
         </div>
+
+        {tasks.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
+            <h3>¡Al día!</h3>
+            <p>No hay registros diarios pendientes de aprobación.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {tasks.map(t => (
+              <div key={t.id} className="card" style={{ borderLeft: '4px solid #facc15', margin: 0, padding: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <span style={{ background: '#fef08a', color: '#854d0e', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>PENDIENTE</span>
+                      <strong style={{ fontSize: '1.1rem' }}>{t.operator_name || 'Operario Desconocido'}</strong>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t.task_date} ({t.shift})</span>
+                    </div>
+                    <h4 style={{ margin: '0.5rem 0', color: 'var(--primary)' }}>
+                      {t.task_type} {t.machine_name ? `» ${t.machine_name}` : t.category ? `» ${t.category}` : ''}
+                    </h4>
+                    <p style={{ margin: '0.5rem 0' }}>{t.description}</p>
+                    <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                      <span><strong>Hora:</strong> {t.start_time} - {t.end_time}</span>
+                      {t.nature && <span><strong>Naturaleza:</strong> {t.nature}</span>}
+                    </div>
+                    {t.deviation && (
+                      <div style={{ background: '#fef2f2', padding: '0.75rem', borderRadius: '4px', marginTop: '0.75rem', color: '#991b1b', fontSize: '0.9rem' }}>
+                        <strong>Desviación:</strong> {t.deviation}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '120px' }}>
+                    <button onClick={() => updateTaskStatus(t.id, 'APPROVED')} className="btn btn-success" style={{ padding: '0.5rem' }}>✓ Aprobar</button>
+                    <button onClick={() => updateTaskStatus(t.id, 'REJECTED')} className="btn" style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.5rem' }}>✗ Rechazar</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
     </>
   );
