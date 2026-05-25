@@ -15,6 +15,8 @@ export default function SupervisorView() {
   const [machinesOut, setMachinesOut] = useState([]);
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [quickObs, setQuickObs] = useState({});
 
   useEffect(() => {
     const savedUser = sessionStorage.getItem("mantenimiento_user");
@@ -69,15 +71,42 @@ export default function SupervisorView() {
       const res = await fetch(`/api/tareas/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status, supervisor_obs: quickObs[id] || '' })
       });
       if (res.ok) {
         setTasks(prev => prev.filter(t => t.id !== id));
+        // Limpiar la observacion
+        setQuickObs(prev => { const n = {...prev}; delete n[id]; return n; });
       } else {
         alert("Hubo un error al actualizar la tarea");
       }
     } catch (err) {
       alert("Error de red al actualizar la tarea");
+    }
+  };
+
+  const saveTaskEdit = async () => {
+    try {
+      const res = await fetch(`/api/tareas/${editingTask.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          start_time: editingTask.start_time,
+          end_time: editingTask.end_time,
+          description: editingTask.description,
+          deviation: editingTask.deviation,
+          observaciones: editingTask.observaciones,
+          supervisor_obs: editingTask.supervisor_obs
+        })
+      });
+      if (res.ok) {
+        setEditingTask(null);
+        fetchData(activeTab, user.plant); // Recargar la tabla actual
+      } else {
+        alert("Error al guardar la edición");
+      }
+    } catch (err) {
+      alert("Error de red al guardar");
     }
   };
 
@@ -114,14 +143,14 @@ export default function SupervisorView() {
       >
         Historial General
       </button>
-      <button 
-        onClick={() => setActiveTab('machines')} 
+      <button
+        onClick={() => setActiveTab('machines')}
         style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1.1rem', cursor: 'pointer', fontWeight: activeTab === 'machines' ? 'bold' : 'normal', color: activeTab === 'machines' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'machines' ? '3px solid var(--primary)' : 'none' }}
       >
         Máquinas Paradas
       </button>
-      <button 
-        onClick={() => setActiveTab('metrics')} 
+      <button
+        onClick={() => setActiveTab('metrics')}
         style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1.1rem', cursor: 'pointer', fontWeight: activeTab === 'metrics' ? 'bold' : 'normal', color: activeTab === 'metrics' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'metrics' ? '3px solid var(--primary)' : 'none' }}
       >
         Estadísticas (Mes)
@@ -160,15 +189,21 @@ export default function SupervisorView() {
               <p>No hay registros diarios pendientes de aprobación.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gap: '1rem' }}>
+            <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fill, minmax(450px, 1fr))' }}>
               {tasks.map(t => (
                 <div key={t.id} className="card" style={{ borderLeft: '4px solid #facc15', margin: 0, padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
+                  <div style={{ display: 'block' }}>
+                    <div style={{ width: '100%' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                         {getStatusBadge(t.status)}
                         <strong style={{ fontSize: '1.1rem' }}>{t.operator_name || 'Operario Desconocido'}</strong>
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t.task_date_fmt} ({t.shift})</span>
+                        <button
+                          onClick={() => setEditingTask({ ...t, start_time: t.start_time_fmt || t.start_time, end_time: t.end_time_fmt || t.end_time })}
+                          style={{ marginLeft: 'auto', background: 'none', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                        >
+                          ✏️ Editar
+                        </button>
                       </div>
                       <h4 style={{ margin: '0.5rem 0', color: 'var(--primary)' }}>
                         {t.task_type} {t.machine_name ? `» ${t.machine_name}` : t.category ? `» ${t.category}` : ''}
@@ -179,14 +214,24 @@ export default function SupervisorView() {
                         {t.nature && <span><strong>Naturaleza:</strong> {t.nature}</span>}
                       </div>
                       {t.deviation && (
-                        <div style={{ background: '#fef2f2', padding: '0.75rem', borderRadius: '4px', marginTop: '0.75rem', color: '#991b1b', fontSize: '0.9rem' }}>
-                          <strong>Desviación:</strong> {t.deviation}
+                        <div style={{ background: '#fff1f2', padding: '0.75rem', borderRadius: '4px', fontSize: '0.9rem', color: '#9f1239', marginBottom: '0.5rem' }}>
+                          <strong>⚠️ Desviación:</strong> {t.deviation}
                         </div>
                       )}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '120px' }}>
-                      <button onClick={() => updateTaskStatus(t.id, 'APPROVED')} className="btn btn-success" style={{ padding: '0.5rem' }}>✓ Aprobar</button>
-                      <button onClick={() => updateTaskStatus(t.id, 'REJECTED')} className="btn" style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.5rem' }}>✗ Rechazar</button>
+                      
+                      <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
+                        <input 
+                          type="text" 
+                          placeholder="Agregar observación (opcional)..." 
+                          style={{ width: '100%', padding: '0.5rem', marginBottom: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                          value={quickObs[t.id] || ''}
+                          onChange={(e) => setQuickObs({...quickObs, [t.id]: e.target.value})}
+                        />
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button onClick={() => updateTaskStatus(t.id, 'APPROVED')} className="btn btn-success" style={{ flex: 1, padding: '0.5rem', fontSize: '0.9rem' }}>✅ Aprobar</button>
+                          <button onClick={() => updateTaskStatus(t.id, 'REJECTED')} className="btn btn-danger" style={{ flex: 1, padding: '0.5rem', fontSize: '0.9rem' }}>❌ Rechazar</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -217,7 +262,14 @@ export default function SupervisorView() {
                     <td style={{ padding: '1rem' }}>{t.task_type}</td>
                     <td style={{ padding: '1rem' }}>{t.machine_name || t.category || '-'}</td>
                     <td style={{ padding: '1rem' }}>{t.start_time_fmt} - {t.end_time_fmt}</td>
-                    <td style={{ padding: '1rem' }}>{getStatusBadge(t.status)}</td>
+                    <td style={{ padding: '1rem' }}>
+                      {getStatusBadge(t.status)}
+                      {t.supervisor_obs && (
+                        <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#64748b', background: '#f1f5f9', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                          <strong>Obs:</strong> {t.supervisor_obs}
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {historyTasks.length === 0 && (
@@ -273,7 +325,7 @@ export default function SupervisorView() {
             <div className="card" style={{ padding: '1.5rem' }}>
               <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)' }}>⏱️ Rendimiento de Operarios</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Horas trabajadas este mes (solo tareas aprobadas).</p>
-              
+
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
@@ -301,7 +353,7 @@ export default function SupervisorView() {
             <div className="card" style={{ padding: '1.5rem' }}>
               <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#b91c1c' }}>⚙️ Máquinas Más Intervenidas</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Top máquinas con mayor cantidad de tareas este mes.</p>
-              
+
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
@@ -328,6 +380,44 @@ export default function SupervisorView() {
         )}
 
       </main>
+
+      {/* MODAL DE EDICIÓN */}
+      {editingTask && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0 }}>Editar Tarea</h3>
+              <button onClick={() => setEditingTask(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8' }}>&times;</button>
+            </div>
+
+            <div className="form-group">
+              <label>Hora Desde</label>
+              <input type="time" className="form-control" value={editingTask.start_time} onChange={e => setEditingTask({ ...editingTask, start_time: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Hora Hasta</label>
+              <input type="time" className="form-control" value={editingTask.end_time} onChange={e => setEditingTask({ ...editingTask, end_time: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Descripción</label>
+              <textarea className="form-control" rows="3" value={editingTask.description || ''} onChange={e => setEditingTask({ ...editingTask, description: e.target.value })}></textarea>
+            </div>
+            <div className="form-group">
+              <label>Desviación</label>
+              <textarea className="form-control" rows="2" value={editingTask.deviation || ''} onChange={e => setEditingTask({ ...editingTask, deviation: e.target.value })}></textarea>
+            </div>
+            <div className="form-group">
+              <label>Observaciones del Supervisor</label>
+              <textarea className="form-control" rows="2" placeholder="Notas internas para el supervisor..." value={editingTask.supervisor_obs || ''} onChange={e => setEditingTask({ ...editingTask, supervisor_obs: e.target.value })}></textarea>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+              <button onClick={() => setEditingTask(null)} className="btn" style={{ flex: 1, background: '#f1f5f9', color: '#475569' }}>Cancelar</button>
+              <button onClick={saveTaskEdit} className="btn btn-primary" style={{ flex: 1 }}>💾 Guardar Cambios</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -17,6 +17,8 @@ export default function OperarioView() {
 
   const [tasks, setTasks] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [todayTasks, setTodayTasks] = useState([]);
+  const [machinesOut, setMachinesOut] = useState([]);
 
   useEffect(() => {
     const savedPlant = sessionStorage.getItem("mantenimiento_current_plant");
@@ -26,10 +28,12 @@ export default function OperarioView() {
       setPlant(savedPlant);
       setFecha(new Date().toISOString().split('T')[0]);
 
+      let uId = null;
       const userRaw = sessionStorage.getItem("mantenimiento_user");
       if (userRaw) {
         const user = JSON.parse(userRaw);
         setCurrentUser(user);
+        uId = user.id;
       }
 
       // Cargar operarios (para los acompañantes)
@@ -44,19 +48,59 @@ export default function OperarioView() {
         .then(res => res.json())
         .then(data => {
           setOptions(data);
-          // Inicializar el primer renglón solo si no hay ninguno
           setTasks(prev => prev.length === 0 ? [{
             record_type: '', description: '', start_time_h: '', start_time_m: '', end_time_h: '', end_time_m: '',
             machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional', companions: []
           }] : prev);
         });
+
+      fetchSidebarData(savedPlant, uId);
     }
   }, [router]);
+
+  const fetchSidebarData = async (p, uId) => {
+    if (!p || !uId) return;
+    try {
+      // Tareas de hoy del operario
+      const resT = await fetch(`/api/tareas/history?plant=${p}`);
+      const dataT = await resT.json();
+      if (dataT.tasks) {
+        // Obtener la fecha local (compensando el timezone offset)
+        const d = new Date();
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        const localToday = d.toISOString().split('T')[0];
+        
+        setTodayTasks(dataT.tasks.filter(t => t.operator_id === uId && t.task_date && t.task_date.startsWith(localToday)));
+      }
+      // Máquinas caídas
+      const resM = await fetch(`/api/machines/out-of-service?plant=${p}`);
+      const dataM = await resM.json();
+      if (dataM.machines) {
+        setMachinesOut(dataM.machines.filter(m => !m.is_resolved));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const addTask = () => {
     setTasks(prev => [...prev, {
       record_type: '', description: '', start_time_h: '', start_time_m: '', end_time_h: '', end_time_m: '',
       machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional', companions: []
+    }]);
+  };
+
+  const addTaskForMachine = (machineId, machineName) => {
+    setTasks([{
+      record_type: 'Mantenimiento de máquina (OT)', 
+      description: `Reparación de ${machineName}`, 
+      start_time_h: '', start_time_m: '', end_time_h: '', end_time_m: '',
+      machine_id: machineId, 
+      nature: 'Falla', 
+      deviation: '', 
+      category: '', 
+      final_state: 'Funcional', 
+      companions: []
     }]);
   };
 
@@ -103,6 +147,7 @@ export default function OperarioView() {
         // Reiniciar tareas
         setTasks([]);
         addTask();
+        fetchSidebarData(plant, currentUser?.id);
       } else {
         alert("Error al guardar: " + resData.error);
       }
@@ -143,19 +188,50 @@ export default function OperarioView() {
           <div style={{ flex: 1, minWidth: "280px", maxWidth: "380px", position: "sticky", top: "1rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div className="card" style={{ margin: 0 }}>
               <h2 className="card-title" style={{ fontSize: "1.1rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem", marginBottom: "1rem", marginTop: 0 }}>
-                Tareas cargadas
+                Tus tareas de hoy
               </h2>
-              <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem", padding: "1.5rem 0" }}>
-                Aún no has guardado tareas hoy.
-              </div>
+              {todayTasks.length === 0 ? (
+                <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem", padding: "1.5rem 0" }}>
+                  Aún no has guardado tareas hoy.
+                </div>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {todayTasks.map(t => (
+                    <li key={t.id} style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', fontSize: '0.9rem' }}>
+                      <strong style={{ color: 'var(--primary)', display: 'block' }}>{t.task_type}</strong>
+                      {t.machine_name && <span>{t.machine_name} <br/></span>}
+                      <span style={{ color: '#64748b' }}>{t.start_time_fmt} - {t.end_time_fmt}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="card" style={{ margin: 0, border: "1px solid #fecaca", background: "#fff5f5" }}>
               <h2 className="card-title" style={{ fontSize: "1.1rem", borderBottom: "1px solid #fecaca", paddingBottom: "0.75rem", marginBottom: "1rem", marginTop: 0, color: "#dc2626" }}>
                 Máquinas fuera de servicio
               </h2>
-              <div style={{ textAlign: "center", color: "#dc2626", fontSize: "0.9rem", padding: "1.5rem 0" }}>
-                No hay máquinas caídas registradas.
-              </div>
+              {machinesOut.length === 0 ? (
+                <div style={{ textAlign: "center", color: "#dc2626", fontSize: "0.9rem", padding: "1.5rem 0" }}>
+                  No hay máquinas caídas registradas.
+                </div>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {machinesOut.map(m => (
+                    <li key={m.id} style={{ padding: '0.75rem', borderBottom: '1px solid #fecaca', fontSize: '0.9rem' }}>
+                      <strong style={{ color: '#b91c1c', display: 'block' }}>{m.machine_name}</strong>
+                      <span style={{ color: '#991b1b' }}>Desde: {m.start_time_fmt}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => addTaskForMachine(m.machine_id, m.machine_name)} 
+                        className="btn btn-primary" 
+                        style={{ display: 'block', marginTop: '0.5rem', width: '100%', fontSize: '0.8rem', padding: '0.4rem', background: '#dc2626', borderColor: '#b91c1c' }}
+                      >
+                        🛠️ Generar OT y Poner Funcional
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
 

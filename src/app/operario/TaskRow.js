@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const optH = ["", ...Array.from({ length: 24 }).map((_, i) => String(i).padStart(2, '0'))];
 const optM = ["", "00", "10", "20", "30", "40", "50"];
@@ -9,6 +9,15 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
   const isAusentismo = task.record_type === 'Ausentismo / no productivo';
 
   const [selectedSector, setSelectedSector] = useState("");
+
+  useEffect(() => {
+    if (plant === 'CBA' && task.machine_id && !selectedSector) {
+      const mach = options.machines.find(m => m.id === task.machine_id);
+      if (mach && mach.sector) {
+        setSelectedSector(mach.sector);
+      }
+    }
+  }, [task.machine_id, plant, options.machines, selectedSector]);
 
   const handleChange = (field, value) => {
     updateTask(index, { ...task, [field]: value });
@@ -80,6 +89,16 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
   const visibleMachines = plant === 'CBA' && selectedSector
     ? options.machines.filter(m => m.sector === selectedSector)
     : options.machines;
+
+  const handleMachineChange = (val) => {
+    handleChange('machine_id', val);
+    if (plant === 'CBA' && val) {
+      const mach = options.machines.find(m => m.id === val);
+      if (mach && mach.sector) {
+        setSelectedSector(mach.sector);
+      }
+    }
+  };
 
   return (
     <div className="card" style={{ background: '#f9fafb', padding: '1.5rem', marginTop: '1rem', border: '1px solid var(--border)' }}>
@@ -188,7 +207,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
               value={selectedSector}
               onChange={(e) => setSelectedSector(e.target.value)}
             >
-              <option value="">Seleccione el sector...</option>
+              <option value="">Todos los sectores...</option>
               {cbaSectors.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           )}
@@ -197,9 +216,9 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
             required
             style={{ width: '100%', padding: '0.6rem', borderColor: 'var(--border)', fontSize: '1rem', borderRadius: '4px' }}
             value={task.machine_id || ""}
-            onChange={(e) => handleChange('machine_id', e.target.value)}
+            onChange={(e) => handleMachineChange(e.target.value)}
           >
-            <option value="">{plant === 'CBA' && !selectedSector ? "Seleccione primero un sector..." : "Seleccione el código de la máquina..."}</option>
+            <option value="">{plant === 'CBA' && selectedSector ? `Máquinas de ${selectedSector}...` : "Buscar y seleccionar máquina..."}</option>
             {visibleMachines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
 
@@ -241,27 +260,46 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
               <label>Horas Hombre (HH) Totales: <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{getHHTotales()}</span></label>
             </div>
 
-            <div className="form-group" style={{ background: '#fff3cd', borderColor: '#ffeeba', padding: '1rem', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ margin: 0, fontWeight: 600, color: '#856404' }}>¿Afectó la Disponibilidad Productiva?</label>
-              <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
-                <input
-                  type="checkbox"
-                  checked={task.affects_availability || false}
-                  onChange={(e) => handleChange('affects_availability', e.target.checked)}
-                  style={{ opacity: 0, width: 0, height: 0 }}
-                />
-                <span style={{
-                  position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
-                  backgroundColor: task.affects_availability ? '#2196F3' : '#ccc', borderRadius: '34px',
-                  transition: '.4s'
-                }}>
+            <div className="form-group" style={{ background: '#fff3cd', borderColor: '#ffeeba', padding: '1rem', borderRadius: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: task.affects_availability ? '1rem' : 0 }}>
+                <label style={{ margin: 0, fontWeight: 600, color: '#856404' }}>¿Afectó la Disponibilidad Productiva?</label>
+                <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
+                  <input
+                    type="checkbox"
+                    checked={task.affects_availability || false}
+                    onChange={(e) => handleChange('affects_availability', e.target.checked)}
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                  />
                   <span style={{
-                    position: 'absolute', content: '""', height: '16px', width: '16px', left: '4px', bottom: '4px',
-                    backgroundColor: 'white', transition: '.4s', borderRadius: '50%',
-                    transform: task.affects_availability ? 'translateX(26px)' : 'none'
-                  }}></span>
-                </span>
-              </label>
+                    position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: task.affects_availability ? '#2196F3' : '#ccc', borderRadius: '34px',
+                    transition: '.4s'
+                  }}>
+                    <span style={{
+                      position: 'absolute', content: '""', height: '16px', width: '16px', left: '4px', bottom: '4px',
+                      backgroundColor: 'white', transition: '.4s', borderRadius: '50%',
+                      transform: task.affects_availability ? 'translateX(26px)' : 'none'
+                    }}></span>
+                  </span>
+                </label>
+              </div>
+              
+              {task.affects_availability && (
+                <div style={{ borderTop: '1px solid #ffeeba', paddingTop: '1rem' }}>
+                  <strong style={{ display: 'block', marginBottom: '0.5rem', color: '#856404' }}>Registro de Parada:</strong>
+                  
+                  <div className="grid-2" style={{ gap: '1rem', marginBottom: '1rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.9rem', color: '#856404' }}>Inicio de falla (Fecha y Hora)</label>
+                      <input type="datetime-local" required style={{ width: '100%', padding: '0.5rem' }} value={task.start_out_time || ""} onChange={(e) => handleChange('start_out_time', e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.9rem', color: '#856404' }}>Fin de falla (Opcional)</label>
+                      <input type="datetime-local" style={{ width: '100%', padding: '0.5rem' }} value={task.end_out_time || ""} onChange={(e) => handleChange('end_out_time', e.target.value)} disabled={task.final_state === 'No Funcional'} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="form-group" style={{ marginTop: '1.5rem' }}>
