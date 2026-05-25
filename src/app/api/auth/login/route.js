@@ -36,6 +36,13 @@ export async function POST(request) {
     }
 
     const { password_hash, ...safeUser } = user;
+
+    try {
+      await query('UPDATE users SET last_login = $1 WHERE id = $2', [new Date().toISOString(), user.id]);
+    } catch (e) {
+      console.error("Error updating last_login:", e);
+    }
+
     return NextResponse.json({ user: safeUser });
 
   } catch (error) {

@@ -6,7 +6,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const res = await query('SELECT id, username, full_name, role, plant, is_active FROM users ORDER BY role, plant, full_name');
+    try {
+      await query('ALTER TABLE users ADD COLUMN last_login timestamp with time zone;');
+    } catch (e) {} // Ignorar si ya existe
+
+    const res = await query('SELECT id, username, full_name, role, plant, is_active, last_login FROM users ORDER BY role, plant, full_name');
     return NextResponse.json({ users: res.rows });
   } catch (error) {
     console.error('Error fetching users:', error);

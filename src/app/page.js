@@ -53,6 +53,9 @@ export default function Home() {
   return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", background: "#f0f2f5" }}>
       <div className="card" style={{ width: "100%", maxWidth: "400px", padding: "2rem" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
+          <img src="/logo-serin.png" alt="Grupo Serin" style={{ width: "150px", height: "auto", borderRadius: "8px", display: "block" }} />
+        </div>
         <h2 style={{ textAlign: "center", marginBottom: "1.5rem", color: "var(--primary)", fontSize: "1.5rem" }}>
           Ingreso a Mantenimiento
         </h2>
