@@ -15,7 +15,8 @@ export async function GET(request) {
     const q = `
       SELECT 
         mos.*, 
-        TO_CHAR(mos.start_time, 'DD/MM/YYYY HH24:MI') as start_time_fmt,
+        TO_CHAR(mos.start_time AT TIME ZONE 'America/Argentina/Buenos_Aires', 'DD/MM/YYYY HH24:MI') as start_time_fmt,
+        TO_CHAR(mos.resolved_at AT TIME ZONE 'America/Argentina/Buenos_Aires', 'DD/MM/YYYY HH24:MI') as resolved_at_fmt,
         m.name as machine_name, 
         m.sector,
         u.full_name as reporter_name

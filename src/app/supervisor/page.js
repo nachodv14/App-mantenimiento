@@ -290,6 +290,7 @@ export default function SupervisorView() {
                   <th style={{ padding: '1rem' }}>Sector</th>
                   <th style={{ padding: '1rem' }}>Reportado por</th>
                   <th style={{ padding: '1rem' }}>Inicio de Parada</th>
+                  <th style={{ padding: '1rem' }}>Fin de Parada</th>
                   <th style={{ padding: '1rem' }}>Desviación</th>
                   <th style={{ padding: '1rem' }}>Estado</th>
                 </tr>
@@ -301,6 +302,7 @@ export default function SupervisorView() {
                     <td style={{ padding: '1rem' }}>{m.sector}</td>
                     <td style={{ padding: '1rem' }}>{m.reporter_name}</td>
                     <td style={{ padding: '1rem' }}>{m.start_time_fmt}</td>
+                    <td style={{ padding: '1rem', color: m.is_resolved ? '#16a34a' : 'inherit' }}>{m.resolved_at_fmt || '-'}</td>
                     <td style={{ padding: '1rem' }}>{m.deviation}</td>
                     <td style={{ padding: '1rem' }}>
                       {m.is_resolved
@@ -311,7 +313,7 @@ export default function SupervisorView() {
                   </tr>
                 ))}
                 {machinesOut.length === 0 && (
-                  <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center' }}>No hay máquinas reportadas como fuera de servicio.</td></tr>
+                  <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center' }}>No hay máquinas reportadas como fuera de servicio.</td></tr>
                 )}
               </tbody>
             </table>
@@ -359,7 +361,7 @@ export default function SupervisorView() {
                   <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
                     <th style={{ padding: '0.75rem' }}>Máquina</th>
                     <th style={{ padding: '0.75rem' }}>Intervenciones</th>
-                    <th style={{ padding: '0.75rem' }}>Tiempo Detenida</th>
+                    <th style={{ padding: '0.75rem' }}>Tiempo de Mantenimiento</th>
                   </tr>
                 </thead>
                 <tbody>

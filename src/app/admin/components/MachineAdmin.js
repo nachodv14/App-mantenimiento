@@ -5,6 +5,11 @@ export default function MachineAdmin() {
   const [data, setData] = useState([]);
   const [plantsList, setPlantsList] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Filtros
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterPlant, setFilterPlant] = useState("");
+
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: "", plant: "", sector: "", is_active: true });
@@ -81,9 +86,27 @@ export default function MachineAdmin() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
-        <h3>Gestión de Máquinas</h3>
-        <button onClick={openNewModal} className="btn btn-primary" style={{ padding: "0.5rem 1rem" }}>+ Nueva Máquina</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <h3 style={{ margin: 0 }}>Gestión de Máquinas</h3>
+        <button onClick={openNewModal} className="btn btn-primary" style={{ padding: "0.5rem 1rem", width: "auto" }}>+ Nueva Máquina</button>
+      </div>
+
+      <div className="card" style={{ padding: "1rem", marginBottom: "1rem", display: "flex", gap: "1rem", alignItems: "center" }}>
+        <input 
+          type="text" 
+          placeholder="Buscar máquina..." 
+          value={searchTerm} 
+          onChange={e => setSearchTerm(e.target.value)}
+          style={{ flex: 1, padding: "0.5rem", borderRadius: "4px", border: "1px solid #d1d5db" }}
+        />
+        <select 
+          value={filterPlant} 
+          onChange={e => setFilterPlant(e.target.value)}
+          style={{ padding: "0.5rem", borderRadius: "4px", border: "1px solid #d1d5db", minWidth: "150px", width: "auto" }}
+        >
+          <option value="">Todas las plantas</option>
+          {plantsList.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
       </div>
 
       <div className="card" style={{ padding: "1rem", overflowX: "auto" }}>
@@ -98,7 +121,11 @@ export default function MachineAdmin() {
             </tr>
           </thead>
           <tbody>
-            {data.map(item => (
+            {data.filter(m => {
+              const matchSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase());
+              const matchPlant = filterPlant ? m.plant === filterPlant : true;
+              return matchSearch && matchPlant;
+            }).map(item => (
               <tr key={item.id} style={{ borderBottom: "1px solid #e5e7eb", opacity: item.is_active ? 1 : 0.6 }}>
                 <td style={{ padding: "0.75rem", fontWeight: "bold" }}>{item.plant}</td>
                 <td style={{ padding: "0.75rem", color: "#64748b" }}>{item.sector || "-"}</td>

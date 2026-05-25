@@ -49,7 +49,8 @@ export default function OperarioView() {
         .then(data => {
           setOptions(data);
           setTasks(prev => prev.length === 0 ? [{
-            record_type: '', description: '', start_time_h: '', start_time_m: '', end_time_h: '', end_time_m: '',
+            record_type: '', description: '', start_time_h: '', start_time_m: '00', end_time_h: '', end_time_m: '00',
+            start_out_h: '', start_out_m: '00', end_out_h: '', end_out_m: '00',
             machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional', companions: []
           }] : prev);
         });
@@ -58,19 +59,15 @@ export default function OperarioView() {
     }
   }, [router]);
 
-  const fetchSidebarData = async (p, uId) => {
+  const fetchSidebarData = async (p, uId, f) => {
     if (!p || !uId) return;
     try {
-      // Tareas de hoy del operario
+      // Tareas del operario
       const resT = await fetch(`/api/tareas/history?plant=${p}`);
       const dataT = await resT.json();
       if (dataT.tasks) {
-        // Obtener la fecha local (compensando el timezone offset)
-        const d = new Date();
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        const localToday = d.toISOString().split('T')[0];
-        
-        setTodayTasks(dataT.tasks.filter(t => t.operator_id === uId && t.task_date && t.task_date.startsWith(localToday)));
+        const targetDate = f || new Date().toISOString().split('T')[0];
+        setTodayTasks(dataT.tasks.filter(t => t.operator_id === uId && t.task_date && t.task_date.startsWith(targetDate)));
       }
       // Máquinas caídas
       const resM = await fetch(`/api/machines/out-of-service?plant=${p}`);
@@ -83,9 +80,16 @@ export default function OperarioView() {
     }
   };
 
+  useEffect(() => {
+    if (plant && currentUser && fecha) {
+      fetchSidebarData(plant, currentUser.id, fecha);
+    }
+  }, [fecha, plant, currentUser]);
+
   const addTask = () => {
     setTasks(prev => [...prev, {
-      record_type: '', description: '', start_time_h: '', start_time_m: '', end_time_h: '', end_time_m: '',
+      record_type: '', description: '', start_time_h: '', start_time_m: '00', end_time_h: '', end_time_m: '00',
+      start_out_h: '', start_out_m: '00', end_out_h: '', end_out_m: '00',
       machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional', companions: []
     }]);
   };
@@ -94,7 +98,8 @@ export default function OperarioView() {
     setTasks([{
       record_type: 'Mantenimiento de máquina (OT)', 
       description: `Reparación de ${machineName}`, 
-      start_time_h: '', start_time_m: '', end_time_h: '', end_time_m: '',
+      start_time_h: '', start_time_m: '00', end_time_h: '', end_time_m: '00',
+      start_out_h: '', start_out_m: '00', end_out_h: '', end_out_m: '00',
       machine_id: machineId, 
       nature: 'Falla', 
       deviation: '', 
@@ -147,7 +152,7 @@ export default function OperarioView() {
         // Reiniciar tareas
         setTasks([]);
         addTask();
-        fetchSidebarData(plant, currentUser?.id);
+        fetchSidebarData(plant, currentUser?.id, fecha);
       } else {
         alert("Error al guardar: " + resData.error);
       }
@@ -187,12 +192,13 @@ export default function OperarioView() {
           {/* Panel Lateral: Historial y Máquinas */}
           <div style={{ flex: 1, minWidth: "280px", maxWidth: "380px", position: "sticky", top: "1rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div className="card" style={{ margin: 0 }}>
-              <h2 className="card-title" style={{ fontSize: "1.1rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem", marginBottom: "1rem", marginTop: 0 }}>
-                Tus tareas de hoy
+              <h2 className="card-title" style={{ fontSize: "1.1rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem", marginBottom: "1rem", marginTop: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <span>Tus tareas del día</span>
+                <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} style={{ padding: "0.3rem", fontSize: "0.9rem", border: "1px solid #d1d5db", borderRadius: "4px", width: "100%" }} />
               </h2>
               {todayTasks.length === 0 ? (
                 <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem", padding: "1.5rem 0" }}>
-                  Aún no has guardado tareas hoy.
+                  Aún no has guardado tareas para esta fecha.
                 </div>
               ) : (
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>

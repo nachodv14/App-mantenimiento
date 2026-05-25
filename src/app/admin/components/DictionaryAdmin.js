@@ -69,9 +69,9 @@ export default function DictionaryAdmin({ table, title }) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
-        <h3>{title}</h3>
-        <button onClick={openNewModal} className="btn btn-primary" style={{ padding: "0.5rem 1rem" }}>+ Nuevo</button>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <h3 style={{ margin: 0 }}>{title}</h3>
+        <button onClick={openNewModal} className="btn btn-primary" style={{ padding: "0.5rem 1rem", flexShrink: 0, width: "auto" }}>+ Nuevo</button>
       </div>
 
       <div className="card" style={{ padding: "1rem" }}>

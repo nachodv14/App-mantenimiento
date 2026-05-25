@@ -11,7 +11,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
   const [selectedSector, setSelectedSector] = useState("");
 
   useEffect(() => {
-    if (plant === 'CBA' && task.machine_id && !selectedSector) {
+    if (task.machine_id && !selectedSector) {
       const mach = options.machines.find(m => m.id === task.machine_id);
       if (mach && mach.sector) {
         setSelectedSector(mach.sector);
@@ -81,18 +81,16 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
     recognition.start();
   };
 
-  // Sectores para CBA
-  const cbaSectors = plant === 'CBA'
-    ? [...new Set(options.machines.filter(m => m.sector).map(m => m.sector))].sort()
-    : [];
+  // Sectores de las máquinas de esta planta
+  const plantSectors = [...new Set(options.machines.filter(m => m.sector).map(m => m.sector))].sort();
 
-  const visibleMachines = plant === 'CBA' && selectedSector
+  const visibleMachines = selectedSector
     ? options.machines.filter(m => m.sector === selectedSector)
     : options.machines;
 
   const handleMachineChange = (val) => {
     handleChange('machine_id', val);
-    if (plant === 'CBA' && val) {
+    if (val) {
       const mach = options.machines.find(m => m.id === val);
       if (mach && mach.sector) {
         setSelectedSector(mach.sector);
@@ -201,14 +199,14 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
         <div style={{ background: '#eef6fc', padding: '1.25rem', borderRadius: '6px', marginBottom: '1rem', border: '1px solid #bcdcf9' }}>
           <label style={{ color: 'var(--primary)', fontWeight: 700, display: 'block', marginBottom: '0.5rem', fontSize: '1.05rem' }}>Máquina intervenida</label>
 
-          {plant === 'CBA' && (
+          {plantSectors.length > 0 && (
             <select
               style={{ width: '100%', padding: '0.6rem', borderColor: 'var(--border)', fontSize: '1rem', borderRadius: '4px', marginBottom: '0.75rem' }}
               value={selectedSector}
               onChange={(e) => setSelectedSector(e.target.value)}
             >
               <option value="">Todos los sectores...</option>
-              {cbaSectors.map(s => <option key={s} value={s}>{s}</option>)}
+              {plantSectors.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           )}
 
@@ -218,7 +216,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
             value={task.machine_id || ""}
             onChange={(e) => handleMachineChange(e.target.value)}
           >
-            <option value="">{plant === 'CBA' && selectedSector ? `Máquinas de ${selectedSector}...` : "Buscar y seleccionar máquina..."}</option>
+            <option value="">{selectedSector ? `Máquinas de ${selectedSector}...` : "Buscar y seleccionar máquina..."}</option>
             {visibleMachines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
 
@@ -290,12 +288,28 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
                   
                   <div className="grid-2" style={{ gap: '1rem', marginBottom: '1rem' }}>
                     <div>
-                      <label style={{ fontSize: '0.9rem', color: '#856404' }}>Inicio de falla (Fecha y Hora)</label>
-                      <input type="datetime-local" required style={{ width: '100%', padding: '0.5rem' }} value={task.start_out_time || ""} onChange={(e) => handleChange('start_out_time', e.target.value)} />
+                      <label style={{ fontSize: '0.9rem', color: '#856404' }}>Inicio de falla (Hora)</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
+                        <select required style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem' }} value={task.start_out_h || ""} onChange={(e) => handleChange('start_out_h', e.target.value)}>
+                          {optH.map(h => <option key={`soh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
+                        </select>
+                        <b style={{ fontSize: '1.2rem' }}>:</b>
+                        <select required style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem' }} value={task.start_out_m || ""} onChange={(e) => handleChange('start_out_m', e.target.value)}>
+                          {optM.map(m => <option key={`som_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
+                        </select>
+                      </div>
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.9rem', color: '#856404' }}>Fin de falla (Opcional)</label>
-                      <input type="datetime-local" style={{ width: '100%', padding: '0.5rem' }} value={task.end_out_time || ""} onChange={(e) => handleChange('end_out_time', e.target.value)} disabled={task.final_state === 'No Funcional'} />
+                      <label style={{ fontSize: '0.9rem', color: '#856404', opacity: task.final_state === 'No Funcional' ? 0.5 : 1 }}>Fin de falla (Opcional)</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
+                        <select style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_h || ""} onChange={(e) => handleChange('end_out_h', e.target.value)} disabled={task.final_state === 'No Funcional'}>
+                          {optH.map(h => <option key={`eoh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
+                        </select>
+                        <b style={{ fontSize: '1.2rem', color: task.final_state === 'No Funcional' ? '#9ca3af' : 'black' }}>:</b>
+                        <select style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_m || ""} onChange={(e) => handleChange('end_out_m', e.target.value)} disabled={task.final_state === 'No Funcional'}>
+                          {optM.map(m => <option key={`eom_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -306,7 +320,11 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
               <label style={{ fontWeight: 600 }}>Estado final de la máquina</label>
               <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.75rem' }}>
                 <label style={{ cursor: 'pointer' }}><input type="radio" name={"estado_" + index} value="Funcional" checked={task.final_state === 'Funcional' || !task.final_state} onChange={(e) => handleChange('final_state', e.target.value)} /> Funcional</label>
-                <label style={{ cursor: 'pointer' }}><input type="radio" name={"estado_" + index} value="No Funcional" checked={task.final_state === 'No Funcional'} onChange={(e) => handleChange('final_state', e.target.value)} /> No Funcional</label>
+                <label style={{ cursor: 'pointer' }}>
+                  <input type="radio" name={"estado_" + index} value="No Funcional" checked={task.final_state === 'No Funcional'} onChange={(e) => {
+                    updateTask(index, { ...task, final_state: 'No Funcional', end_out_h: '', end_out_m: '00' });
+                  }} /> No Funcional
+                </label>
               </div>
             </div>
           </div>

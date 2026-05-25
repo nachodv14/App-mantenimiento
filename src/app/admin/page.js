@@ -12,6 +12,10 @@ export default function AdminDashboard() {
   const [plantsList, setPlantsList] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Filtros
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterPlant, setFilterPlant] = useState("");
+
   // Form State
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -133,15 +137,34 @@ export default function AdminDashboard() {
       {activeTab === 'users' && (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-            <h3>Gestión de Usuarios</h3>
+            <h3 style={{ margin: 0 }}>Gestión de Usuarios</h3>
             <button
               className="btn btn-primary"
               onClick={openNewModal}
-              style={{ padding: "0.5rem 1rem", borderRadius: "4px", background: "var(--primary)", color: "white", border: "none", cursor: "pointer" }}
+              style={{ padding: "0.5rem 1rem", borderRadius: "4px", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", width: "auto" }}
             >
               + Nuevo Usuario
             </button>
           </div>
+          
+          <div className="card" style={{ padding: "1rem", marginBottom: "1rem", display: "flex", gap: "1rem", alignItems: "center" }}>
+            <input 
+              type="text" 
+              placeholder="Buscar por nombre o usuario..." 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{ flex: 1, padding: "0.5rem", borderRadius: "4px", border: "1px solid #d1d5db" }}
+            />
+            <select 
+              value={filterPlant} 
+              onChange={e => setFilterPlant(e.target.value)}
+              style={{ padding: "0.5rem", borderRadius: "4px", border: "1px solid #d1d5db", minWidth: "150px", width: "auto" }}
+            >
+              <option value="">Todas las plantas</option>
+              {plantsList.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+
           <div className="card" style={{ padding: "1rem", overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", minWidth: "800px" }}>
               <thead>
@@ -156,7 +179,11 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {users.map(u => (
+                {users.filter(u => {
+                  const matchSearch = u.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || u.username.toLowerCase().includes(searchTerm.toLowerCase());
+                  const matchPlant = filterPlant ? u.plant === filterPlant : true;
+                  return matchSearch && matchPlant;
+                }).map(u => (
                   <tr key={u.id} style={{ borderBottom: "1px solid #e5e7eb", opacity: u.is_active ? 1 : 0.5 }}>
                     <td style={{ padding: "1rem" }}>{u.full_name}</td>
                     <td style={{ padding: "1rem", fontFamily: "monospace", fontSize: "1.1rem" }}>{u.username}</td>
