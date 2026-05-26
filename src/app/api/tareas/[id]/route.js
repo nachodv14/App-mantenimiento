@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { runGoogleSheetsSync } from '@/lib/syncSheets';
 
 export async function PUT(request, { params }) {
   // En Next.js App Router, params se deben extraer asíncronamente en versiones recientes o sincrónicamente dependiendo de la versión.
@@ -20,6 +21,12 @@ export async function PUT(request, { params }) {
       } else {
         await query('UPDATE tasks SET status = $1 WHERE id = $2', [data.status, id]);
       }
+
+      // Auto-sync a Google Sheets de fondo
+      if (process.env.GOOGLE_SCRIPT_URL) {
+        runGoogleSheetsSync().catch(console.error);
+      }
+
       return NextResponse.json({ success: true, message: `Tarea marcada como ${data.status}` });
     }
 

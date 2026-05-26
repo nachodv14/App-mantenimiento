@@ -105,6 +105,23 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleSyncSheets = async () => {
+    try {
+      setSaving(true);
+      const res = await fetch("/api/sync-sheets", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert("Sincronización con Google Sheets exitosa.");
+      } else {
+        alert("Error al sincronizar: " + (data.error || "Desconocido"));
+      }
+    } catch (e) {
+      alert("Error de red al intentar sincronizar.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <div style={{ padding: "2rem", textAlign: "center" }}>Cargando panel de administración...</div>;
 
   return (
@@ -112,6 +129,13 @@ export default function AdminDashboard() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
         <h2>Panel de Administración (Admin)</h2>
         <div style={{ display: "flex", gap: "1rem" }}>
+          <button
+            onClick={handleSyncSheets}
+            disabled={saving}
+            style={{ padding: "0.5rem 1rem", borderRadius: "4px", background: "#10b981", color: "white", border: "none", cursor: "pointer", opacity: saving ? 0.7 : 1 }}
+          >
+            {saving ? "Sincronizando..." : "Sincronizar Google Sheets"}
+          </button>
           <button
             onClick={() => {
               sessionStorage.clear();
@@ -146,17 +170,17 @@ export default function AdminDashboard() {
               + Nuevo Usuario
             </button>
           </div>
-          
+
           <div className="card" style={{ padding: "1rem", marginBottom: "1rem", display: "flex", gap: "1rem", alignItems: "center" }}>
-            <input 
-              type="text" 
-              placeholder="Buscar por nombre o usuario..." 
-              value={searchTerm} 
+            <input
+              type="text"
+              placeholder="Buscar por nombre o usuario..."
+              value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               style={{ flex: 1, padding: "0.5rem", borderRadius: "4px", border: "1px solid #d1d5db" }}
             />
-            <select 
-              value={filterPlant} 
+            <select
+              value={filterPlant}
               onChange={e => setFilterPlant(e.target.value)}
               style={{ padding: "0.5rem", borderRadius: "4px", border: "1px solid #d1d5db", minWidth: "150px", width: "auto" }}
             >
@@ -198,8 +222,8 @@ export default function AdminDashboard() {
                     </td>
                     <td style={{ padding: "1rem", fontWeight: 600 }}>{u.plant}</td>
                     <td style={{ padding: "1rem", fontSize: "0.85rem", color: "#64748b" }}>
-                  {u.last_login ? new Date(u.last_login).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short', hour12: false }) : 'Nunca'}
-                </td>
+                      {u.last_login ? new Date(u.last_login).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short', hour12: false }) : 'Nunca'}
+                    </td>
                     <td style={{ padding: "1rem" }}>{u.is_active ? "🟢 Activo" : "🔴 Inactivo"}</td>
                     <td style={{ padding: "1rem" }}>
                       <button

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { runGoogleSheetsSync } from '@/lib/syncSheets';
 
 export async function POST(request) {
   try {
@@ -104,6 +105,11 @@ export async function POST(request) {
           await query(`UPDATE machines_out_of_service SET is_resolved = true, resolved_at = $2 WHERE machine_id = $1 AND is_resolved = false`, [t.machine_id, resolutionTime]);
         }
       }
+    }
+
+    // Auto-sync a Google Sheets de fondo
+    if (process.env.GOOGLE_SCRIPT_URL) {
+      runGoogleSheetsSync().catch(console.error);
     }
 
     return NextResponse.json({ message: 'Jornada guardada correctamente', status: 'success' });
