@@ -34,16 +34,16 @@ export async function POST(request) {
       
       let taskStartOutTime = null;
       if (t.start_out_date && t.start_out_h && t.start_out_m) {
-        try { taskStartOutTime = new Date(`${t.start_out_date}T${t.start_out_h}:${t.start_out_m}:00`).toISOString(); } catch(e){}
+        try { taskStartOutTime = new Date(`${t.start_out_date}T${t.start_out_h}:${t.start_out_m}:00-03:00`).toISOString(); } catch(e){}
       } else if (t.start_out_h && t.start_out_m) {
-        try { taskStartOutTime = new Date(`${data.task_date}T${t.start_out_h}:${t.start_out_m}:00`).toISOString(); } catch(e){}
+        try { taskStartOutTime = new Date(`${data.task_date}T${t.start_out_h}:${t.start_out_m}:00-03:00`).toISOString(); } catch(e){}
       }
 
       let taskEndOutTime = null;
       if (t.end_out_date && t.end_out_h && t.end_out_m) {
-        try { taskEndOutTime = new Date(`${t.end_out_date}T${t.end_out_h}:${t.end_out_m}:00`).toISOString(); } catch(e){}
+        try { taskEndOutTime = new Date(`${t.end_out_date}T${t.end_out_h}:${t.end_out_m}:00-03:00`).toISOString(); } catch(e){}
       } else if (t.end_out_h && t.end_out_m) {
-        try { taskEndOutTime = new Date(`${data.task_date}T${t.end_out_h}:${t.end_out_m}:00`).toISOString(); } catch(e){}
+        try { taskEndOutTime = new Date(`${data.task_date}T${t.end_out_h}:${t.end_out_m}:00-03:00`).toISOString(); } catch(e){}
       }
 
       const text = `
@@ -101,7 +101,7 @@ export async function POST(request) {
           let resolutionTime;
           try {
             // Construir la fecha/hora local y pasarla a ISO para Postgres
-            resolutionTime = new Date(`${data.task_date}T${t.end_time}:00`).toISOString();
+            resolutionTime = new Date(`${data.task_date}T${t.end_time}:00-03:00`).toISOString();
           } catch (e) {
             // Fallback por si hay algún error raro en el formato
             resolutionTime = new Date().toISOString();
