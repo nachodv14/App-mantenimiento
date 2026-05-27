@@ -50,7 +50,7 @@ export default function OperarioView() {
           setOptions(data);
           setTasks(prev => prev.length === 0 ? [{
             record_type: '', description: '', start_time_h: '', start_time_m: '00', end_time_h: '', end_time_m: '00',
-            start_out_h: '', start_out_m: '00', end_out_h: '', end_out_m: '00',
+            start_out_date: '', start_out_h: '', start_out_m: '00', end_out_date: '', end_out_h: '', end_out_m: '00',
             machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional', companions: []
           }] : prev);
         });
@@ -89,7 +89,7 @@ export default function OperarioView() {
   const addTask = () => {
     setTasks(prev => [...prev, {
       record_type: '', description: '', start_time_h: '', start_time_m: '00', end_time_h: '', end_time_m: '00',
-      start_out_h: '', start_out_m: '00', end_out_h: '', end_out_m: '00',
+      start_out_date: '', start_out_h: '', start_out_m: '00', end_out_date: '', end_out_h: '', end_out_m: '00',
       machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional', companions: []
     }]);
   };
@@ -99,7 +99,7 @@ export default function OperarioView() {
       record_type: 'Mantenimiento de máquina (OT)', 
       description: `Reparación de ${machineName}`, 
       start_time_h: '', start_time_m: '00', end_time_h: '', end_time_m: '00',
-      start_out_h: '', start_out_m: '00', end_out_h: '', end_out_m: '00',
+      start_out_date: '', start_out_h: '', start_out_m: '00', end_out_date: '', end_out_h: '', end_out_m: '00',
       machine_id: machineId, 
       nature: 'Falla', 
       deviation: '', 

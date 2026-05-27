@@ -288,7 +288,15 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
                   
                   <div className="grid-2" style={{ gap: '1rem', marginBottom: '1rem' }}>
                     <div>
-                      <label style={{ fontSize: '0.9rem', color: '#856404' }}>Inicio de falla (Hora)</label>
+                      <label style={{ fontSize: '0.9rem', color: '#856404', display: 'block', marginBottom: '0.25rem' }}>Fecha de inicio</label>
+                      <input type="date" required style={{ width: '100%', padding: '0.6rem', fontSize: '1rem', borderRadius: '4px', border: '1px solid #d1d5db' }} value={task.start_out_date || ""} onChange={(e) => handleChange('start_out_date', e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.9rem', color: '#856404', display: 'block', marginBottom: '0.25rem', opacity: task.final_state === 'No Funcional' ? 0.5 : 1 }}>Fecha de fin</label>
+                      <input type="date" disabled={task.final_state === 'No Funcional'} style={{ width: '100%', padding: '0.6rem', fontSize: '1rem', borderRadius: '4px', border: '1px solid #d1d5db', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_date || ""} onChange={(e) => handleChange('end_out_date', e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.9rem', color: '#856404' }}>Hora de inicio</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
                         <select required style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem' }} value={task.start_out_h || ""} onChange={(e) => handleChange('start_out_h', e.target.value)}>
                           {optH.map(h => <option key={`soh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
@@ -300,7 +308,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
                       </div>
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.9rem', color: '#856404', opacity: task.final_state === 'No Funcional' ? 0.5 : 1 }}>Fin de falla (Opcional)</label>
+                      <label style={{ fontSize: '0.9rem', color: '#856404', opacity: task.final_state === 'No Funcional' ? 0.5 : 1 }}>Hora de fin (Opcional)</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
                         <select style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_h || ""} onChange={(e) => handleChange('end_out_h', e.target.value)} disabled={task.final_state === 'No Funcional'}>
                           {optH.map(h => <option key={`eoh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
