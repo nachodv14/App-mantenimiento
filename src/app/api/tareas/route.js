@@ -27,11 +27,6 @@ export async function POST(request) {
       const companionsCount = Array.isArray(t.companions) ? t.companions.length : 0;
       const manHours = totalMinutes ? (totalMinutes / 60) * (companionsCount + 1) : null;
       
-      let stopTimeMinutes = null;
-      if (t.affects_availability && t.start_out_time && t.end_out_time) {
-        stopTimeMinutes = Math.round((new Date(t.end_out_time) - new Date(t.start_out_time)) / 60000);
-      }
-      
       let taskStartOutTime = null;
       if (t.start_out_date && t.start_out_h && t.start_out_m) {
         try { taskStartOutTime = new Date(`${t.start_out_date}T${t.start_out_h}:${t.start_out_m}:00-03:00`).toISOString(); } catch(e){}
@@ -44,6 +39,11 @@ export async function POST(request) {
         try { taskEndOutTime = new Date(`${t.end_out_date}T${t.end_out_h}:${t.end_out_m}:00-03:00`).toISOString(); } catch(e){}
       } else if (t.end_out_h && t.end_out_m) {
         try { taskEndOutTime = new Date(`${data.task_date}T${t.end_out_h}:${t.end_out_m}:00-03:00`).toISOString(); } catch(e){}
+      }
+
+      let stopTimeMinutes = null;
+      if (t.affects_availability && taskStartOutTime && taskEndOutTime) {
+        stopTimeMinutes = Math.round((new Date(taskEndOutTime) - new Date(taskStartOutTime)) / 60000);
       }
 
       const text = `
