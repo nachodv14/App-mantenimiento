@@ -83,7 +83,8 @@ export async function POST(request) {
         stopTimeMinutes
       ];
 
-      await query(text, params);
+      const insertResult = await query(text, params);
+      const taskId = insertResult.rows[0].id;
 
       // Gestionar estado de máquinas fuera de servicio
       if (t.machine_id) {
@@ -106,7 +107,24 @@ export async function POST(request) {
             // Fallback por si hay algún error raro en el formato
             resolutionTime = new Date().toISOString();
           }
+
+          // Buscar cuándo fue reportada la falla
+          const resMachine = await query(`SELECT start_time FROM machines_out_of_service WHERE machine_id = $1 AND is_resolved = false`, [t.machine_id]);
+          
           await query(`UPDATE machines_out_of_service SET is_resolved = true, resolved_at = $2 WHERE machine_id = $1 AND is_resolved = false`, [t.machine_id, resolutionTime]);
+          
+          if (resMachine.rows.length > 0) {
+            const outStartTime = resMachine.rows[0].start_time;
+            
+            // Poner TODOS los datos de la parada en la tarea ACTUAL (la de reparación)
+            await query(`
+              UPDATE tasks 
+              SET start_out_time = $1, 
+                  end_out_time = $2, 
+                  stop_time_minutes = ROUND(EXTRACT(EPOCH FROM ($2::timestamp with time zone - $1::timestamp with time zone))/60)
+              WHERE id = $3
+            `, [outStartTime, resolutionTime, taskId]);
+          }
         }
       }
     }
