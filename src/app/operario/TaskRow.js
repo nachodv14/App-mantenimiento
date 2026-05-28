@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const optH = ["", ...Array.from({ length: 24 }).map((_, i) => String(i).padStart(2, '0'))];
 const optM = ["", "00", "10", "20", "30", "40", "50"];
@@ -9,6 +9,8 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
   const isAusentismo = task.record_type === 'Ausentismo / no productivo';
 
   const [selectedSector, setSelectedSector] = useState("");
+  const [dictatingField, setDictatingField] = useState(null);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     if (task.machine_id && !selectedSector) {
@@ -67,18 +69,73 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
   };
 
   const handleVoiceDictation = (field) => {
+    if (dictatingField === field) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setDictatingField(null);
+      return;
+    }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("Tu navegador no soporta audiodictado. Usa Chrome.");
       return;
     }
+
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
     const recognition = new SpeechRecognition();
     recognition.lang = 'es-AR';
+    recognition.continuous = true; // Sigue grabando hasta que el usuario lo pare
+    recognition.interimResults = false;
+
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      handleChange(field, (task[field] || '') + ' ' + transcript);
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript + ' ';
+      }
+      handleChange(field, (task[field] || '') + ' ' + transcript.trim());
     };
+
+    recognition.onerror = () => {
+      setDictatingField(null);
+    };
+
+    recognition.onend = () => {
+      setDictatingField(null);
+    };
+
     recognition.start();
+    recognitionRef.current = recognition;
+    setDictatingField(field);
+  };
+
+  const renderDictationBtn = (field) => {
+    const isDictating = dictatingField === field;
+    return (
+      <button 
+        type="button" 
+        onClick={() => handleVoiceDictation(field)} 
+        style={{ 
+          background: isDictating ? '#fee2e2' : '#e5e7eb', 
+          color: isDictating ? '#dc2626' : '#374151',
+          border: isDictating ? '1px solid #dc2626' : '1px solid transparent', 
+          borderRadius: '4px', 
+          padding: '0.25rem 0.5rem', 
+          cursor: 'pointer', 
+          marginBottom: '0.25rem',
+          fontWeight: isDictating ? 600 : 400,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.25rem'
+        }}
+      >
+        {isDictating ? '⏹️ Detener' : '🎤 Audiodictado'}
+      </button>
+    );
   };
 
   // Sectores de las máquinas de esta planta
@@ -125,9 +182,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
       <div className="form-group" style={{ marginBottom: '1rem' }}>
         <label style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           Descripción de la tarea
-          <button type="button" onClick={() => handleVoiceDictation('description')} style={{ background: '#e5e7eb', border: 'none', borderRadius: '4px', padding: '0.25rem 0.5rem', cursor: 'pointer', marginBottom: '0.25rem' }}>
-            🎤 Audiodictado
-          </button>
+          {renderDictationBtn('description')}
         </label>
         <textarea
           required
@@ -237,9 +292,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
             <div className="form-group">
               <label style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 Desviación detectada
-                <button type="button" onClick={() => handleVoiceDictation('deviation')} style={{ background: '#e5e7eb', border: 'none', borderRadius: '4px', padding: '0.25rem 0.5rem', cursor: 'pointer', marginBottom: '0.25rem' }}>
-                  🎤 Audiodictado
-                </button>
+                {renderDictationBtn('deviation')}
               </label>
               <textarea placeholder="Detalle el problema detectado..." value={task.deviation || ""} onChange={(e) => handleChange('deviation', e.target.value)} />
             </div>
@@ -247,9 +300,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
             <div className="form-group">
               <label style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 Observaciones / tareas recomendadas
-                <button type="button" onClick={() => handleVoiceDictation('observaciones')} style={{ background: '#e5e7eb', border: 'none', borderRadius: '4px', padding: '0.25rem 0.5rem', cursor: 'pointer', marginBottom: '0.25rem' }}>
-                  🎤 Audiodictado
-                </button>
+                {renderDictationBtn('observaciones')}
               </label>
               <textarea placeholder="Indique si hay tareas pendientes o recomendaciones..." value={task.observaciones || ""} onChange={(e) => handleChange('observaciones', e.target.value)} />
             </div>
