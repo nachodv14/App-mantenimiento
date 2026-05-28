@@ -40,10 +40,18 @@ export async function runGoogleSheetsSync() {
     `;
     const resMachines = await query(qMachines);
 
+    const qUsers = `SELECT id, full_name FROM users`;
+    const resUsers = await query(qUsers);
+    const usersDict = {};
+    resUsers.rows.forEach(u => usersDict[u.id] = u.full_name);
+
     const formatTask = (t) => {
       let comps = [];
-      try { comps = JSON.parse(t.companions); } catch (e) { }
-      const compStr = Array.isArray(comps) ? comps.map(c => c.name).join(', ') : '';
+      try { 
+        comps = typeof t.companions === 'string' ? JSON.parse(t.companions) : t.companions; 
+        if (!comps) comps = [];
+      } catch (e) { }
+      const compStr = Array.isArray(comps) ? comps.map(c => usersDict[c] || c).join(', ') : '';
 
       const formatTime = (isoString) => {
         if (!isoString) return '';
