@@ -324,6 +324,29 @@ export default function OperarioView() {
                 ))}
               </div>
 
+              {tasks.length > 0 && (() => {
+                let total = 0;
+                tasks.forEach(t => {
+                  if (t.start_time_h && t.start_time_m && t.end_time_h && t.end_time_m) {
+                    const sh = parseInt(t.start_time_h, 10) || 0;
+                    const sm = parseInt(t.start_time_m, 10) || 0;
+                    const eh = parseInt(t.end_time_h, 10) || 0;
+                    const em = parseInt(t.end_time_m, 10) || 0;
+                    
+                    let diff = (eh * 60 + em) - (sh * 60 + sm);
+                    if (diff < 0) diff += 24 * 60; // cruza la medianoche
+                    total += diff;
+                  }
+                });
+                const h = Math.floor(total / 60);
+                const m = total % 60;
+                return (
+                  <div style={{ textAlign: "right", marginTop: "1rem", marginBottom: "-1rem", fontSize: "1.1rem" }}>
+                    Total acumulado: <span style={{ fontWeight: 700, color: "var(--primary)" }}>{h}h {m}m</span>
+                  </div>
+                );
+              })()}
+
               <div className="form-group" style={{ marginTop: "2rem", marginBottom: "2rem" }}>
                 <button
                   type="button"
