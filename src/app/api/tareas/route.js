@@ -129,10 +129,8 @@ export async function POST(request) {
       }
     }
 
-    // Auto-sync a Google Sheets de fondo
-    if (process.env.GOOGLE_SCRIPT_URL) {
-      runGoogleSheetsSync().catch(console.error);
-    }
+    // 6. Lanzar la sincronización a Google Sheets en background y pasar la planta
+    runGoogleSheetsSync(data.plant).catch(console.error);
 
     return NextResponse.json({ message: 'Jornada guardada correctamente', status: 'success' });
   } catch (error) {

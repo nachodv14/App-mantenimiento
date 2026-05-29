@@ -15,16 +15,16 @@ export async function PUT(request, { params }) {
       if (!['APPROVED', 'REJECTED'].includes(data.status)) {
         return NextResponse.json({ error: 'Status inválido' }, { status: 400 });
       }
-      
+
       if (data.supervisor_obs !== undefined) {
         await query('UPDATE tasks SET status = $1, supervisor_obs = $2 WHERE id = $3', [data.status, data.supervisor_obs, id]);
       } else {
         await query('UPDATE tasks SET status = $1 WHERE id = $2', [data.status, id]);
       }
 
-      // Auto-sync a Google Sheets de fondo
-      if (process.env.GOOGLE_SCRIPT_URL) {
-        runGoogleSheetsSync().catch(console.error);
+      const resTask = await query('SELECT plant FROM tasks WHERE id = $1', [id]);
+      if (resTask.rows.length > 0) {
+        runGoogleSheetsSync(resTask.rows[0].plant).catch(console.error);
       }
 
       return NextResponse.json({ success: true, message: `Tarea marcada como ${data.status}` });
@@ -32,7 +32,7 @@ export async function PUT(request, { params }) {
 
     // Si envían una edición completa de la tarea
     const { start_time, end_time, description, deviation, observaciones, supervisor_obs } = data;
-    
+
     let updateQuery = `
       UPDATE tasks 
       SET description = $1, deviation = $2, observaciones = $3, supervisor_obs = $4
@@ -41,7 +41,7 @@ export async function PUT(request, { params }) {
     let paramIndex = 5;
 
     if (start_time && end_time) {
-      updateQuery += `, start_time = $${paramIndex++}, end_time = $${paramIndex++}, total_time_minutes = (EXTRACT(EPOCH FROM ($${paramIndex-1}::time - $${paramIndex-2}::time))/60 + 1440)::int % 1440`;
+      updateQuery += `, start_time = $${paramIndex++}, end_time = $${paramIndex++}, total_time_minutes = (EXTRACT(EPOCH FROM ($${paramIndex - 1}::time - $${paramIndex - 2}::time))/60 + 1440)::int % 1440`;
       params.push(start_time, end_time);
     }
 
