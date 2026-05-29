@@ -94,17 +94,33 @@ export default function OperarioView() {
     }]);
   };
 
-  const addTaskForMachine = (machineId, machineName) => {
+  const addTaskForMachine = (m) => {
+    let sDate = '';
+    let sH = '00';
+    let sM = '00';
+    if (m.start_time_fmt) {
+      const parts = m.start_time_fmt.split(' ');
+      if (parts.length === 2) {
+         const [day, month, year] = parts[0].split('/');
+         sDate = `${year}-${month}-${day}`;
+         const [hh, mm] = parts[1].split(':');
+         sH = hh;
+         sM = mm;
+      }
+    }
+
     setTasks([{
       record_type: 'Mantenimiento de máquina (OT)', 
-      description: `Reparación de ${machineName}`, 
+      description: `Reparación de ${m.machine_name}`, 
       start_time_h: '', start_time_m: '00', end_time_h: '', end_time_m: '00',
-      start_out_date: '', start_out_h: '', start_out_m: '00', end_out_date: '', end_out_h: '', end_out_m: '00',
-      machine_id: machineId, 
+      start_out_date: sDate, start_out_h: sH, start_out_m: sM, end_out_date: '', end_out_h: '', end_out_m: '00',
+      machine_id: m.machine_id, 
       nature: 'Falla', 
-      deviation: '', 
+      deviation: m.deviation || '', 
       category: '', 
       final_state: 'Funcional', 
+      affects_availability: true,
+      lock_start_out: true,
       companions: []
     }]);
   };
@@ -228,7 +244,7 @@ export default function OperarioView() {
                       <span style={{ color: '#991b1b' }}>Desde: {m.start_time_fmt}</span>
                       <button 
                         type="button" 
-                        onClick={() => addTaskForMachine(m.machine_id, m.machine_name)} 
+                        onClick={() => addTaskForMachine(m)} 
                         className="btn btn-primary" 
                         style={{ display: 'block', marginTop: '0.5rem', width: '100%', fontSize: '0.8rem', padding: '0.4rem', background: '#dc2626', borderColor: '#b91c1c' }}
                       >

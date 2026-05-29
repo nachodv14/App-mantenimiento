@@ -98,14 +98,14 @@ export async function POST(request) {
             )
           `, [data.plant, t.machine_id, data.operator_id, outStartTime, t.deviation || t.description]);
         } else if (t.final_state === 'Funcional') {
-          // La máquina se arregló a la hora que terminó esta tarea
-          let resolutionTime;
-          try {
-            // Construir la fecha/hora local y pasarla a ISO para Postgres
-            resolutionTime = new Date(`${data.task_date}T${t.end_time}:00-03:00`).toISOString();
-          } catch (e) {
-            // Fallback por si hay algún error raro en el formato
-            resolutionTime = new Date().toISOString();
+          // La máquina se arregló: Tomar la hora manual ingresada o la de fin de tarea
+          let resolutionTime = taskEndOutTime;
+          if (!resolutionTime) {
+            try {
+              resolutionTime = new Date(`${data.task_date}T${t.end_time}:00-03:00`).toISOString();
+            } catch (e) {
+              resolutionTime = new Date().toISOString();
+            }
           }
 
           // Buscar cuándo fue reportada la falla

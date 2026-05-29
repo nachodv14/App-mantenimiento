@@ -317,6 +317,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
                     type="checkbox"
                     checked={task.affects_availability || false}
                     onChange={(e) => handleChange('affects_availability', e.target.checked)}
+                    disabled={task.lock_start_out}
                     style={{ opacity: 0, width: 0, height: 0 }}
                   />
                   <span style={{
@@ -339,33 +340,39 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
                   
                   <div className="grid-2" style={{ gap: '1rem', marginBottom: '1rem' }}>
                     <div>
-                      <label style={{ fontSize: '0.9rem', color: '#856404', display: 'block', marginBottom: '0.25rem' }}>Fecha de inicio</label>
-                      <input type="date" required style={{ width: '100%', padding: '0.6rem', fontSize: '1rem', borderRadius: '4px', border: '1px solid #d1d5db' }} value={task.start_out_date || ""} onChange={(e) => handleChange('start_out_date', e.target.value)} />
+                      <label style={{ fontSize: '0.9rem', color: '#856404', display: 'block', marginBottom: '0.25rem', opacity: task.lock_start_out ? 0.7 : 1 }}>
+                        Fecha de inicio {task.lock_start_out ? <small>(Bloqueado)</small> : task.final_state === 'Funcional' ? <small>(Opcional, se busca auto.)</small> : ''}
+                      </label>
+                      <input type="date" required={task.final_state === 'No Funcional' && !task.lock_start_out} disabled={task.lock_start_out} style={{ width: '100%', padding: '0.6rem', fontSize: '1rem', borderRadius: '4px', border: '1px solid #d1d5db', backgroundColor: task.lock_start_out ? '#e5e7eb' : 'white', opacity: task.lock_start_out ? 0.7 : 1 }} value={task.start_out_date || ""} onChange={(e) => handleChange('start_out_date', e.target.value)} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.9rem', color: '#856404', display: 'block', marginBottom: '0.25rem', opacity: task.final_state === 'No Funcional' ? 0.5 : 1 }}>Fecha de fin</label>
-                      <input type="date" disabled={task.final_state === 'No Funcional'} style={{ width: '100%', padding: '0.6rem', fontSize: '1rem', borderRadius: '4px', border: '1px solid #d1d5db', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_date || ""} onChange={(e) => handleChange('end_out_date', e.target.value)} />
+                      <label style={{ fontSize: '0.9rem', color: '#856404', display: 'block', marginBottom: '0.25rem', opacity: task.final_state === 'No Funcional' ? 0.5 : 1 }}>
+                        Fecha de fin {task.final_state === 'Funcional' ? '*' : ''}
+                      </label>
+                      <input type="date" required={task.final_state === 'Funcional'} disabled={task.final_state === 'No Funcional'} style={{ width: '100%', padding: '0.6rem', fontSize: '1rem', borderRadius: '4px', border: '1px solid #d1d5db', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_date || ""} onChange={(e) => handleChange('end_out_date', e.target.value)} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.9rem', color: '#856404' }}>Hora de inicio</label>
+                      <label style={{ fontSize: '0.9rem', color: '#856404', opacity: task.lock_start_out ? 0.7 : 1 }}>Hora de inicio</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
-                        <select required style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem' }} value={task.start_out_h || ""} onChange={(e) => handleChange('start_out_h', e.target.value)}>
+                        <select required={task.final_state === 'No Funcional' && !task.lock_start_out} disabled={task.lock_start_out} style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.lock_start_out ? '#e5e7eb' : 'white', opacity: task.lock_start_out ? 0.7 : 1 }} value={task.start_out_h || ""} onChange={(e) => handleChange('start_out_h', e.target.value)}>
                           {optH.map(h => <option key={`soh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
                         </select>
-                        <b style={{ fontSize: '1.2rem' }}>:</b>
-                        <select required style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem' }} value={task.start_out_m || ""} onChange={(e) => handleChange('start_out_m', e.target.value)}>
+                        <b style={{ fontSize: '1.2rem', color: task.lock_start_out ? '#9ca3af' : 'black' }}>:</b>
+                        <select required={task.final_state === 'No Funcional' && !task.lock_start_out} disabled={task.lock_start_out} style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.lock_start_out ? '#e5e7eb' : 'white', opacity: task.lock_start_out ? 0.7 : 1 }} value={task.start_out_m || ""} onChange={(e) => handleChange('start_out_m', e.target.value)}>
                           {optM.map(m => <option key={`som_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
                         </select>
                       </div>
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.9rem', color: '#856404', opacity: task.final_state === 'No Funcional' ? 0.5 : 1 }}>Hora de fin (Opcional)</label>
+                      <label style={{ fontSize: '0.9rem', color: '#856404', opacity: task.final_state === 'No Funcional' ? 0.5 : 1 }}>
+                        Hora de fin {task.final_state === 'Funcional' ? '*' : '(Opcional)'}
+                      </label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
-                        <select style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_h || ""} onChange={(e) => handleChange('end_out_h', e.target.value)} disabled={task.final_state === 'No Funcional'}>
+                        <select required={task.final_state === 'Funcional'} style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_h || ""} onChange={(e) => handleChange('end_out_h', e.target.value)} disabled={task.final_state === 'No Funcional'}>
                           {optH.map(h => <option key={`eoh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
                         </select>
                         <b style={{ fontSize: '1.2rem', color: task.final_state === 'No Funcional' ? '#9ca3af' : 'black' }}>:</b>
-                        <select style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_m || ""} onChange={(e) => handleChange('end_out_m', e.target.value)} disabled={task.final_state === 'No Funcional'}>
+                        <select required={task.final_state === 'Funcional'} style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_m || ""} onChange={(e) => handleChange('end_out_m', e.target.value)} disabled={task.final_state === 'No Funcional'}>
                           {optM.map(m => <option key={`eom_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
                         </select>
                       </div>
