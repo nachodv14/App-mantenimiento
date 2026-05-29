@@ -87,11 +87,22 @@ export default function OperarioView() {
   }, [fecha, plant, currentUser]);
 
   const addTask = () => {
-    setTasks(prev => [...prev, {
-      record_type: '', description: '', start_time_h: '', start_time_m: '00', end_time_h: '', end_time_m: '00',
-      start_out_date: '', start_out_h: '', start_out_m: '00', end_out_date: '', end_out_h: '', end_out_m: '00',
-      machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional', companions: []
-    }]);
+    setTasks(prev => {
+      let nextStartH = '';
+      let nextStartM = '00';
+      
+      if (prev.length > 0) {
+        const lastTask = prev[prev.length - 1];
+        if (lastTask.end_time_h) nextStartH = lastTask.end_time_h;
+        if (lastTask.end_time_m) nextStartM = lastTask.end_time_m;
+      }
+
+      return [...prev, {
+        record_type: '', description: '', start_time_h: nextStartH, start_time_m: nextStartM, end_time_h: '', end_time_m: '00',
+        start_out_date: '', start_out_h: '', start_out_m: '00', end_out_date: '', end_out_h: '', end_out_m: '00',
+        machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional', companions: []
+      }];
+    });
   };
 
   const addTaskForMachine = (m) => {
