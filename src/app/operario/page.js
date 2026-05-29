@@ -141,6 +141,14 @@ export default function OperarioView() {
     setIsSubmitting(true);
 
     try {
+      // Validar que todas las tareas tengan descripción completada
+      const tasksSinDescripcion = tasks.filter(t => !t.description?.trim());
+      if (tasksSinDescripcion.length > 0) {
+        alert(`Por favor, completa el campo "Descripción de la tarea" en ${tasksSinDescripcion.length > 1 ? 'todas las tareas' : 'la tarea'} antes de enviar.`);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Validar que todos los registros de mantenimiento tengan desviación completada
       const tasksSinDesviacion = tasks.filter(t => t.record_type === 'Mantenimiento de máquina (OT)' && !t.deviation?.trim());
       if (tasksSinDesviacion.length > 0) {
@@ -148,6 +156,7 @@ export default function OperarioView() {
         setIsSubmitting(false);
         return;
       }
+
 
       // Procesar tiempos para el backend
       const formattedTasks = tasks.map(t => ({

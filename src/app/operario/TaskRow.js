@@ -181,7 +181,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
 
       <div className="form-group" style={{ marginBottom: '1rem' }}>
         <label style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          Descripción de la tarea
+          <span>Descripción de la tarea <span style={{ color: '#dc2626' }}>*</span></span>
           {renderDictationBtn('description')}
         </label>
         <textarea
@@ -190,6 +190,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
           placeholder="Describa el trabajo o presione el micrófono..."
           value={task.description || ""}
           onChange={(e) => handleChange('description', e.target.value)}
+          style={{ borderColor: !task.description?.trim() ? '#fca5a5' : undefined }}
         />
       </div>
 
