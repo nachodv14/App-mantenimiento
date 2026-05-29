@@ -256,9 +256,10 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
 
           {plantSectors.length > 0 && (
             <select
-              style={{ width: '100%', padding: '0.6rem', borderColor: 'var(--border)', fontSize: '1rem', borderRadius: '4px', marginBottom: '0.75rem' }}
+              style={{ width: '100%', padding: '0.6rem', borderColor: 'var(--border)', fontSize: '1rem', borderRadius: '4px', marginBottom: '0.75rem', backgroundColor: task.lock_machine ? '#e5e7eb' : 'white', opacity: task.lock_machine ? 0.7 : 1 }}
               value={selectedSector}
               onChange={(e) => setSelectedSector(e.target.value)}
+              disabled={task.lock_machine}
             >
               <option value="">Todos los sectores...</option>
               {plantSectors.map(s => <option key={s} value={s}>{s}</option>)}
@@ -267,9 +268,10 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
 
           <select
             required
-            style={{ width: '100%', padding: '0.6rem', borderColor: 'var(--border)', fontSize: '1rem', borderRadius: '4px' }}
+            style={{ width: '100%', padding: '0.6rem', borderColor: 'var(--border)', fontSize: '1rem', borderRadius: '4px', backgroundColor: task.lock_machine ? '#e5e7eb' : 'white', opacity: task.lock_machine ? 0.7 : 1 }}
             value={task.machine_id || ""}
             onChange={(e) => handleMachineChange(e.target.value)}
+            disabled={task.lock_machine}
           >
             <option value="">{selectedSector ? `Máquinas de ${selectedSector}...` : "Buscar y seleccionar máquina..."}</option>
             {visibleMachines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}

@@ -111,7 +111,7 @@ export default function OperarioView() {
 
     setTasks([{
       record_type: 'Mantenimiento de máquina (OT)', 
-      description: `Reparación de ${m.machine_name}`, 
+      description: '', 
       start_time_h: '', start_time_m: '00', end_time_h: '', end_time_m: '00',
       start_out_date: sDate, start_out_h: sH, start_out_m: sM, end_out_date: '', end_out_h: '', end_out_m: '00',
       machine_id: m.machine_id, 
@@ -121,6 +121,7 @@ export default function OperarioView() {
       final_state: 'Funcional', 
       affects_availability: true,
       lock_start_out: true,
+      lock_machine: true,
       companions: []
     }]);
   };
