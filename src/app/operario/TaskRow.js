@@ -293,10 +293,10 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
 
             <div className="form-group">
               <label style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                Desviación detectada
+                <span>Desviación detectada <span style={{ color: '#dc2626' }}>*</span></span>
                 {renderDictationBtn('deviation')}
               </label>
-              <textarea placeholder="Detalle el problema detectado..." value={task.deviation || ""} onChange={(e) => handleChange('deviation', e.target.value)} />
+              <textarea required placeholder="Detalle el problema detectado..." value={task.deviation || ""} onChange={(e) => handleChange('deviation', e.target.value)} style={{ borderColor: !task.deviation?.trim() ? '#fca5a5' : undefined }} />
             </div>
 
             <div className="form-group">

@@ -141,6 +141,14 @@ export default function OperarioView() {
     setIsSubmitting(true);
 
     try {
+      // Validar que todos los registros de mantenimiento tengan desviación completada
+      const tasksSinDesviacion = tasks.filter(t => t.record_type === 'Mantenimiento de máquina (OT)' && !t.deviation?.trim());
+      if (tasksSinDesviacion.length > 0) {
+        alert(`Por favor, completa el campo "Desviación detectada" en ${tasksSinDesviacion.length > 1 ? 'todas las tareas' : 'la tarea'} antes de enviar.`);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Procesar tiempos para el backend
       const formattedTasks = tasks.map(t => ({
         ...t,
