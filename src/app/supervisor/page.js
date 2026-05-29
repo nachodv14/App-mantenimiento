@@ -13,6 +13,7 @@ export default function SupervisorView() {
   const [tasks, setTasks] = useState([]);
   const [historyTasks, setHistoryTasks] = useState([]);
   const [machinesOut, setMachinesOut] = useState([]);
+  const [machineAvailability, setMachineAvailability] = useState([]);
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -54,6 +55,10 @@ export default function SupervisorView() {
         const res = await fetch(`/api/machines/out-of-service?plant=${plant}`, { cache: "no-store" });
         const data = await res.json();
         if (data.machines) setMachinesOut(data.machines);
+      } else if (tab === "availability") {
+        const res = await fetch(`/api/machines/availability?plant=${plant}`, { cache: "no-store" });
+        const data = await res.json();
+        if (data.machines) setMachineAvailability(data.machines);
       } else if (tab === "metrics") {
         const res = await fetch(`/api/tareas/metrics?plant=${plant}`, { cache: "no-store" });
         const data = await res.json();
@@ -110,6 +115,27 @@ export default function SupervisorView() {
     }
   };
 
+  const handleAvailabilityChange = (id, field, value) => {
+    setMachineAvailability(prev => prev.map(m => m.id === id ? { ...m, [field]: value } : m));
+  };
+
+  const saveMachineAvailability = async (id, start, end) => {
+    try {
+      const res = await fetch('/api/machines/availability', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, productive_start: start, productive_end: end })
+      });
+      if (res.ok) {
+        alert("Horario actualizado correctamente");
+      } else {
+        alert("Error al actualizar horario");
+      }
+    } catch(e) {
+      alert("Error de red");
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'APPROVED': return <span style={{ background: '#dcfce7', color: '#166534', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>APROBADO</span>;
@@ -148,6 +174,12 @@ export default function SupervisorView() {
         style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1.1rem', cursor: 'pointer', fontWeight: activeTab === 'machines' ? 'bold' : 'normal', color: activeTab === 'machines' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'machines' ? '3px solid var(--primary)' : 'none' }}
       >
         Máquinas Paradas
+      </button>
+      <button
+        onClick={() => setActiveTab('availability')}
+        style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1.1rem', cursor: 'pointer', fontWeight: activeTab === 'availability' ? 'bold' : 'normal', color: activeTab === 'availability' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'availability' ? '3px solid var(--primary)' : 'none' }}
+      >
+        Disponibilidad máquinas
       </button>
       <button
         onClick={() => setActiveTab('metrics')}
@@ -314,6 +346,59 @@ export default function SupervisorView() {
                 ))}
                 {machinesOut.length === 0 && (
                   <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center' }}>No hay máquinas reportadas como fuera de servicio.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* TAB: DISPONIBILIDAD MÁQUINAS */}
+        {activeTab === 'availability' && (
+          <div className="card" style={{ padding: '1rem', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                  <th style={{ padding: '1rem' }}>Máquina</th>
+                  <th style={{ padding: '1rem' }}>Sector</th>
+                  <th style={{ padding: '1rem' }}>Inicio Productivo</th>
+                  <th style={{ padding: '1rem' }}>Fin Productivo</th>
+                  <th style={{ padding: '1rem' }}>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {machineAvailability.map(m => (
+                  <tr key={m.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: '1rem', fontWeight: 600 }}>{m.name}</td>
+                    <td style={{ padding: '1rem' }}>{m.sector}</td>
+                    <td style={{ padding: '1rem' }}>
+                      <input 
+                        type="time" 
+                        value={m.productive_start || ''} 
+                        onChange={e => handleAvailabilityChange(m.id, 'productive_start', e.target.value)}
+                        style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                      />
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      <input 
+                        type="time" 
+                        value={m.productive_end || ''} 
+                        onChange={e => handleAvailabilityChange(m.id, 'productive_end', e.target.value)}
+                        style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                      />
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      <button 
+                        onClick={() => saveMachineAvailability(m.id, m.productive_start, m.productive_end)}
+                        className="btn btn-primary"
+                        style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}
+                      >
+                        Guardar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {machineAvailability.length === 0 && (
+                  <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center' }}>No hay máquinas activas en esta planta.</td></tr>
                 )}
               </tbody>
             </table>
