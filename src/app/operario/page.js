@@ -289,7 +289,7 @@ export default function OperarioView() {
           {/* Panel Principal Derecho: Formulario */}
           <div className="card" style={{ flex: 2, minWidth: "320px" }}>
             <h2 className="card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span>Registro Diario de Actividades</span>
+              <span>REGISTRO DIARIO DE ACTIVIDADES</span>
               <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
                 <span style={{ fontSize: "0.875rem", color: "var(--text-muted)", background: "var(--bg-color)", padding: "0.25rem 0.5rem", borderRadius: "4px", fontWeight: 600 }}>Planta: {plant}</span>
               </div>
