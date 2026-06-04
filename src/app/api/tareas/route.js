@@ -46,6 +46,15 @@ export async function POST(request) {
         stopTimeMinutes = Math.round((new Date(taskEndOutTime) - new Date(taskStartOutTime)) / 60000);
       }
 
+      let finalDescription = t.description || '';
+      let finalDeviation = t.deviation || null;
+
+      if (t.affected_lines && Array.isArray(t.affected_lines) && t.affected_lines.length > 0) {
+        const linesText = `\n[Líneas afectadas: ${t.affected_lines.join(', ')}]`;
+        finalDescription += linesText;
+        if (finalDeviation) finalDeviation += linesText;
+      }
+
       const text = `
         INSERT INTO tasks (
           plant, task_date, shift, operator_id, companions,
@@ -68,12 +77,12 @@ export async function POST(request) {
         t.end_time,
         totalMinutes,
         manHours,
-        t.description || '',
+        finalDescription,
         t.record_type,
         t.category || null,
         t.machine_id || null,
         t.nature || null,
-        t.deviation || null,
+        finalDeviation,
         t.observaciones || null,
         t.affects_availability || false,
         t.final_state || null,
@@ -96,7 +105,7 @@ export async function POST(request) {
             ) VALUES (
               $1, $2, $3, $4, $5, false
             )
-          `, [data.plant, t.machine_id, data.operator_id, outStartTime, t.deviation || t.description]);
+          `, [data.plant, t.machine_id, data.operator_id, outStartTime, finalDeviation || finalDescription]);
         } else if (t.final_state === 'Funcional') {
           // La máquina se arregló: Tomar la hora manual ingresada o la de fin de tarea
           let resolutionTime = taskEndOutTime;

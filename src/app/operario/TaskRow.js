@@ -145,6 +145,9 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
     ? options.machines.filter(m => m.sector === selectedSector)
     : options.machines;
 
+  const selectedMachineObj = options.machines.find(m => m.id === task.machine_id);
+  const isDruidsRAM = plant === 'RAM' && selectedMachineObj && selectedMachineObj.name === 'DRUIDS01';
+
   const handleMachineChange = (val) => {
     handleChange('machine_id', val);
     if (val) {
@@ -381,6 +384,45 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
                       </div>
                     </div>
                   </div>
+
+                  {isDruidsRAM && (
+                    <div style={{ marginTop: '1rem', borderTop: '1px solid #ffeeba', paddingTop: '1rem' }}>
+                      <strong style={{ display: 'block', marginBottom: '0.5rem', color: '#856404' }}>Líneas afectadas (DRUIDS01):</strong>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontWeight: 600, color: '#b45309' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={task.affected_lines?.includes('Todo el equipo completo') || false} 
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                handleChange('affected_lines', ['Todo el equipo completo']);
+                              } else {
+                                handleChange('affected_lines', []);
+                              }
+                            }} 
+                          /> Todo el equipo completo
+                        </label>
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+                          <label key={`linea_${num}`} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', color: '#856404' }}>
+                            <input 
+                              type="checkbox" 
+                              checked={task.affected_lines?.includes(`Línea ${num}`) || false} 
+                              onChange={(e) => {
+                                const current = task.affected_lines || [];
+                                let newLines = current.filter(l => l !== 'Todo el equipo completo');
+                                if (e.target.checked) {
+                                  newLines.push(`Línea ${num}`);
+                                } else {
+                                  newLines = newLines.filter(l => l !== `Línea ${num}`);
+                                }
+                                handleChange('affected_lines', newLines);
+                              }} 
+                            /> Línea {num}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
