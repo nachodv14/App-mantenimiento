@@ -79,7 +79,7 @@ export async function runGoogleSheetsSync(targetPlant = null) {
         formatTime(t.start_out_time),
         formatTime(t.end_out_time),
         t.stop_time_minutes ? Number((t.stop_time_minutes / 60).toFixed(2)) : '',
-        t.final_state || '',
+        (t.task_type === 'Mantenimiento edilicio / varios' || t.task_type === 'Ausentismo / no productivo') ? '' : (t.final_state || ''),
         t.supervisor_obs || ''
       ];
     };
