@@ -63,7 +63,7 @@ export async function POST(request) {
           const s2 = timeToMins(t2.start_time);
           const e2 = timeToMins(t2.end_time);
           if (doOverlap(s1, e1, s2, e2)) {
-            return NextResponse.json({ error: `Conflicto: El renglón ${i+1} y el renglón ${j+1} se superponen en horario para uno de los operarios.` }, { status: 400 });
+            return NextResponse.json({ error: `Conflicto en fecha ${data.task_date}: El renglón ${i+1} (${t1.start_time} a ${t1.end_time}) y el renglón ${j+1} (${t2.start_time} a ${t2.end_time}) se superponen en horario para uno de los operarios.` }, { status: 400 });
           }
         }
       }
@@ -100,7 +100,9 @@ export async function POST(request) {
           const s2 = timeToMins(exTask.start_time);
           const e2 = timeToMins(exTask.end_time);
           if (doOverlap(s1, e1, s2, e2)) {
-            return NextResponse.json({ error: `Conflicto: El renglón ${i+1} se solapa con una tarea ya registrada en la base de datos para uno de los operarios.` }, { status: 400 });
+            const exStart = exTask.start_time ? exTask.start_time.substring(0, 5) : '';
+            const exEnd = exTask.end_time ? exTask.end_time.substring(0, 5) : '';
+            return NextResponse.json({ error: `Conflicto en fecha ${data.task_date}: El renglón ${i+1} (${t1.start_time} a ${t1.end_time}) se solapa con una tarea ya registrada en la base de datos (de ${exStart} a ${exEnd}) para uno de los operarios.` }, { status: 400 });
           }
         }
       }
