@@ -11,6 +11,101 @@ export async function POST(request) {
       return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 });
     }
 
+    const timeToMins = (timeStr) => {
+      if (!timeStr) return -1;
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const getSegments = (s, e) => {
+      if (s < 0 || e < 0) return [];
+      if (s < e) return [[s, e]];
+      if (s > e) return [[s, 1440], [0, e]];
+      return [];
+    };
+
+    const doOverlap = (s1, e1, s2, e2) => {
+      const segs1 = getSegments(s1, e1);
+      const segs2 = getSegments(s2, e2);
+      for (const a of segs1) {
+        for (const b of segs2) {
+          if (a[0] < b[1] && b[0] < a[1]) return true;
+        }
+      }
+      return false;
+    };
+
+    const getInvolvedUsers = (task) => {
+      const users = new Set([data.operator_id]);
+      if (Array.isArray(task.companions)) {
+        task.companions.forEach(c => users.add(c));
+      }
+      return users;
+    };
+
+    // 1. Validar solapamiento interno en el payload
+    for (let i = 0; i < data.tasks.length; i++) {
+      const t1 = data.tasks[i];
+      const u1 = getInvolvedUsers(t1);
+      const s1 = timeToMins(t1.start_time);
+      const e1 = timeToMins(t1.end_time);
+
+      for (let j = i + 1; j < data.tasks.length; j++) {
+        const t2 = data.tasks[j];
+        const u2 = getInvolvedUsers(t2);
+        
+        let shareUser = false;
+        for (const u of u1) {
+          if (u2.has(u)) { shareUser = true; break; }
+        }
+
+        if (shareUser) {
+          const s2 = timeToMins(t2.start_time);
+          const e2 = timeToMins(t2.end_time);
+          if (doOverlap(s1, e1, s2, e2)) {
+            return NextResponse.json({ error: `Conflicto: El renglón ${i+1} y el renglón ${j+1} se superponen en horario para uno de los operarios.` }, { status: 400 });
+          }
+        }
+      }
+    }
+
+    // 2. Validar solapamiento con base de datos (tareas ya cargadas)
+    const existingRes = await query(`
+      SELECT id, operator_id, companions, start_time, end_time 
+      FROM tasks 
+      WHERE task_date = $1 AND status != 'REJECTED'
+    `, [data.task_date]);
+    
+    const existingTasks = existingRes.rows;
+
+    for (let i = 0; i < data.tasks.length; i++) {
+      const t1 = data.tasks[i];
+      const u1 = getInvolvedUsers(t1);
+      const s1 = timeToMins(t1.start_time);
+      const e1 = timeToMins(t1.end_time);
+
+      for (const exTask of existingTasks) {
+        const exUsers = new Set([exTask.operator_id]);
+        try {
+          const exComps = typeof exTask.companions === 'string' ? JSON.parse(exTask.companions) : (exTask.companions || []);
+          exComps.forEach(c => exUsers.add(c));
+        } catch(e) {}
+
+        let shareUser = false;
+        for (const u of u1) {
+          if (exUsers.has(u)) { shareUser = true; break; }
+        }
+
+        if (shareUser) {
+          const s2 = timeToMins(exTask.start_time);
+          const e2 = timeToMins(exTask.end_time);
+          if (doOverlap(s1, e1, s2, e2)) {
+            return NextResponse.json({ error: `Conflicto: El renglón ${i+1} se solapa con una tarea ya registrada en la base de datos para uno de los operarios.` }, { status: 400 });
+          }
+        }
+      }
+    }
+
     // Función para calcular la diferencia de minutos entre dos horas (HH:MM)
     const calculateMinutes = (start, end) => {
       if (!start || !end) return null;
