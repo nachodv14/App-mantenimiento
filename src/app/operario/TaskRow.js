@@ -245,7 +245,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
             {(task.companions || []).map((comp, cIdx) => (
               <select key={cIdx} value={comp} onChange={(e) => handleCompanionChange(cIdx, e.target.value)}>
                 <option value="">Seleccione compañero...</option>
-                {operariosList.filter(o => o.id !== currentOperator).map(o => (
+                {operariosList.filter(o => o.id !== currentOperator && (!(task.companions || []).includes(o.id) || o.id === comp)).map(o => (
                   <option key={o.id} value={o.id}>{o.full_name}</option>
                 ))}
               </select>
