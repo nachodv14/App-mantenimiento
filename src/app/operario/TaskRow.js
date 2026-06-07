@@ -158,6 +158,20 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
     }
   };
 
+  const getTaskEndOptions = () => {
+    if (plant?.trim().toUpperCase() === 'RAM') return optH;
+    if (!task.start_time_h) return optH;
+    return optH.filter(h => h === "" || parseInt(h, 10) >= parseInt(task.start_time_h, 10));
+  };
+
+  const getDowntimeEndOptions = () => {
+    if (!task.start_out_date || !task.end_out_date || !task.start_out_h) return optH;
+    if (task.start_out_date === task.end_out_date) {
+      return optH.filter(h => h === "" || parseInt(h, 10) >= parseInt(task.start_out_h, 10));
+    }
+    return optH;
+  };
+
   return (
     <div className="card" style={{ background: '#f9fafb', padding: '1.5rem', marginTop: '1rem', border: '1px solid var(--border)' }}>
       <h4 style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
@@ -214,7 +228,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
           <label>Hasta</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
             <select required className="time-hasta-h" style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem' }} value={task.end_time_h || ""} onChange={(e) => handleChange('end_time_h', e.target.value)}>
-              {optH.map(h => <option key={`hh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
+              {getTaskEndOptions().map(h => <option key={`hh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
             </select>
             <b style={{ fontSize: '1.2rem' }}>:</b>
             <select required className="time-hasta-m" style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem' }} value={task.end_time_m || ""} onChange={(e) => handleChange('end_time_m', e.target.value)}>
@@ -375,7 +389,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
                       </label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
                         <select required={task.final_state === 'Funcional'} style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_h || ""} onChange={(e) => handleChange('end_out_h', e.target.value)} disabled={task.final_state === 'No Funcional'}>
-                          {optH.map(h => <option key={`eoh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
+                          {getDowntimeEndOptions().map(h => <option key={`eoh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
                         </select>
                         <b style={{ fontSize: '1.2rem', color: task.final_state === 'No Funcional' ? '#9ca3af' : 'black' }}>:</b>
                         <select required={task.final_state === 'Funcional'} style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_m || ""} onChange={(e) => handleChange('end_out_m', e.target.value)} disabled={task.final_state === 'No Funcional'}>
