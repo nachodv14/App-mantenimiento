@@ -146,7 +146,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
     : options.machines;
 
   const selectedMachineObj = options.machines.find(m => m.id === task.machine_id);
-  const isDruidsRAM = plant === 'RAM' && selectedMachineObj && selectedMachineObj.name === 'DRUIDS01';
+  const isDruidsRAM = plant?.trim().toUpperCase() === 'RAM' && selectedMachineObj && selectedMachineObj.name?.toUpperCase().replace(/\s/g, '').includes('DRUIDS01');
 
   const handleMachineChange = (val) => {
     handleChange('machine_id', val);
