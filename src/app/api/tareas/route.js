@@ -118,6 +118,64 @@ export async function POST(request) {
       return diff;
     };
 
+    const calculateProductiveDowntime = (faultStart, faultEnd, prodStartStr, prodEndStr) => {
+      if (!prodStartStr || !prodEndStr) return 0; // Si no hay horario, se asume 0 productiva
+      if (isNaN(faultStart.getTime()) || isNaN(faultEnd.getTime())) return 0;
+      if (faultStart >= faultEnd) return 0;
+
+      const parseTime = (str) => {
+        const [h, m] = str.split(':').map(Number);
+        return h * 60 + m;
+      };
+
+      const ps = parseTime(prodStartStr);
+      const pe = parseTime(prodEndStr);
+
+      const getProductiveSegmentsForDay = () => {
+        if (ps <= pe) {
+          return [[ps, pe]];
+        } else {
+          return [[0, pe], [ps, 1440]];
+        }
+      };
+      const prodSegments = getProductiveSegmentsForDay();
+
+      let totalDowntime = 0;
+      let currentStart = new Date(faultStart);
+      
+      while (currentStart < faultEnd) {
+        let currentDayEnd = new Date(currentStart);
+        currentDayEnd.setHours(24, 0, 0, 0); 
+        
+        let currentSegmentEnd = currentDayEnd < faultEnd ? currentDayEnd : faultEnd;
+        
+        const startMins = currentStart.getHours() * 60 + currentStart.getMinutes() + currentStart.getSeconds() / 60;
+        const endMins = currentSegmentEnd.getHours() * 60 + currentSegmentEnd.getMinutes() + currentSegmentEnd.getSeconds() / 60;
+        
+        const actualEndMins = (endMins === 0 && currentSegmentEnd > currentStart) ? 1440 : endMins;
+
+        for (const [pStart, pEnd] of prodSegments) {
+          const overlapStart = Math.max(startMins, pStart);
+          const overlapEnd = Math.min(actualEndMins, pEnd);
+          if (overlapStart < overlapEnd) {
+            totalDowntime += (overlapEnd - overlapStart);
+          }
+        }
+        currentStart = currentDayEnd;
+      }
+      return Math.round(totalDowntime);
+    };
+
+    // Obtener configuración de máquinas para la disponibilidad
+    const machineIds = data.tasks.filter(t => t.machine_id).map(t => t.machine_id);
+    let machineConfigs = {};
+    if (machineIds.length > 0) {
+      const mcRes = await query(`SELECT id, productive_start, productive_end FROM machines WHERE id = ANY($1)`, [machineIds]);
+      mcRes.rows.forEach(r => {
+        machineConfigs[r.id] = r;
+      });
+    }
+
     // Guardar cada tarea en la DB
     for (const t of data.tasks) {
       const totalMinutes = calculateMinutes(t.start_time, t.end_time);
@@ -139,8 +197,9 @@ export async function POST(request) {
       }
 
       let stopTimeMinutes = null;
-      if (t.affects_availability && taskStartOutTime && taskEndOutTime) {
-        stopTimeMinutes = Math.round((new Date(taskEndOutTime) - new Date(taskStartOutTime)) / 60000);
+      if (t.affects_availability && taskStartOutTime && taskEndOutTime && t.machine_id) {
+        const mc = machineConfigs[t.machine_id] || {};
+        stopTimeMinutes = calculateProductiveDowntime(new Date(taskStartOutTime), new Date(taskEndOutTime), mc.productive_start, mc.productive_end);
       }
 
       let finalDescription = t.description || '';
@@ -222,14 +281,17 @@ export async function POST(request) {
           if (resMachine.rows.length > 0) {
             const outStartTime = resMachine.rows[0].start_time;
             
+            const mc = machineConfigs[t.machine_id] || {};
+            const resolutionStopTime = calculateProductiveDowntime(new Date(outStartTime), new Date(resolutionTime), mc.productive_start, mc.productive_end);
+            
             // Poner TODOS los datos de la parada en la tarea ACTUAL (la de reparación)
             await query(`
               UPDATE tasks 
               SET start_out_time = $1, 
                   end_out_time = $2, 
-                  stop_time_minutes = ROUND(EXTRACT(EPOCH FROM ($2::timestamp with time zone - $1::timestamp with time zone))/60)
+                  stop_time_minutes = $4
               WHERE id = $3
-            `, [outStartTime, resolutionTime, taskId]);
+            `, [outStartTime, resolutionTime, taskId, resolutionStopTime]);
           }
         }
       }
