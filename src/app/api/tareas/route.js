@@ -140,17 +140,29 @@ export async function POST(request) {
       };
       const prodSegments = getProductiveSegmentsForDay();
 
+      const getArgMidnight = (d) => {
+        const argTime = d.getTime() - (3 * 60 * 60 * 1000);
+        const argDate = new Date(argTime);
+        argDate.setUTCHours(24, 0, 0, 0);
+        return new Date(argDate.getTime() + (3 * 60 * 60 * 1000));
+      };
+
+      const getArgMins = (d) => {
+        const argTime = d.getTime() - (3 * 60 * 60 * 1000);
+        const argDate = new Date(argTime);
+        return argDate.getUTCHours() * 60 + argDate.getUTCMinutes() + argDate.getUTCSeconds() / 60;
+      };
+
       let totalDowntime = 0;
       let currentStart = new Date(faultStart);
       
       while (currentStart < faultEnd) {
-        let currentDayEnd = new Date(currentStart);
-        currentDayEnd.setHours(24, 0, 0, 0); 
+        let currentDayEnd = getArgMidnight(currentStart);
         
         let currentSegmentEnd = currentDayEnd < faultEnd ? currentDayEnd : faultEnd;
         
-        const startMins = currentStart.getHours() * 60 + currentStart.getMinutes() + currentStart.getSeconds() / 60;
-        const endMins = currentSegmentEnd.getHours() * 60 + currentSegmentEnd.getMinutes() + currentSegmentEnd.getSeconds() / 60;
+        const startMins = getArgMins(currentStart);
+        const endMins = getArgMins(currentSegmentEnd);
         
         const actualEndMins = (endMins === 0 && currentSegmentEnd > currentStart) ? 1440 : endMins;
 
