@@ -12,6 +12,11 @@ export async function PUT(request, { params }) {
 
     // Si envían el status (Aprobar/Rechazar directo o con observación)
     if (data.status) {
+      const role = request.headers.get('x-user-role');
+      if (role === 'operario') {
+        return NextResponse.json({ error: 'Acceso denegado: Los operarios no pueden aprobar o rechazar tareas' }, { status: 403 });
+      }
+
       if (!['APPROVED', 'REJECTED'].includes(data.status)) {
         return NextResponse.json({ error: 'Status inválido' }, { status: 400 });
       }
