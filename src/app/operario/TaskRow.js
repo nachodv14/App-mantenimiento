@@ -174,14 +174,14 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
 
   return (
     <div className="card" style={{ background: '#f9fafb', padding: '1.5rem', marginTop: '1rem', border: '1px solid var(--border)' }}>
-      <h4 style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
-        <span>Renglón {index + 1}</span>
+      <h3 style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', fontWeight: 'bold' }}>
+        <span>TAREA {index + 1}</span>
         {index > 0 && (
-          <button type="button" onClick={() => removeTask(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+          <button type="button" onClick={() => removeTask(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>
             &times; Quitar
           </button>
         )}
-      </h4>
+      </h3>
 
       <div className="form-group" style={{ marginBottom: '1rem', borderBottom: '1px dashed var(--border)', paddingBottom: '1rem' }}>
         <label style={{ fontWeight: 600 }}>Tipo de registro</label>
