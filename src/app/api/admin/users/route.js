@@ -10,7 +10,7 @@ export async function GET() {
       await query('ALTER TABLE users ADD COLUMN last_login timestamp with time zone;');
     } catch (e) {} // Ignorar si ya existe
 
-    const res = await query('SELECT id, username, full_name, role, plant, is_active, last_login FROM users ORDER BY role, plant, full_name');
+    const res = await query("SELECT id, username, full_name, role, plant, is_active, last_login FROM users WHERE username != 'admin' ORDER BY role, plant, full_name");
     return NextResponse.json({ users: res.rows });
   } catch (error) {
     console.error('Error fetching users:', error);

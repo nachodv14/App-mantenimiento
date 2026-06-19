@@ -34,7 +34,12 @@ export default function SupervisorView() {
     }
   }, [router, activeTab]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error(e);
+    }
     sessionStorage.removeItem("mantenimiento_user");
     sessionStorage.removeItem("mantenimiento_current_plant");
     router.push('/');
@@ -81,7 +86,7 @@ export default function SupervisorView() {
       if (res.ok) {
         setTasks(prev => prev.filter(t => t.id !== id));
         // Limpiar la observacion
-        setQuickObs(prev => { const n = {...prev}; delete n[id]; return n; });
+        setQuickObs(prev => { const n = { ...prev }; delete n[id]; return n; });
       } else {
         alert("Hubo un error al actualizar la tarea");
       }
@@ -131,7 +136,7 @@ export default function SupervisorView() {
       } else {
         alert("Error al actualizar horario");
       }
-    } catch(e) {
+    } catch (e) {
       alert("Error de red");
     }
   };
@@ -250,14 +255,14 @@ export default function SupervisorView() {
                           <strong>⚠️ Desviación:</strong> {t.deviation}
                         </div>
                       )}
-                      
+
                       <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
-                        <input 
-                          type="text" 
-                          placeholder="Agregar observación (opcional)..." 
+                        <input
+                          type="text"
+                          placeholder="Agregar observación (opcional)..."
                           style={{ width: '100%', padding: '0.5rem', marginBottom: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                           value={quickObs[t.id] || ''}
-                          onChange={(e) => setQuickObs({...quickObs, [t.id]: e.target.value})}
+                          onChange={(e) => setQuickObs({ ...quickObs, [t.id]: e.target.value })}
                         />
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button onClick={() => updateTaskStatus(t.id, 'APPROVED')} className="btn btn-success" style={{ flex: 1, padding: '0.5rem', fontSize: '0.9rem' }}>✅ Aprobar</button>
@@ -371,23 +376,23 @@ export default function SupervisorView() {
                     <td style={{ padding: '1rem', fontWeight: 600 }}>{m.name}</td>
                     <td style={{ padding: '1rem' }}>{m.sector}</td>
                     <td style={{ padding: '1rem' }}>
-                      <input 
-                        type="time" 
-                        value={m.productive_start || ''} 
+                      <input
+                        type="time"
+                        value={m.productive_start || ''}
                         onChange={e => handleAvailabilityChange(m.id, 'productive_start', e.target.value)}
                         style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                       />
                     </td>
                     <td style={{ padding: '1rem' }}>
-                      <input 
-                        type="time" 
-                        value={m.productive_end || ''} 
+                      <input
+                        type="time"
+                        value={m.productive_end || ''}
                         onChange={e => handleAvailabilityChange(m.id, 'productive_end', e.target.value)}
                         style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                       />
                     </td>
                     <td style={{ padding: '1rem' }}>
-                      <button 
+                      <button
                         onClick={() => saveMachineAvailability(m.id, m.productive_start, m.productive_end)}
                         className="btn btn-primary"
                         style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { signToken } from '@/lib/auth';
 
 export async function POST(request) {
   try {
@@ -10,14 +11,9 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Faltan credenciales' }, { status: 400 });
     }
 
-    // 1. Check if it's the Admin
-    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-      return NextResponse.json({
-        user: { role: 'admin', full_name: 'Administrador Principal', username }
-      });
-    }
+    let userPayload = null;
 
-    // 2. Check in the users table using password_hash
+    // Buscar en la base de datos
     const result = await query('SELECT id, username, password_hash, full_name, role, plant, is_active FROM users WHERE username = $1', [username]);
 
     if (result.rows.length === 0) {
@@ -36,6 +32,7 @@ export async function POST(request) {
     }
 
     const { password_hash, ...safeUser } = user;
+    userPayload = safeUser;
 
     try {
       await query('UPDATE users SET last_login = $1 WHERE id = $2', [new Date().toISOString(), user.id]);
@@ -43,7 +40,21 @@ export async function POST(request) {
       console.error("Error updating last_login:", e);
     }
 
-    return NextResponse.json({ user: safeUser });
+    // Generate JWT Token
+    const token = await signToken(userPayload);
+
+    const response = NextResponse.json({ user: userPayload });
+
+    // Set HttpOnly Cookie
+    response.cookies.set('mantenimiento_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 12 // 12 hours
+    });
+
+    return response;
 
   } catch (error) {
     console.error('Login error:', error);

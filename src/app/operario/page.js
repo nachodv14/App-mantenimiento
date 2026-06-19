@@ -90,7 +90,7 @@ export default function OperarioView() {
     setTasks(prev => {
       let nextStartH = '';
       let nextStartM = '00';
-      
+
       if (prev.length > 0) {
         const lastTask = prev[prev.length - 1];
         if (lastTask.end_time_h) nextStartH = lastTask.end_time_h;
@@ -112,24 +112,24 @@ export default function OperarioView() {
     if (m.start_time_fmt) {
       const parts = m.start_time_fmt.split(' ');
       if (parts.length === 2) {
-         const [day, month, year] = parts[0].split('/');
-         sDate = `${year}-${month}-${day}`;
-         const [hh, mm] = parts[1].split(':');
-         sH = hh;
-         sM = mm;
+        const [day, month, year] = parts[0].split('/');
+        sDate = `${year}-${month}-${day}`;
+        const [hh, mm] = parts[1].split(':');
+        sH = hh;
+        sM = mm;
       }
     }
 
     setTasks([{
-      record_type: 'Mantenimiento de máquina (OT)', 
-      description: '', 
+      record_type: 'Mantenimiento de máquina (OT)',
+      description: '',
       start_time_h: '', start_time_m: '00', end_time_h: '', end_time_m: '00',
       start_out_date: sDate, start_out_h: sH, start_out_m: sM, end_out_date: '', end_out_h: '', end_out_m: '00',
-      machine_id: m.machine_id, 
-      nature: 'Falla', 
-      deviation: m.deviation || '', 
-      category: '', 
-      final_state: 'Funcional', 
+      machine_id: m.machine_id,
+      nature: 'Falla',
+      deviation: m.deviation || '',
+      category: '',
+      final_state: 'Funcional',
       affects_availability: true,
       lock_start_out: true,
       lock_machine: true,
@@ -208,7 +208,12 @@ export default function OperarioView() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error(e);
+    }
     sessionStorage.removeItem("mantenimiento_user");
     sessionStorage.removeItem("mantenimiento_current_plant");
     router.push('/');
@@ -250,7 +255,7 @@ export default function OperarioView() {
                   {todayTasks.map(t => (
                     <li key={t.id} style={{ padding: '0.75rem', borderBottom: '1px solid #e5e7eb', fontSize: '0.9rem' }}>
                       <strong style={{ color: 'var(--primary)', display: 'block' }}>{t.task_type}</strong>
-                      {t.machine_name && <span>{t.machine_name} <br/></span>}
+                      {t.machine_name && <span>{t.machine_name} <br /></span>}
                       <span style={{ color: '#64748b' }}>{t.start_time_fmt} - {t.end_time_fmt}</span>
                     </li>
                   ))}
@@ -271,10 +276,10 @@ export default function OperarioView() {
                     <li key={m.id} style={{ padding: '0.75rem', borderBottom: '1px solid #fecaca', fontSize: '0.9rem' }}>
                       <strong style={{ color: '#b91c1c', display: 'block' }}>{m.machine_name}</strong>
                       <span style={{ color: '#991b1b' }}>Desde: {m.start_time_fmt}</span>
-                      <button 
-                        type="button" 
-                        onClick={() => addTaskForMachine(m)} 
-                        className="btn btn-primary" 
+                      <button
+                        type="button"
+                        onClick={() => addTaskForMachine(m)}
+                        className="btn btn-primary"
                         style={{ display: 'block', marginTop: '0.5rem', width: '100%', fontSize: '0.8rem', padding: '0.4rem', background: '#dc2626', borderColor: '#b91c1c' }}
                       >
                         🛠️ Generar OT y Poner Funcional
@@ -343,7 +348,7 @@ export default function OperarioView() {
                     const sm = parseInt(t.start_time_m, 10) || 0;
                     const eh = parseInt(t.end_time_h, 10) || 0;
                     const em = parseInt(t.end_time_m, 10) || 0;
-                    
+
                     let diff = (eh * 60 + em) - (sh * 60 + sm);
                     if (diff < 0) diff += 24 * 60; // cruza la medianoche
                     total += diff;

@@ -22,6 +22,16 @@ export default function AdminDashboard() {
   const [formData, setFormData] = useState({ username: "", password: "", full_name: "", role: "operario", plant: "", is_active: true });
   const [saving, setSaving] = useState(false);
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error(e);
+    }
+    sessionStorage.removeItem("mantenimiento_user");
+    router.push("/");
+  };
+
   useEffect(() => {
     const userRaw = sessionStorage.getItem("mantenimiento_user");
     if (!userRaw) {
