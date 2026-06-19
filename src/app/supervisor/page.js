@@ -19,6 +19,11 @@ export default function SupervisorView() {
   const [editingTask, setEditingTask] = useState(null);
   const [quickObs, setQuickObs] = useState({});
 
+  // Filtros Pendientes
+  const [pendingDateFrom, setPendingDateFrom] = useState("");
+  const [pendingDateTo, setPendingDateTo] = useState("");
+  const [pendingOperator, setPendingOperator] = useState("");
+
   useEffect(() => {
     const savedUser = sessionStorage.getItem("mantenimiento_user");
     if (savedUser) {
@@ -195,6 +200,21 @@ export default function SupervisorView() {
     </div>
   );
 
+  const uniqueOperators = [...new Set(tasks.map(t => t.operator_name))].filter(Boolean);
+
+  const filteredPendingTasks = tasks.filter(t => {
+    let match = true;
+    if (pendingOperator) {
+      match = match && t.operator_name === pendingOperator;
+    }
+    if (t.task_date) {
+      const dateStr = t.task_date.slice(0, 10);
+      if (pendingDateFrom && dateStr < pendingDateFrom) match = false;
+      if (pendingDateTo && dateStr > pendingDateTo) match = false;
+    }
+    return match;
+  });
+
   return (
     <>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 5%', background: '#1e293b', color: '#fff' }}>
@@ -219,15 +239,34 @@ export default function SupervisorView() {
 
         {/* TAB: PENDIENTES */}
         {activeTab === 'pending' && (
-          tasks.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
-              <h3>¡Al día!</h3>
-              <p>No hay registros diarios pendientes de aprobación.</p>
+          <>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.2rem', color: '#64748b' }}>Desde fecha</label>
+                <input type="date" value={pendingDateFrom} onChange={(e) => setPendingDateFrom(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.2rem', color: '#64748b' }}>Hasta fecha</label>
+                <input type="date" value={pendingDateTo} onChange={(e) => setPendingDateTo(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: '200px' }}>
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.2rem', color: '#64748b' }}>Operario</label>
+                <select value={pendingOperator} onChange={(e) => setPendingOperator(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                  <option value="">Todos los operarios</option>
+                  {uniqueOperators.map(op => <option key={op} value={op}>{op}</option>)}
+                </select>
+              </div>
             </div>
-          ) : (
-            <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fill, minmax(450px, 1fr))' }}>
-              {tasks.map(t => (
+
+            {filteredPendingTasks.length === 0 ? (
+              <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
+                <h3>¡Al día!</h3>
+                <p>No hay registros diarios pendientes con estos filtros.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fill, minmax(450px, 1fr))' }}>
+                {filteredPendingTasks.map(t => (
                 <div key={t.id} className="card" style={{ borderLeft: '4px solid #facc15', margin: 0, padding: '1.25rem' }}>
                   <div style={{ display: 'block' }}>
                     <div style={{ width: '100%' }}>
@@ -273,8 +312,9 @@ export default function SupervisorView() {
                   </div>
                 </div>
               ))}
-            </div>
-          )
+              </div>
+            )}
+          </>
         )}
 
         {/* TAB: HISTORIAL */}
