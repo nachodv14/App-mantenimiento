@@ -68,6 +68,89 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
     return hh.endsWith('.00') ? hh.slice(0, -3) : hh;
   };
 
+  const calculateProductiveDowntime = (faultStart, faultEnd, prodStartStr, prodEndStr) => {
+    if (!prodStartStr || !prodEndStr) return 0;
+    if (isNaN(faultStart.getTime()) || isNaN(faultEnd.getTime())) return 0;
+    if (faultStart >= faultEnd) return 0;
+
+    const parseTime = (str) => {
+      const [h, m] = str.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const ps = parseTime(prodStartStr);
+    const pe = parseTime(prodEndStr);
+
+    const getProductiveSegmentsForDay = () => {
+      if (ps <= pe) {
+        return [[ps, pe]];
+      } else {
+        return [[0, pe], [ps, 1440]];
+      }
+    };
+    const prodSegments = getProductiveSegmentsForDay();
+
+    const getArgMidnight = (d) => {
+      const argTime = d.getTime() - (3 * 60 * 60 * 1000);
+      const argDate = new Date(argTime);
+      argDate.setUTCHours(24, 0, 0, 0);
+      return new Date(argDate.getTime() + (3 * 60 * 60 * 1000));
+    };
+
+    const getArgMins = (d) => {
+      const argTime = d.getTime() - (3 * 60 * 60 * 1000);
+      const argDate = new Date(argTime);
+      return argDate.getUTCHours() * 60 + argDate.getUTCMinutes() + argDate.getUTCSeconds() / 60;
+    };
+
+    let totalDowntime = 0;
+    let currentStart = new Date(faultStart);
+    
+    while (currentStart < faultEnd) {
+      let currentDayEnd = getArgMidnight(currentStart);
+      
+      let currentSegmentEnd = currentDayEnd < faultEnd ? currentDayEnd : faultEnd;
+      
+      const startMins = getArgMins(currentStart);
+      const endMins = getArgMins(currentSegmentEnd);
+      
+      const actualEndMins = (endMins === 0 && currentSegmentEnd > currentStart) ? 1440 : endMins;
+
+      for (const [pStart, pEnd] of prodSegments) {
+        const overlapStart = Math.max(startMins, pStart);
+        const overlapEnd = Math.min(actualEndMins, pEnd);
+        if (overlapStart < overlapEnd) {
+          totalDowntime += (overlapEnd - overlapStart);
+        }
+      }
+      currentStart = currentDayEnd;
+    }
+    return Math.round(totalDowntime);
+  };
+
+  const getDowntimeDuration = () => {
+    if (!task.start_out_date || !task.start_out_h || !task.start_out_m) return '0h 0m';
+    if (!task.end_out_date || !task.end_out_h || !task.end_out_m) return '0h 0m';
+    if (!task.machine_id) return '0h 0m';
+
+    try {
+      const startD = new Date(`${task.start_out_date}T${task.start_out_h}:${task.start_out_m}:00-03:00`);
+      const endD = new Date(`${task.end_out_date}T${task.end_out_h}:${task.end_out_m}:00-03:00`);
+      
+      const mach = options.machines.find(m => m.id === task.machine_id);
+      if (!mach || !mach.productive_start || !mach.productive_end) return '0h 0m';
+
+      const diffMins = calculateProductiveDowntime(startD, endD, mach.productive_start, mach.productive_end);
+      if (diffMins <= 0) return '0h 0m';
+      
+      const hours = Math.floor(diffMins / 60);
+      const mins = Math.round(diffMins % 60);
+      return `${hours}h ${mins}m`;
+    } catch (e) {
+      return '0h 0m';
+    }
+  };
+
   const handleVoiceDictation = (field) => {
     if (dictatingField === field) {
       if (recognitionRef.current) {
@@ -174,14 +257,14 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
 
   return (
     <div className="card" style={{ background: '#f9fafb', padding: '1.5rem', marginTop: '1rem', border: '1px solid var(--border)' }}>
-      <h4 style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
-        <span>Renglón {index + 1}</span>
+      <h3 style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', fontWeight: 'bold' }}>
+        <span>TAREA {index + 1}</span>
         {index > 0 && (
-          <button type="button" onClick={() => removeTask(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+          <button type="button" onClick={() => removeTask(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '1rem' }}>
             &times; Quitar
           </button>
         )}
-      </h4>
+      </h3>
 
       <div className="form-group" style={{ marginBottom: '1rem', borderBottom: '1px dashed var(--border)', paddingBottom: '1rem' }}>
         <label style={{ fontWeight: 600 }}>Tipo de registro</label>
@@ -398,6 +481,15 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
                       </div>
                     </div>
                   </div>
+
+                  {task.start_out_date && task.end_out_date && task.end_out_h && task.machine_id && (
+                    <div style={{ marginTop: '0.5rem', marginBottom: '1rem', background: '#e0f2fe', padding: '0.75rem', borderRadius: '4px', border: '1px solid #bae6fd' }}>
+                      <label style={{ margin: 0, fontSize: '0.95rem', color: '#0369a1' }}>
+                        Tiempo de parada neto: <span style={{ fontWeight: 700, color: '#0284c7' }}>{getDowntimeDuration()}</span>
+                      </label>
+                    </div>
+                  )}
+
 
                   {isDruidsRAM && (
                     <div style={{ marginTop: '1rem', borderTop: '1px solid #ffeeba', paddingTop: '1rem' }}>
