@@ -7,7 +7,7 @@ export async function GET(request) {
 
   try {
     const machines = plant 
-      ? await query('SELECT id, name, sector FROM machines WHERE plant = $1 AND is_active = true ORDER BY name ASC;', [plant])
+      ? await query('SELECT id, name, sector, productive_start, productive_end FROM machines WHERE plant = $1 AND is_active = true ORDER BY name ASC;', [plant])
       : { rows: [] };
       
     const recordTypes = await query('SELECT name FROM record_types ORDER BY id ASC;');
