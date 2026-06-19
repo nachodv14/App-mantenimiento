@@ -67,7 +67,16 @@ export default function OperarioView() {
       const dataT = await resT.json();
       if (dataT.tasks) {
         const targetDate = f || new Date().toISOString().split('T')[0];
-        setTodayTasks(dataT.tasks.filter(t => t.operator_id === uId && t.task_date && t.task_date.startsWith(targetDate)));
+        setTodayTasks(dataT.tasks.filter(t => {
+          let hasUser = t.operator_id === uId;
+          if (!hasUser) {
+            try {
+              const comps = typeof t.companions === 'string' ? JSON.parse(t.companions) : (t.companions || []);
+              if (Array.isArray(comps) && comps.includes(uId)) hasUser = true;
+            } catch(e){}
+          }
+          return hasUser && t.task_date && t.task_date.startsWith(targetDate);
+        }));
       }
       // Máquinas caídas
       const resM = await fetch(`/api/machines/out-of-service?plant=${p}`);
