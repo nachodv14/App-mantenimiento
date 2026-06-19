@@ -53,7 +53,10 @@ export async function runGoogleSheetsSync(targetPlant = null) {
         if (!dateString) return '';
         try {
           const d = new Date(dateString);
-          return d.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
+          const day = String(d.getUTCDate()).padStart(2, '0');
+          const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+          const year = d.getUTCFullYear();
+          return `${day}/${month}/${year}`;
         } catch (e) { return dateString; }
       }
 
