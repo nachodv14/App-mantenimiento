@@ -255,6 +255,19 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
     return optH;
   };
 
+  const getOptM = (currentVal) => {
+    let options = [...optM];
+    if (currentVal && !options.includes(currentVal)) {
+      options.push(currentVal);
+      options.sort((a, b) => {
+        if (a === "") return -1;
+        if (b === "") return 1;
+        return parseInt(a, 10) - parseInt(b, 10);
+      });
+    }
+    return options;
+  };
+
   return (
     <div className="card" style={{ background: '#f9fafb', padding: '1.5rem', marginTop: '1rem', border: '1px solid var(--border)' }}>
       <h3 style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', fontWeight: 'bold' }}>
@@ -303,7 +316,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
             </select>
             <b style={{ fontSize: '1.2rem' }}>:</b>
             <select required className="time-desde-m" style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem' }} value={task.start_time_m || ""} onChange={(e) => handleChange('start_time_m', e.target.value)}>
-              {optM.map(m => <option key={`dm_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
+              {getOptM(task.start_time_m).map(m => <option key={`dm_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
             </select>
           </div>
         </div>
@@ -315,7 +328,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
             </select>
             <b style={{ fontSize: '1.2rem' }}>:</b>
             <select required className="time-hasta-m" style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem' }} value={task.end_time_m || ""} onChange={(e) => handleChange('end_time_m', e.target.value)}>
-              {optM.map(m => <option key={`hm_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
+              {getOptM(task.end_time_m).map(m => <option key={`hm_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
             </select>
           </div>
         </div>
@@ -462,7 +475,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
                         </select>
                         <b style={{ fontSize: '1.2rem', color: task.lock_start_out ? '#9ca3af' : 'black' }}>:</b>
                         <select required={task.final_state === 'No Funcional' && !task.lock_start_out} disabled={task.lock_start_out} style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.lock_start_out ? '#e5e7eb' : 'white', opacity: task.lock_start_out ? 0.7 : 1 }} value={task.start_out_m || ""} onChange={(e) => handleChange('start_out_m', e.target.value)}>
-                          {optM.map(m => <option key={`som_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
+                          {getOptM(task.start_out_m).map(m => <option key={`som_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
                         </select>
                       </div>
                     </div>
@@ -476,7 +489,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
                         </select>
                         <b style={{ fontSize: '1.2rem', color: task.final_state === 'No Funcional' ? '#9ca3af' : 'black' }}>:</b>
                         <select required={task.final_state === 'Funcional'} style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem', backgroundColor: task.final_state === 'No Funcional' ? '#e5e7eb' : 'white', opacity: task.final_state === 'No Funcional' ? 0.6 : 1 }} value={task.end_out_m || ""} onChange={(e) => handleChange('end_out_m', e.target.value)} disabled={task.final_state === 'No Funcional'}>
-                          {optM.map(m => <option key={`eom_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
+                          {getOptM(task.end_out_m).map(m => <option key={`eom_${m}`} value={m}>{m === "" ? "MM" : m}</option>)}
                         </select>
                       </div>
                     </div>
