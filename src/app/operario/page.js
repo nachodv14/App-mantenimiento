@@ -11,6 +11,7 @@ export default function OperarioView() {
   const [fecha, setFecha] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const [turno, setTurno] = useState("");
+  const [shiftConfigs, setShiftConfigs] = useState([]);
 
   const [operariosList, setOperariosList] = useState([]);
   const [options, setOptions] = useState({ machines: [], recordTypes: [], natureTypes: [], buildingCategories: [], absenceReasons: [] });
@@ -53,6 +54,13 @@ export default function OperarioView() {
             start_out_date: '', start_out_h: '', start_out_m: '00', end_out_date: '', end_out_h: '', end_out_m: '00',
             machine_id: '', nature: '', deviation: '', category: '', final_state: 'Funcional', companions: []
           }] : prev);
+        });
+
+      // Cargar configuraciones de turnos
+      fetch(`/api/shifts?plant=${savedPlant}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.shifts) setShiftConfigs(data.shifts);
         });
 
       fetchSidebarData(savedPlant, uId);
@@ -321,6 +329,8 @@ export default function OperarioView() {
                     <option value="">Seleccione...</option>
                     <option value="Mañana">Mañana</option>
                     <option value="Tarde">Tarde</option>
+                    <option value="Noche">Noche</option>
+                    <option value="Cruce de turnos">Cruce de turnos</option>
                   </select>
                 </div>
               </div>
@@ -345,6 +355,8 @@ export default function OperarioView() {
                     plant={plant}
                     operariosList={operariosList}
                     currentOperator={currentUser?.id}
+                    turnoSeleccionado={turno}
+                    shiftConfigs={shiftConfigs}
                   />
                 ))}
               </div>

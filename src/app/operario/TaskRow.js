@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 const optH = ["", ...Array.from({ length: 24 }).map((_, i) => String(i).padStart(2, '0'))];
 const optM = ["", "00", "10", "20", "30", "40", "50"];
 
-export default function TaskRow({ index, task, updateTask, removeTask, options, plant, operariosList, currentOperator }) {
+export default function TaskRow({ index, task, updateTask, removeTask, options, plant, operariosList, currentOperator, turnoSeleccionado, shiftConfigs }) {
   const isMaquina = task.record_type === 'Mantenimiento de máquina (OT)';
   const isEdilicio = task.record_type === 'Mantenimiento edilicio / varios';
   const isAusentismo = task.record_type === 'Ausentismo / no productivo';
@@ -241,10 +241,30 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
     }
   };
 
+  const getShiftOptH = () => {
+    if (!turnoSeleccionado || turnoSeleccionado === 'Cruce de turnos' || !shiftConfigs) return optH;
+    const conf = shiftConfigs.find(s => s.shift_name.includes(turnoSeleccionado));
+    if (!conf || !conf.start_time || !conf.end_time) return optH;
+
+    const startH = parseInt(conf.start_time.split(':')[0], 10);
+    const endH = parseInt(conf.end_time.split(':')[0], 10);
+
+    return optH.filter(h => {
+      if (h === "") return true;
+      const hour = parseInt(h, 10);
+      if (startH <= endH) {
+        return hour >= startH && hour <= endH;
+      } else {
+        return hour >= startH || hour <= endH;
+      }
+    });
+  };
+
   const getTaskEndOptions = () => {
-    if (plant?.trim().toUpperCase() === 'RAM') return optH;
-    if (!task.start_time_h) return optH;
-    return optH.filter(h => h === "" || parseInt(h, 10) >= parseInt(task.start_time_h, 10));
+    const baseOpt = getShiftOptH();
+    if (plant?.trim().toUpperCase() === 'RAM') return baseOpt;
+    if (!task.start_time_h) return baseOpt;
+    return baseOpt.filter(h => h === "" || parseInt(h, 10) >= parseInt(task.start_time_h, 10));
   };
 
   const getDowntimeEndOptions = () => {
@@ -312,7 +332,7 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
           <label>Desde</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
             <select required className="time-desde-h" style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem' }} value={task.start_time_h || ""} onChange={(e) => handleChange('start_time_h', e.target.value)}>
-              {optH.map(h => <option key={`dh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
+              {getShiftOptH().map(h => <option key={`dh_${h}`} value={h}>{h === "" ? "HH" : h}</option>)}
             </select>
             <b style={{ fontSize: '1.2rem' }}>:</b>
             <select required className="time-desde-m" style={{ flex: 1, padding: '0.6rem', textAlign: 'center', fontSize: '1.1rem' }} value={task.start_time_m || ""} onChange={(e) => handleChange('start_time_m', e.target.value)}>

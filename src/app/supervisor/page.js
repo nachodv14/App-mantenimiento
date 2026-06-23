@@ -19,6 +19,11 @@ export default function SupervisorView() {
   const [editingTask, setEditingTask] = useState(null);
   const [quickObs, setQuickObs] = useState({});
   const [operariosList, setOperariosList] = useState([]);
+  const [shiftConfigs, setShiftConfigs] = useState([
+    { shift_name: 'Turno Mañana', start_time: '06:00', end_time: '14:00' },
+    { shift_name: 'Turno Tarde', start_time: '14:00', end_time: '22:00' },
+    { shift_name: 'Turno Noche', start_time: '22:00', end_time: '06:00' }
+  ]);
 
   // Filtros Pendientes
   const [pendingDateFrom, setPendingDateFrom] = useState("");
@@ -79,6 +84,12 @@ export default function SupervisorView() {
         const res = await fetch(`/api/tareas/metrics?plant=${plant}`, { cache: "no-store" });
         const data = await res.json();
         if (data) setMetrics(data);
+      } else if (tab === "shifts") {
+        const res = await fetch(`/api/shifts?plant=${plant}`, { cache: "no-store" });
+        const data = await res.json();
+        if (data.shifts && data.shifts.length > 0) {
+          setShiftConfigs(data.shifts);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -217,6 +228,12 @@ export default function SupervisorView() {
         style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1.1rem', cursor: 'pointer', fontWeight: activeTab === 'metrics' ? 'bold' : 'normal', color: activeTab === 'metrics' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'metrics' ? '3px solid var(--primary)' : 'none' }}
       >
         Estadísticas (Mes)
+      </button>
+      <button
+        onClick={() => setActiveTab('shifts')}
+        style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1.1rem', cursor: 'pointer', fontWeight: activeTab === 'shifts' ? 'bold' : 'normal', color: activeTab === 'shifts' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'shifts' ? '3px solid var(--primary)' : 'none' }}
+      >
+        Horarios de Turnos
       </button>
     </div>
   );
@@ -578,6 +595,62 @@ export default function SupervisorView() {
           </div>
         </div>
       )}
+        {/* TAB: SHIFTS */}
+        {activeTab === 'shifts' && (
+          <div className="card" style={{ padding: '2rem' }}>
+            <h2 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Horarios de Turnos - {user.plant}</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Configura el rango horario que abarca cada turno en esta planta. Al seleccionar un turno, los operarios solo podrán cargar horas dentro del rango definido.</p>
+            
+            <div style={{ display: 'grid', gap: '1.5rem', maxWidth: '600px' }}>
+              {shiftConfigs.map((sc, i) => (
+                <div key={sc.shift_name} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', alignItems: 'flex-end', background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div>
+                    <strong style={{ display: 'block', marginBottom: '0.5rem', fontSize: '1.1rem' }}>{sc.shift_name}</strong>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.2rem', color: '#64748b' }}>Hora Inicio</label>
+                    <input type="time" value={sc.start_time} onChange={(e) => {
+                      const newConfigs = [...shiftConfigs];
+                      newConfigs[i].start_time = e.target.value;
+                      setShiftConfigs(newConfigs);
+                    }} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.2rem', color: '#64748b' }}>Hora Fin</label>
+                    <input type="time" value={sc.end_time} onChange={(e) => {
+                      const newConfigs = [...shiftConfigs];
+                      newConfigs[i].end_time = e.target.value;
+                      setShiftConfigs(newConfigs);
+                    }} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                  </div>
+                </div>
+              ))}
+              
+              <button 
+                className="btn btn-primary" 
+                style={{ marginTop: '1rem', padding: '0.75rem', fontSize: '1.1rem' }}
+                onClick={async () => {
+                  try {
+                    setLoading(true);
+                    await fetch('/api/shifts', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ plant: user.plant, shifts: shiftConfigs })
+                    });
+                    alert('Horarios guardados correctamente');
+                  } catch(e) {
+                    alert('Error al guardar');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                Guardar Horarios
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
     </>
   );
 }
