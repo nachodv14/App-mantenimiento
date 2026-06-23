@@ -224,9 +224,9 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
   // Sectores de las máquinas de esta planta
   const plantSectors = [...new Set(options.machines.filter(m => m.sector).map(m => m.sector))].sort();
 
-  const visibleMachines = selectedSector
+  const visibleMachines = (selectedSector
     ? options.machines.filter(m => m.sector === selectedSector)
-    : options.machines;
+    : [...options.machines]).sort((a, b) => a.name.localeCompare(b.name));
 
   const selectedMachineObj = options.machines.find(m => m.id === task.machine_id);
   const isDruidsRAM = plant?.trim().toUpperCase() === 'RAM' && selectedMachineObj && selectedMachineObj.name?.toUpperCase().replace(/\s/g, '').includes('DRUIDS01');
