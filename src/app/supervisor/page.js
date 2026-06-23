@@ -18,6 +18,7 @@ export default function SupervisorView() {
   const [loading, setLoading] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [quickObs, setQuickObs] = useState({});
+  const [operariosList, setOperariosList] = useState([]);
 
   // Filtros Pendientes
   const [pendingDateFrom, setPendingDateFrom] = useState("");
@@ -31,6 +32,11 @@ export default function SupervisorView() {
       if (u.role === 'supervisor') {
         setUser(u);
         fetchData(activeTab, u.plant);
+        fetch(`/api/operarios?plant=${u.plant}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.operators) setOperariosList(data.operators);
+          });
       } else {
         router.push('/');
       }
@@ -161,6 +167,21 @@ export default function SupervisorView() {
     return `${h}h ${m}m`;
   };
 
+  const getCompanionsText = (companionsJson) => {
+    if (!companionsJson) return null;
+    try {
+      const comps = typeof companionsJson === 'string' ? JSON.parse(companionsJson) : companionsJson;
+      if (!Array.isArray(comps) || comps.length === 0) return null;
+      const names = comps.map(cId => {
+        const op = operariosList.find(o => o.id === cId);
+        return op ? op.full_name : 'Operario Desconocido';
+      });
+      return `Con ${names.join(', ')} (${comps.length + 1} operarios en total)`;
+    } catch (e) {
+      return null;
+    }
+  };
+
   if (!user) {
     return <div style={{ padding: "2rem", textAlign: "center" }}>Cargando panel de supervisor...</div>;
   }
@@ -272,8 +293,15 @@ export default function SupervisorView() {
                     <div style={{ width: '100%' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                         {getStatusBadge(t.status)}
-                        <strong style={{ fontSize: '1.1rem' }}>{t.operator_name || 'Operario Desconocido'}</strong>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{t.task_date_fmt} ({t.shift})</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                          <strong style={{ fontSize: '1.1rem' }}>{t.operator_name || 'Operario Desconocido'}</strong>
+                          {getCompanionsText(t.companions) && (
+                            <span style={{ fontSize: '0.8rem', color: '#0369a1', background: '#e0f2fe', padding: '0.1rem 0.4rem', borderRadius: '4px', alignSelf: 'flex-start' }}>
+                              👥 {getCompanionsText(t.companions)}
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginLeft: '0.5rem' }}>{t.task_date_fmt} ({t.shift})</span>
                         <button
                           onClick={() => setEditingTask({ ...t, start_time: t.start_time_fmt || t.start_time, end_time: t.end_time_fmt || t.end_time })}
                           style={{ marginLeft: 'auto', background: 'none', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
