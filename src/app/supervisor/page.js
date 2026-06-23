@@ -585,16 +585,172 @@ export default function SupervisorView() {
             </div>
             <div className="form-group">
               <label>Observaciones del Supervisor</label>
-              <textarea className="form-control" rows="2" placeholder="Notas internas para el supervisor..." value={editingTask.supervisor_obs || ''} onChange={e => setEditingTask({ ...editingTask, supervisor_obs: e.target.value })}></textarea>
+)}
+                    </td>
+                  </tr>
+                ))}
+                {historyTasks.length === 0 && (
+                  <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center' }}>No hay registros en el historial.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* TAB: MÁQUINAS PARADAS */}
+        {activeTab === 'machines' && (
+          <div className="card" style={{ padding: '1rem', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                  <th style={{ padding: '1rem' }}>Máquina</th>
+                  <th style={{ padding: '1rem' }}>Sector</th>
+                  <th style={{ padding: '1rem' }}>Reportado por</th>
+                  <th style={{ padding: '1rem' }}>Inicio de Parada</th>
+                  <th style={{ padding: '1rem' }}>Fin de Parada</th>
+                  <th style={{ padding: '1rem' }}>Desviación</th>
+                  <th style={{ padding: '1rem' }}>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {machinesOut.map(m => (
+                  <tr key={m.id} style={{ borderBottom: '1px solid #e5e7eb', background: m.is_resolved ? 'transparent' : '#fef2f2' }}>
+                    <td style={{ padding: '1rem', fontWeight: 600 }}>{m.machine_name}</td>
+                    <td style={{ padding: '1rem' }}>{m.sector}</td>
+                    <td style={{ padding: '1rem' }}>{m.reporter_name}</td>
+                    <td style={{ padding: '1rem' }}>{m.start_time_fmt}</td>
+                    <td style={{ padding: '1rem', color: m.is_resolved ? '#16a34a' : 'inherit' }}>{m.resolved_at_fmt || '-'}</td>
+                    <td style={{ padding: '1rem' }}>{m.deviation}</td>
+                    <td style={{ padding: '1rem' }}>
+                      {m.is_resolved
+                        ? <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓ Resuelto</span>
+                        : <span style={{ color: '#dc2626', fontWeight: 'bold' }}>⚠️ PARADA</span>
+                      }
+                    </td>
+                  </tr>
+                ))}
+                {machinesOut.length === 0 && (
+                  <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center' }}>No hay máquinas reportadas como fuera de servicio.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* TAB: DISPONIBILIDAD MÁQUINAS */}
+        {activeTab === 'availability' && (
+          <div className="card" style={{ padding: '1rem', overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                  <th style={{ padding: '1rem' }}>Máquina</th>
+                  <th style={{ padding: '1rem' }}>Sector</th>
+                  <th style={{ padding: '1rem' }}>Inicio Productivo</th>
+                  <th style={{ padding: '1rem' }}>Fin Productivo</th>
+                  <th style={{ padding: '1rem' }}>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {machineAvailability.map(m => (
+                  <tr key={m.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: '1rem', fontWeight: 600 }}>{m.name}</td>
+                    <td style={{ padding: '1rem' }}>{m.sector}</td>
+                    <td style={{ padding: '1rem' }}>
+                      <input
+                        type="time"
+                        value={m.productive_start || ''}
+                        onChange={e => handleAvailabilityChange(m.id, 'productive_start', e.target.value)}
+                        style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                      />
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      <input
+                        type="time"
+                        value={m.productive_end || ''}
+                        onChange={e => handleAvailabilityChange(m.id, 'productive_end', e.target.value)}
+                        style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                      />
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      <button
+                        onClick={() => saveMachineAvailability(m.id, m.productive_start, m.productive_end)}
+                        className="btn btn-primary"
+                        style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}
+                      >
+                        Guardar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {machineAvailability.length === 0 && (
+                  <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center' }}>No hay máquinas activas en esta planta.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* TAB: ESTADÍSTICAS */}
+        {activeTab === 'metrics' && metrics && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+            {/* Rendimiento Operarios */}
+            <div className="card" style={{ padding: '1.5rem' }}>
+              <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)' }}>⏱️ Rendimiento de Operarios</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Horas trabajadas este mes (solo tareas aprobadas).</p>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
+                    <th style={{ padding: '0.75rem' }}>Operario</th>
+                    <th style={{ padding: '0.75rem' }}>Tareas</th>
+                    <th style={{ padding: '0.75rem' }}>Horas Totales</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metrics.operatorMetrics?.map((op, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                      <td style={{ padding: '0.75rem', fontWeight: 600 }}>{op.operator_name}</td>
+                      <td style={{ padding: '0.75rem' }}>{op.total_tasks}</td>
+                      <td style={{ padding: '0.75rem', color: '#0ea5e9', fontWeight: 'bold' }}>{formatMinutesToHours(op.total_minutes)}</td>
+                    </tr>
+                  ))}
+                  {(!metrics.operatorMetrics || metrics.operatorMetrics.length === 0) && (
+                    <tr><td colSpan="3" style={{ padding: '1rem', textAlign: 'center' }}>Sin datos este mes</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-              <button onClick={() => setEditingTask(null)} className="btn" style={{ flex: 1, background: '#f1f5f9', color: '#475569' }}>Cancelar</button>
-              <button onClick={saveTaskEdit} className="btn btn-primary" style={{ flex: 1 }}>💾 Guardar Cambios</button>
+            {/* Máquinas Intervenidas */}
+            <div className="card" style={{ padding: '1.5rem' }}>
+              <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#b91c1c' }}>⚙️ Máquinas Más Intervenidas</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Top máquinas con mayor cantidad de tareas este mes.</p>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
+                    <th style={{ padding: '0.75rem' }}>Máquina</th>
+                    <th style={{ padding: '0.75rem' }}>Intervenciones</th>
+                    <th style={{ padding: '0.75rem' }}>Tiempo de Mantenimiento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metrics.machineMetrics?.map((m, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                      <td style={{ padding: '0.75rem', fontWeight: 600 }}>{m.machine_name}</td>
+                      <td style={{ padding: '0.75rem' }}>{m.total_interventions}</td>
+                      <td style={{ padding: '0.75rem', color: '#0ea5e9', fontWeight: 'bold' }}>{formatMinutesToHours(m.total_minutes)}</td>
+                    </tr>
+                  ))}
+                  {(!metrics.machineMetrics || metrics.machineMetrics.length === 0) && (
+                    <tr><td colSpan="3" style={{ padding: '1rem', textAlign: 'center' }}>Sin datos este mes</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
         {/* TAB: SHIFTS */}
         {activeTab === 'shifts' && (
           <div className="card" style={{ padding: '2rem' }}>
@@ -650,7 +806,46 @@ export default function SupervisorView() {
             </div>
           </div>
         )}
+
       </main>
+
+      {/* MODAL DE EDICIÓN */}
+      {editingTask && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0 }}>Editar Tarea</h3>
+              <button onClick={() => setEditingTask(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8' }}>&times;</button>
+            </div>
+
+            <div className="form-group">
+              <label>Hora Desde</label>
+              <input type="time" className="form-control" value={editingTask.start_time} onChange={e => setEditingTask({ ...editingTask, start_time: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Hora Hasta</label>
+              <input type="time" className="form-control" value={editingTask.end_time} onChange={e => setEditingTask({ ...editingTask, end_time: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Descripción</label>
+              <textarea className="form-control" rows="3" value={editingTask.description || ''} onChange={e => setEditingTask({ ...editingTask, description: e.target.value })}></textarea>
+            </div>
+            <div className="form-group">
+              <label>Desviación</label>
+              <textarea className="form-control" rows="2" value={editingTask.deviation || ''} onChange={e => setEditingTask({ ...editingTask, deviation: e.target.value })}></textarea>
+            </div>
+            <div className="form-group">
+              <label>Observaciones del Supervisor</label>
+              <textarea className="form-control" rows="2" placeholder="Notas internas para el supervisor..." value={editingTask.supervisor_obs || ''} onChange={e => setEditingTask({ ...editingTask, supervisor_obs: e.target.value })}></textarea>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+              <button onClick={() => setEditingTask(null)} className="btn" style={{ flex: 1, background: '#f1f5f9', color: '#475569' }}>Cancelar</button>
+              <button onClick={saveTaskEdit} className="btn btn-primary" style={{ flex: 1 }}>💾 Guardar Cambios</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
