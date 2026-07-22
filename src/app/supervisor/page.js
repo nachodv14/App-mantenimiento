@@ -227,7 +227,7 @@ export default function SupervisorView() {
         onClick={() => setActiveTab('metrics')}
         style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1.1rem', cursor: 'pointer', fontWeight: activeTab === 'metrics' ? 'bold' : 'normal', color: activeTab === 'metrics' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'metrics' ? '3px solid var(--primary)' : 'none' }}
       >
-        Estadísticas (Mes)
+        Indicadores
       </button>
       <button
         onClick={() => setActiveTab('shifts')}
