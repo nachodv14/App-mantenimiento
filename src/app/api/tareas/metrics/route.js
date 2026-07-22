@@ -208,21 +208,20 @@ export async function GET(request) {
       kpiMediaAutoelevadores = parseFloat((sumAuto / validAutoAvail.length).toFixed(2));
     }
 
-    // 6. Horas Hombre (HH) Metrics
+    // 6. Horas Hombre (HH) Metrics - PARTICIÓN COMPLETA SIN PÉRDIDA DE HORAS
     const hhRes = await query(
       `SELECT 
          t.task_type,
          t.nature,
-         COALESCE(SUM(t.man_hours), SUM(COALESCE(t.total_time_minutes, 0) / 60.0)) as total_hh
+         t.man_hours,
+         t.total_time_minutes
        FROM tasks t
        WHERE t.status = 'APPROVED'
          AND ($1 = 'ALL' OR t.plant = $1)
-         AND t.task_date >= $2 AND t.task_date <= $3
-       GROUP BY t.task_type, t.nature`,
+         AND t.task_date >= $2 AND t.task_date <= $3`,
       [plant, startDateStr, endDateStr]
     );
 
-    let totalHHLoaded = 0;
     let hhCorrectivo = 0;
     let hhPreventivo = 0;
     let hhVarios = 0;
@@ -233,33 +232,34 @@ export async function GET(request) {
     ];
 
     hhRes.rows.forEach(r => {
-      const hh = parseFloat(r.total_hh) || 0;
-      totalHHLoaded += hh;
+      // Calcular horas de esta tarea (preferir man_hours, si es null usar total_time_minutes / 60)
+      let taskHH = 0;
+      if (r.man_hours !== null && r.man_hours !== undefined && !isNaN(parseFloat(r.man_hours))) {
+        taskHH = parseFloat(r.man_hours);
+      } else if (r.total_time_minutes !== null && r.total_time_minutes !== undefined) {
+        taskHH = parseFloat(r.total_time_minutes) / 60.0;
+      }
 
       const natureLower = (r.nature || '').toLowerCase();
       const typeLower = (r.task_type || '').toLowerCase();
 
-      // 10) Correctivos (nature = Falla)
-      if (natureLower.includes('falla')) {
-        hhCorrectivo += hh;
-      }
-
-      // 11) Preventivos
-      const isPreventive = PREVENTIVE_PATTERNS.some(p => natureLower.includes(p));
-      if (isPreventive) {
-        hhPreventivo += hh;
-      }
-
-      // 12) Varios
-      if (typeLower.includes('edilicio') || typeLower.includes('varios')) {
-        hhVarios += hh;
-      }
-
-      // 13) Ausentismo
+      // Clasificación exhaustiva (if / else if / else if / else)
       if (typeLower.includes('ausentismo') || typeLower.includes('no productivo')) {
-        hhAusentismo += hh;
+        // 13) Ausentismo
+        hhAusentismo += taskHH;
+      } else if (natureLower.includes('falla')) {
+        // 10) Trabajos Correctivos (Falla)
+        hhCorrectivo += taskHH;
+      } else if (PREVENTIVE_PATTERNS.some(p => natureLower.includes(p))) {
+        // 11) Trabajos Preventivos
+        hhPreventivo += taskHH;
+      } else {
+        // 12) Trabajos Varios (Mantenimiento Edilicio / Varios + cualquier otra naturaleza de máquina no clasificada)
+        hhVarios += taskHH;
       }
     });
+
+    const totalHHLoaded = hhCorrectivo + hhPreventivo + hhVarios + hhAusentismo;
 
     const pctHHCorrectivo = totalHHLoaded > 0 ? parseFloat(((hhCorrectivo / totalHHLoaded) * 100).toFixed(2)) : 0;
     const pctHHPreventivo = totalHHLoaded > 0 ? parseFloat(((hhPreventivo / totalHHLoaded) * 100).toFixed(2)) : 0;
@@ -271,7 +271,8 @@ export async function GET(request) {
       SELECT 
         o.full_name as operator_name,
         COUNT(t.id)::int as total_tasks,
-        COALESCE(SUM(t.total_time_minutes), 0)::int as total_minutes
+        COALESCE(SUM(t.total_time_minutes), 0)::int as total_minutes,
+        COALESCE(SUM(COALESCE(t.man_hours, t.total_time_minutes / 60.0)), 0) as total_hh
       FROM tasks t
       JOIN users o ON t.operator_id = o.id
       WHERE t.status = 'APPROVED'

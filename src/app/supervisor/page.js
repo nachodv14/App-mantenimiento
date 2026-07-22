@@ -738,9 +738,14 @@ export default function SupervisorView() {
 
                 {/* HORAS HOMBRE METRICS (10 AL 13) */}
                 <div>
-                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     ⏱️ Distribución de Horas Hombre (% HH Aprobadas)
                   </h3>
+
+                  <div style={{ marginBottom: '1.25rem', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem 1.25rem', borderRadius: '6px', fontSize: '0.95rem', color: '#166534', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <span>📌 Total Horas Hombre cargadas en el período: <strong>{metrics.sl2KPIs.hhMetrics?.totalHHLoaded} hs</strong></span>
+                    <span style={{ fontSize: '0.85rem', color: '#15803d' }}>Suma (Indicadores 10 + 11 + 12 + 13) = 100%</span>
+                  </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
                     
