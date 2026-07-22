@@ -30,6 +30,14 @@ export default function SupervisorView() {
   const [pendingDateTo, setPendingDateTo] = useState("");
   const [pendingOperator, setPendingOperator] = useState("");
 
+  // Filtros Indicadores (Meses & Días Hábiles)
+  const now = new Date();
+  const defaultYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [metricsFromMonth, setMetricsFromMonth] = useState(defaultYM);
+  const [metricsToMonth, setMetricsToMonth] = useState(defaultYM);
+  const [businessDaysInput, setBusinessDaysInput] = useState("");
+  const [savingBusinessDays, setSavingBusinessDays] = useState(false);
+
   useEffect(() => {
     const savedUser = sessionStorage.getItem("mantenimiento_user");
     if (savedUser) {
@@ -61,7 +69,7 @@ export default function SupervisorView() {
     router.push('/');
   };
 
-  const fetchData = async (tab, plant) => {
+  const fetchData = async (tab, plant, customFromM, customToM) => {
     setLoading(true);
     try {
       if (tab === "pending") {
@@ -81,9 +89,17 @@ export default function SupervisorView() {
         const data = await res.json();
         if (data.machines) setMachineAvailability(data.machines);
       } else if (tab === "metrics") {
-        const res = await fetch(`/api/tareas/metrics?plant=${plant}`, { cache: "no-store" });
+        const fromM = customFromM !== undefined ? customFromM : metricsFromMonth;
+        const toM = customToM !== undefined ? customToM : metricsToMonth;
+        const res = await fetch(`/api/tareas/metrics?plant=${plant}&fromMonth=${fromM}&toMonth=${toM}`, { cache: "no-store" });
         const data = await res.json();
-        if (data) setMetrics(data);
+        if (data) {
+          setMetrics(data);
+          const currentMonthDays = data.monthlyDaysBreakdown?.[fromM] !== undefined
+            ? data.monthlyDaysBreakdown[fromM]
+            : (data.totalBusinessDays || 20);
+          setBusinessDaysInput(String(currentMonthDays));
+        }
       } else if (tab === "shifts") {
         const res = await fetch(`/api/shifts?plant=${plant}`, { cache: "no-store" });
         const data = await res.json();
@@ -98,6 +114,33 @@ export default function SupervisorView() {
     }
   };
 
+  const saveBusinessDays = async () => {
+    if (!user || !metricsFromMonth) return;
+    setSavingBusinessDays(true);
+    try {
+      const res = await fetch('/api/business-days', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plant: user.plant,
+          yearMonth: metricsFromMonth,
+          business_days: parseInt(businessDaysInput, 10)
+        })
+      });
+      const json = await res.json();
+      if (res.ok) {
+        alert('Días hábiles guardados correctamente');
+        fetchData('metrics', user.plant);
+      } else {
+        alert('Error: ' + json.error);
+      }
+    } catch (e) {
+      alert('Error de red al guardar días hábiles');
+    } finally {
+      setSavingBusinessDays(false);
+    }
+  };
+
   const updateTaskStatus = async (id, status) => {
     try {
       const res = await fetch(`/api/tareas/${id}`, {
@@ -107,7 +150,6 @@ export default function SupervisorView() {
       });
       if (res.ok) {
         setTasks(prev => prev.filter(t => t.id !== id));
-        // Limpiar la observacion
         setQuickObs(prev => { const n = { ...prev }; delete n[id]; return n; });
       } else {
         alert("Hubo un error al actualizar la tarea");
@@ -133,7 +175,7 @@ export default function SupervisorView() {
       });
       if (res.ok) {
         setEditingTask(null);
-        fetchData(activeTab, user.plant); // Recargar la tabla actual
+        fetchData(activeTab, user.plant);
       } else {
         alert("Error al guardar la edición");
       }
@@ -193,12 +235,32 @@ export default function SupervisorView() {
     }
   };
 
+  const renderKpiBadge = (val, isPercentage = true) => {
+    if (val === null || val === undefined) {
+      return <span style={{ background: '#f1f5f9', color: '#64748b', padding: '0.25rem 0.65rem', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold' }}>⚠️ Sin Horario</span>;
+    }
+    let bg = '#dcfce7';
+    let color = '#166534';
+    if (val < 85) {
+      bg = '#fee2e2';
+      color = '#991b1b';
+    } else if (val < 95) {
+      bg = '#fef08a';
+      color = '#854d0e';
+    }
+    return (
+      <span style={{ background: bg, color: color, padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '1.35rem', fontWeight: 'bold' }}>
+        {val}{isPercentage ? '%' : ''}
+      </span>
+    );
+  };
+
   if (!user) {
     return <div style={{ padding: "2rem", textAlign: "center" }}>Cargando panel de supervisor...</div>;
   }
 
   const renderTabs = () => (
-    <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+    <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', flexWrap: 'wrap' }}>
       <button
         onClick={() => setActiveTab('pending')}
         style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1.1rem', cursor: 'pointer', fontWeight: activeTab === 'pending' ? 'bold' : 'normal', color: activeTab === 'pending' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'pending' ? '3px solid var(--primary)' : 'none' }}
@@ -496,63 +558,312 @@ export default function SupervisorView() {
         )}
 
         {/* TAB: ESTADÍSTICAS / INDICADORES */}
-        {activeTab === 'metrics' && metrics && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-            {/* Rendimiento Operarios */}
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)' }}>⏱️ Rendimiento de Operarios</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Horas trabajadas este mes (solo tareas aprobadas).</p>
+        {activeTab === 'metrics' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            
+            {/* Panel de Controles / Filtros de Período y Días Hábiles */}
+            <div className="card" style={{ padding: '1.5rem', background: '#f8fafc', border: '1px solid #cbd5e1' }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                📅 Seleccionar Período de Análisis
+              </h3>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', alignItems: 'end' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
+                    Mes Desde
+                  </label>
+                  <input
+                    type="month"
+                    value={metricsFromMonth}
+                    onChange={(e) => {
+                      setMetricsFromMonth(e.target.value);
+                      fetchData('metrics', user.plant, e.target.value, metricsToMonth);
+                    }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }}
+                  />
+                </div>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
-                    <th style={{ padding: '0.75rem' }}>Operario</th>
-                    <th style={{ padding: '0.75rem' }}>Tareas</th>
-                    <th style={{ padding: '0.75rem' }}>Horas Totales</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metrics.operatorMetrics?.map((op, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <td style={{ padding: '0.75rem', fontWeight: 600 }}>{op.operator_name}</td>
-                      <td style={{ padding: '0.75rem' }}>{op.total_tasks}</td>
-                      <td style={{ padding: '0.75rem', color: '#0ea5e9', fontWeight: 'bold' }}>{formatMinutesToHours(op.total_minutes)}</td>
-                    </tr>
-                  ))}
-                  {(!metrics.operatorMetrics || metrics.operatorMetrics.length === 0) && (
-                    <tr><td colSpan="3" style={{ padding: '1rem', textAlign: 'center' }}>Sin datos este mes</td></tr>
-                  )}
-                </tbody>
-              </table>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
+                    Mes Hasta (Período multimes)
+                  </label>
+                  <input
+                    type="month"
+                    value={metricsToMonth}
+                    onChange={(e) => {
+                      setMetricsToMonth(e.target.value);
+                      fetchData('metrics', user.plant, metricsFromMonth, e.target.value);
+                    }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
+                    Días Hábiles ({metricsFromMonth})
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={businessDaysInput}
+                      onChange={(e) => setBusinessDaysInput(e.target.value)}
+                      style={{ width: '90px', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.95rem', textAlign: 'center' }}
+                    />
+                    <button
+                      onClick={saveBusinessDays}
+                      disabled={savingBusinessDays}
+                      className="btn btn-primary"
+                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
+                    >
+                      {savingBusinessDays ? 'Guardando...' : '💾 Guardar'}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ background: '#e0f2fe', border: '1px solid #bae6fd', padding: '0.75rem', borderRadius: '6px', fontSize: '0.85rem', color: '#0369a1' }}>
+                  <strong>Período evaluado:</strong> {metrics?.months?.length || 1} mes(es) ({metrics?.totalBusinessDays || 0} días hábiles totales)
+                </div>
+              </div>
             </div>
 
-            {/* Máquinas Intervenidas */}
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#b91c1c' }}>⚙️ Máquinas Más Intervenidas</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Top máquinas con mayor cantidad de tareas este mes.</p>
+            {/* Advertencia de máquinas sin horario productivo */}
+            {metrics?.unconfiguredMachines && metrics.unconfiguredMachines.length > 0 && (
+              <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '8px', padding: '1rem 1.5rem', color: '#873800' }}>
+                <h4 style={{ margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  ⚠️ Atención: Máquinas sin Horario Productivo Configurado
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                  Las siguientes máquinas en <strong>{user.plant}</strong> no tienen configurado un horario productivo en la solapa <em>"Disponibilidad máquinas"</em>: 
+                  <strong> {metrics.unconfiguredMachines.join(', ')}</strong>. 
+                  Para calcular su disponibilidad exacta, ingresa a la solapa <em>"Disponibilidad máquinas"</em> y establece sus horas de inicio y fin productivo.
+                </p>
+              </div>
+            )}
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
-                    <th style={{ padding: '0.75rem' }}>Máquina</th>
-                    <th style={{ padding: '0.75rem' }}>Intervenciones</th>
-                    <th style={{ padding: '0.75rem' }}>Tiempo de Mantenimiento</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metrics.machineMetrics?.map((m, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <td style={{ padding: '0.75rem', fontWeight: 600 }}>{m.machine_name}</td>
-                      <td style={{ padding: '0.75rem' }}>{m.total_interventions}</td>
-                      <td style={{ padding: '0.75rem', color: '#0ea5e9', fontWeight: 'bold' }}>{formatMinutesToHours(m.total_minutes)}</td>
+            {/* SECCIÓN SL2: INDICADORES MENSUALES CLAVE */}
+            {user.plant === 'SL2' && metrics?.sl2KPIs && (
+              <>
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    📊 Indicadores de Disponibilidad de Equipos (Planta SL2)
+                  </h3>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+                    
+                    {/* 1) FL02 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>1) Disponibilidad FL02</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Flejadora / Equipo FL02</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl2KPIs.disponibilidadFL02)}
+                    </div>
+
+                    {/* 2) M01 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>2) Disponibilidad M01</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina M01</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl2KPIs.disponibilidadM01)}
+                    </div>
+
+                    {/* 3) M03 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>3) Disponibilidad M03</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina M03</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl2KPIs.disponibilidadM03)}
+                    </div>
+
+                    {/* 4) M05 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>4) Disponibilidad M05</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina M05</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl2KPIs.disponibilidadM05)}
+                    </div>
+
+                    {/* 5) M06 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>5) Disponibilidad M06</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina M06</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl2KPIs.disponibilidadM06)}
+                    </div>
+
+                    {/* 6) M07 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>6) Disponibilidad M07</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina M07</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl2KPIs.disponibilidadM07)}
+                    </div>
+
+                    {/* 7) Media P08-P09 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #0284c7' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>7) Disponibilidad media P08-P09</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Promedio de máquinas P08 y P09</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl2KPIs.disponibilidadMediaP08P09)}
+                    </div>
+
+                    {/* 8) Menor disponibilidad Puentes Grúas */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #d97706' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>8) Menor disponibilidad Puentes Grúas</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Mínimo valor de puentes grúas</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl2KPIs.menorDisponibilidadPuentesGruas)}
+                    </div>
+
+                    {/* 9) Disponibilidad media autoelevadores */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #059669' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>9) Disponibilidad media Autoelevadores</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Promedio de flota autoelevadores</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl2KPIs.disponibilidadMediaAutoelevadores)}
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* HORAS HOMBRE METRICS (10 AL 13) */}
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    ⏱️ Distribución de Horas Hombre (% HH Aprobadas)
+                  </h3>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                    
+                    {/* 10) % HH Correctivos */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #dc2626' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>10) TRABAJOS CORRECTIVOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#dc2626' }}>
+                          {metrics.sl2KPIs.hhMetrics?.pctHHCorrectivo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.sl2KPIs.hhMetrics?.hhCorrectivo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Tareas en "Fallas"</span>
+                    </div>
+
+                    {/* 11) % HH Preventivos */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #16a34a' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>11) TRABAJOS PREVENTIVOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#16a34a' }}>
+                          {metrics.sl2KPIs.hhMetrics?.pctHHPreventivo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.sl2KPIs.hhMetrics?.hhPreventivo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Preventivos condicional/periódicos</span>
+                    </div>
+
+                    {/* 12) % HH Varios */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #2563eb' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>12) TRABAJOS VARIOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#2563eb' }}>
+                          {metrics.sl2KPIs.hhMetrics?.pctHHVarios}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.sl2KPIs.hhMetrics?.hhVarios} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Mantenimiento edilicio / varios</span>
+                    </div>
+
+                    {/* 13) % HH Ausentismo */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #d97706' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>13) AUSENTISMO / NO PRODUCTIVO</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#d97706' }}>
+                          {metrics.sl2KPIs.hhMetrics?.pctHHAusentismo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.sl2KPIs.hhMetrics?.hhAusentismo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Ausentismo / no productivo</span>
+                    </div>
+
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Rendimiento Operarios y Máquinas Intervenidas */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+              {/* Rendimiento Operarios */}
+              <div className="card" style={{ padding: '1.5rem' }}>
+                <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)' }}>⏱️ Rendimiento de Operarios</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Horas trabajadas en el período seleccionado (solo tareas aprobadas).</p>
+
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
+                      <th style={{ padding: '0.75rem' }}>Operario</th>
+                      <th style={{ padding: '0.75rem' }}>Tareas</th>
+                      <th style={{ padding: '0.75rem' }}>Horas Totales</th>
                     </tr>
-                  ))}
-                  {(!metrics.machineMetrics || metrics.machineMetrics.length === 0) && (
-                    <tr><td colSpan="3" style={{ padding: '1rem', textAlign: 'center' }}>Sin datos este mes</td></tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {metrics?.operatorMetrics?.map((op, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '0.75rem', fontWeight: 600 }}>{op.operator_name}</td>
+                        <td style={{ padding: '0.75rem' }}>{op.total_tasks}</td>
+                        <td style={{ padding: '0.75rem', color: '#0ea5e9', fontWeight: 'bold' }}>{formatMinutesToHours(op.total_minutes)}</td>
+                      </tr>
+                    ))}
+                    {(!metrics?.operatorMetrics || metrics.operatorMetrics.length === 0) && (
+                      <tr><td colSpan="3" style={{ padding: '1rem', textAlign: 'center' }}>Sin datos en este período</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Máquinas Intervenidas */}
+              <div className="card" style={{ padding: '1.5rem' }}>
+                <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#b91c1c' }}>⚙️ Máquinas Más Intervenidas</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Top máquinas con mayor cantidad de intervenciones en el período.</p>
+
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
+                      <th style={{ padding: '0.75rem' }}>Máquina</th>
+                      <th style={{ padding: '0.75rem' }}>Intervenciones</th>
+                      <th style={{ padding: '0.75rem' }}>Tiempo de Parada</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metrics?.machineMetrics?.map((m, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '0.75rem', fontWeight: 600 }}>{m.name}</td>
+                        <td style={{ padding: '0.75rem' }}>{m.interventions}</td>
+                        <td style={{ padding: '0.75rem', color: '#0ea5e9', fontWeight: 'bold' }}>{(m.stop_hours || 0).toFixed(1)} hs</td>
+                      </tr>
+                    ))}
+                    {(!metrics?.machineMetrics || metrics.machineMetrics.length === 0) && (
+                      <tr><td colSpan="3" style={{ padding: '1rem', textAlign: 'center' }}>Sin datos en este período</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
           </div>
         )}
 
