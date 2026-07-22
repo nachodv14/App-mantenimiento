@@ -305,58 +305,58 @@ export default function SupervisorView() {
             ) : (
               <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fill, minmax(450px, 1fr))' }}>
                 {filteredPendingTasks.map(t => (
-                <div key={t.id} className="card" style={{ borderLeft: '4px solid #facc15', margin: 0, padding: '1.25rem' }}>
-                  <div style={{ display: 'block' }}>
-                    <div style={{ width: '100%' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                        {getStatusBadge(t.status)}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                          <strong style={{ fontSize: '1.1rem' }}>{t.operator_name || 'Operario Desconocido'}</strong>
-                          {getCompanionsText(t.companions) && (
-                            <span style={{ fontSize: '0.8rem', color: '#0369a1', background: '#e0f2fe', padding: '0.1rem 0.4rem', borderRadius: '4px', alignSelf: 'flex-start' }}>
-                              👥 {getCompanionsText(t.companions)}
-                            </span>
-                          )}
+                  <div key={t.id} className="card" style={{ borderLeft: '4px solid #facc15', margin: 0, padding: '1.25rem' }}>
+                    <div style={{ display: 'block' }}>
+                      <div style={{ width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          {getStatusBadge(t.status)}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            <strong style={{ fontSize: '1.1rem' }}>{t.operator_name || 'Operario Desconocido'}</strong>
+                            {getCompanionsText(t.companions) && (
+                              <span style={{ fontSize: '0.8rem', color: '#0369a1', background: '#e0f2fe', padding: '0.1rem 0.4rem', borderRadius: '4px', alignSelf: 'flex-start' }}>
+                                👥 {getCompanionsText(t.companions)}
+                              </span>
+                            )}
+                          </div>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginLeft: '0.5rem' }}>{t.task_date_fmt} ({t.shift})</span>
+                          <button
+                            onClick={() => setEditingTask({ ...t, start_time: t.start_time_fmt || t.start_time, end_time: t.end_time_fmt || t.end_time })}
+                            style={{ marginLeft: 'auto', background: 'none', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
+                          >
+                            ✏️ Editar
+                          </button>
                         </div>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginLeft: '0.5rem' }}>{t.task_date_fmt} ({t.shift})</span>
-                        <button
-                          onClick={() => setEditingTask({ ...t, start_time: t.start_time_fmt || t.start_time, end_time: t.end_time_fmt || t.end_time })}
-                          style={{ marginLeft: 'auto', background: 'none', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
-                        >
-                          ✏️ Editar
-                        </button>
-                      </div>
-                      <h4 style={{ margin: '0.5rem 0', color: 'var(--primary)' }}>
-                        {t.task_type} {t.machine_name ? `» ${t.machine_name}` : t.category ? `» ${t.category}` : ''}
-                      </h4>
-                      <p style={{ margin: '0.5rem 0' }}>{t.description}</p>
-                      <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                        <span><strong>Hora:</strong> {t.start_time_fmt} - {t.end_time_fmt}</span>
-                        {t.nature && <span><strong>Naturaleza:</strong> {t.nature}</span>}
-                      </div>
-                      {t.deviation && (
-                        <div style={{ background: '#fff1f2', padding: '0.75rem', borderRadius: '4px', fontSize: '0.9rem', color: '#9f1239', marginBottom: '0.5rem' }}>
-                          <strong>⚠️ Desviación:</strong> {t.deviation}
+                        <h4 style={{ margin: '0.5rem 0', color: 'var(--primary)' }}>
+                          {t.task_type} {t.machine_name ? `» ${t.machine_name}` : t.category ? `» ${t.category}` : ''}
+                        </h4>
+                        <p style={{ margin: '0.5rem 0' }}>{t.description}</p>
+                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                          <span><strong>Hora:</strong> {t.start_time_fmt} - {t.end_time_fmt}</span>
+                          {t.nature && <span><strong>Naturaleza:</strong> {t.nature}</span>}
                         </div>
-                      )}
+                        {t.deviation && (
+                          <div style={{ background: '#fff1f2', padding: '0.75rem', borderRadius: '4px', fontSize: '0.9rem', color: '#9f1239', marginBottom: '0.5rem' }}>
+                            <strong>⚠️ Desviación:</strong> {t.deviation}
+                          </div>
+                        )}
 
-                      <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
-                        <input
-                          type="text"
-                          placeholder="Agregar observación (opcional)..."
-                          style={{ width: '100%', padding: '0.5rem', marginBottom: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
-                          value={quickObs[t.id] || ''}
-                          onChange={(e) => setQuickObs({ ...quickObs, [t.id]: e.target.value })}
-                        />
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button onClick={() => updateTaskStatus(t.id, 'APPROVED')} className="btn btn-success" style={{ flex: 1, padding: '0.5rem', fontSize: '0.9rem' }}>✅ Aprobar</button>
-                          <button onClick={() => updateTaskStatus(t.id, 'REJECTED')} className="btn btn-danger" style={{ flex: 1, padding: '0.5rem', fontSize: '0.9rem' }}>❌ Rechazar</button>
+                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
+                          <input
+                            type="text"
+                            placeholder="Agregar observación (opcional)..."
+                            style={{ width: '100%', padding: '0.5rem', marginBottom: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                            value={quickObs[t.id] || ''}
+                            onChange={(e) => setQuickObs({ ...quickObs, [t.id]: e.target.value })}
+                          />
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button onClick={() => updateTaskStatus(t.id, 'APPROVED')} className="btn btn-success" style={{ flex: 1, padding: '0.5rem', fontSize: '0.9rem' }}>✅ Aprobar</button>
+                            <button onClick={() => updateTaskStatus(t.id, 'REJECTED')} className="btn btn-danger" style={{ flex: 1, padding: '0.5rem', fontSize: '0.9rem' }}>❌ Rechazar</button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
               </div>
             )}
           </>
@@ -495,202 +495,7 @@ export default function SupervisorView() {
           </div>
         )}
 
-        {/* TAB: ESTADÍSTICAS */}
-        {activeTab === 'metrics' && metrics && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-            {/* Rendimiento Operarios */}
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)' }}>⏱️ Rendimiento de Operarios</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Horas trabajadas este mes (solo tareas aprobadas).</p>
-
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
-                    <th style={{ padding: '0.75rem' }}>Operario</th>
-                    <th style={{ padding: '0.75rem' }}>Tareas</th>
-                    <th style={{ padding: '0.75rem' }}>Horas Totales</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metrics.operatorMetrics?.map((op, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <td style={{ padding: '0.75rem', fontWeight: 600 }}>{op.operator_name}</td>
-                      <td style={{ padding: '0.75rem' }}>{op.total_tasks}</td>
-                      <td style={{ padding: '0.75rem', color: '#0ea5e9', fontWeight: 'bold' }}>{formatMinutesToHours(op.total_minutes)}</td>
-                    </tr>
-                  ))}
-                  {(!metrics.operatorMetrics || metrics.operatorMetrics.length === 0) && (
-                    <tr><td colSpan="3" style={{ padding: '1rem', textAlign: 'center' }}>Sin datos este mes</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Máquinas Intervenidas */}
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#b91c1c' }}>⚙️ Máquinas Más Intervenidas</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Top máquinas con mayor cantidad de tareas este mes.</p>
-
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
-                    <th style={{ padding: '0.75rem' }}>Máquina</th>
-                    <th style={{ padding: '0.75rem' }}>Intervenciones</th>
-                    <th style={{ padding: '0.75rem' }}>Tiempo de Mantenimiento</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metrics.machineMetrics?.map((m, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                      <td style={{ padding: '0.75rem', fontWeight: 600 }}>{m.machine_name}</td>
-                      <td style={{ padding: '0.75rem' }}>{m.total_interventions}</td>
-                      <td style={{ padding: '0.75rem', color: '#0ea5e9', fontWeight: 'bold' }}>{formatMinutesToHours(m.total_minutes)}</td>
-                    </tr>
-                  ))}
-                  {(!metrics.machineMetrics || metrics.machineMetrics.length === 0) && (
-                    <tr><td colSpan="3" style={{ padding: '1rem', textAlign: 'center' }}>Sin datos este mes</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-      </main>
-
-      {/* MODAL DE EDICIÓN */}
-      {editingTask && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ margin: 0 }}>Editar Tarea</h3>
-              <button onClick={() => setEditingTask(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8' }}>&times;</button>
-            </div>
-
-            <div className="form-group">
-              <label>Hora Desde</label>
-              <input type="time" className="form-control" value={editingTask.start_time} onChange={e => setEditingTask({ ...editingTask, start_time: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>Hora Hasta</label>
-              <input type="time" className="form-control" value={editingTask.end_time} onChange={e => setEditingTask({ ...editingTask, end_time: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>Descripción</label>
-              <textarea className="form-control" rows="3" value={editingTask.description || ''} onChange={e => setEditingTask({ ...editingTask, description: e.target.value })}></textarea>
-            </div>
-            <div className="form-group">
-              <label>Desviación</label>
-              <textarea className="form-control" rows="2" value={editingTask.deviation || ''} onChange={e => setEditingTask({ ...editingTask, deviation: e.target.value })}></textarea>
-            </div>
-            <div className="form-group">
-              <label>Observaciones del Supervisor</label>
-)}
-                    </td>
-                  </tr>
-                ))}
-                {historyTasks.length === 0 && (
-                  <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center' }}>No hay registros en el historial.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* TAB: MÁQUINAS PARADAS */}
-        {activeTab === 'machines' && (
-          <div className="card" style={{ padding: '1rem', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                  <th style={{ padding: '1rem' }}>Máquina</th>
-                  <th style={{ padding: '1rem' }}>Sector</th>
-                  <th style={{ padding: '1rem' }}>Reportado por</th>
-                  <th style={{ padding: '1rem' }}>Inicio de Parada</th>
-                  <th style={{ padding: '1rem' }}>Fin de Parada</th>
-                  <th style={{ padding: '1rem' }}>Desviación</th>
-                  <th style={{ padding: '1rem' }}>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {machinesOut.map(m => (
-                  <tr key={m.id} style={{ borderBottom: '1px solid #e5e7eb', background: m.is_resolved ? 'transparent' : '#fef2f2' }}>
-                    <td style={{ padding: '1rem', fontWeight: 600 }}>{m.machine_name}</td>
-                    <td style={{ padding: '1rem' }}>{m.sector}</td>
-                    <td style={{ padding: '1rem' }}>{m.reporter_name}</td>
-                    <td style={{ padding: '1rem' }}>{m.start_time_fmt}</td>
-                    <td style={{ padding: '1rem', color: m.is_resolved ? '#16a34a' : 'inherit' }}>{m.resolved_at_fmt || '-'}</td>
-                    <td style={{ padding: '1rem' }}>{m.deviation}</td>
-                    <td style={{ padding: '1rem' }}>
-                      {m.is_resolved
-                        ? <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓ Resuelto</span>
-                        : <span style={{ color: '#dc2626', fontWeight: 'bold' }}>⚠️ PARADA</span>
-                      }
-                    </td>
-                  </tr>
-                ))}
-                {machinesOut.length === 0 && (
-                  <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center' }}>No hay máquinas reportadas como fuera de servicio.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* TAB: DISPONIBILIDAD MÁQUINAS */}
-        {activeTab === 'availability' && (
-          <div className="card" style={{ padding: '1rem', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                  <th style={{ padding: '1rem' }}>Máquina</th>
-                  <th style={{ padding: '1rem' }}>Sector</th>
-                  <th style={{ padding: '1rem' }}>Inicio Productivo</th>
-                  <th style={{ padding: '1rem' }}>Fin Productivo</th>
-                  <th style={{ padding: '1rem' }}>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {machineAvailability.map(m => (
-                  <tr key={m.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                    <td style={{ padding: '1rem', fontWeight: 600 }}>{m.name}</td>
-                    <td style={{ padding: '1rem' }}>{m.sector}</td>
-                    <td style={{ padding: '1rem' }}>
-                      <input
-                        type="time"
-                        value={m.productive_start || ''}
-                        onChange={e => handleAvailabilityChange(m.id, 'productive_start', e.target.value)}
-                        style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                      />
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <input
-                        type="time"
-                        value={m.productive_end || ''}
-                        onChange={e => handleAvailabilityChange(m.id, 'productive_end', e.target.value)}
-                        style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-                      />
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <button
-                        onClick={() => saveMachineAvailability(m.id, m.productive_start, m.productive_end)}
-                        className="btn btn-primary"
-                        style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}
-                      >
-                        Guardar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {machineAvailability.length === 0 && (
-                  <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center' }}>No hay máquinas activas en esta planta.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* TAB: ESTADÍSTICAS */}
+        {/* TAB: ESTADÍSTICAS / INDICADORES */}
         {activeTab === 'metrics' && metrics && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
             {/* Rendimiento Operarios */}
