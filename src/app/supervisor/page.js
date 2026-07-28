@@ -714,7 +714,7 @@ export default function SupervisorView() {
                     <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #059669' }}>
                       <div>
                         <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>7) Disponibilidad media Autoelevadores</strong>
-                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Promedio de flota autoelevadores</span>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Promedio de máquinas S16 y SA02</span>
                       </div>
                       {renderKpiBadge(metrics.sl1KPIs.disponibilidadMediaAutoelevadores)}
                     </div>
