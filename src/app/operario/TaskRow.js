@@ -425,13 +425,19 @@ export default function TaskRow({ index, task, updateTask, removeTask, options, 
               </select>
             </div>
 
-            <div className="form-group">
-              <label style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <span>Desviación detectada <span style={{ color: '#dc2626' }}>*</span></span>
-                {renderDictationBtn('deviation')}
-              </label>
-              <textarea required placeholder="Detalle el problema detectado..." value={task.deviation || ""} onChange={(e) => handleChange('deviation', e.target.value)} style={{ borderColor: !task.deviation?.trim() ? '#fca5a5' : undefined }} />
-            </div>
+            {(() => {
+              const natureLower = (task.nature || '').toLowerCase();
+              const isDevRequired = natureLower.includes('falla') || natureLower.includes('inspeccion') || natureLower.includes('inspección');
+              return (
+                <div className="form-group">
+                  <label style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <span>Desviación detectada {isDevRequired ? <span style={{ color: '#dc2626' }}>*</span> : <small style={{ color: '#64748b', fontWeight: 'normal' }}>(Opcional)</small>}</span>
+                    {renderDictationBtn('deviation')}
+                  </label>
+                  <textarea required={isDevRequired} placeholder={isDevRequired ? "Detalle la falla o desviación detectada..." : "Detalle si hubo alguna desviación (opcional)..."} value={task.deviation || ""} onChange={(e) => handleChange('deviation', e.target.value)} style={{ borderColor: isDevRequired && !task.deviation?.trim() ? '#fca5a5' : undefined }} />
+                </div>
+              );
+            })()}
 
             <div className="form-group">
               <label style={{ fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>

@@ -177,10 +177,15 @@ export default function OperarioView() {
         return;
       }
 
-      // Validar que todos los registros de mantenimiento tengan desviación completada
-      const tasksSinDesviacion = tasks.filter(t => t.record_type === 'Mantenimiento de máquina (OT)' && !t.deviation?.trim());
+      // Validar que los registros de mantenimiento con naturaleza "Falla" o "Inspección" tengan desviación completada
+      const tasksSinDesviacion = tasks.filter(t => {
+        if (t.record_type !== 'Mantenimiento de máquina (OT)') return false;
+        const n = (t.nature || '').toLowerCase();
+        const isDevRequired = n.includes('falla') || n.includes('inspeccion') || n.includes('inspección');
+        return isDevRequired && !t.deviation?.trim();
+      });
       if (tasksSinDesviacion.length > 0) {
-        alert(`Por favor, completa el campo "Desviación detectada" en ${tasksSinDesviacion.length > 1 ? 'todas las tareas' : 'la tarea'} antes de enviar.`);
+        alert(`Por favor, completa el campo "Desviación detectada" en ${tasksSinDesviacion.length > 1 ? 'las tareas de Falla/Inspección' : 'la tarea de Falla/Inspección'} antes de enviar.`);
         setIsSubmitting(false);
         return;
       }
