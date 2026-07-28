@@ -240,7 +240,7 @@ export async function GET(request) {
       kpiMenorPuenteGruaNombre = validPuentes[0].name;
     }
 
-    // Autoelevadores
+    // Autoelevadores SL2 (filtro por nombre genérico)
     const autoelevadores = machinesAvailabilityList.filter(m => 
       m.name.toLowerCase().includes('autoelevador') || (m.sector && m.sector.toLowerCase().includes('autoelevador'))
     );
@@ -249,6 +249,17 @@ export async function GET(request) {
     if (validAutoAvail.length > 0) {
       const sumAuto = validAutoAvail.reduce((acc, curr) => acc + curr, 0);
       kpiMediaAutoelevadores = parseFloat((sumAuto / validAutoAvail.length).toFixed(2));
+    }
+
+    // Autoelevadores SL1 — S16 y SA02 específicamente
+    const kpiS16 = findMachAvail('S16');
+    const kpiSA02 = findMachAvail('SA02');
+    const autoelevadoresSL1 = [kpiS16, kpiSA02].filter(m => m !== null && m !== undefined);
+    let kpiMediaAutoelevadoresSL1 = null;
+    const validAutoSL1 = autoelevadoresSL1.map(m => m.availability_pct).filter(v => v !== null && v !== undefined);
+    if (validAutoSL1.length > 0) {
+      const sumAutoSL1 = validAutoSL1.reduce((acc, curr) => acc + curr, 0);
+      kpiMediaAutoelevadoresSL1 = parseFloat((sumAutoSL1 / validAutoSL1.length).toFixed(2));
     }
 
     // 6. Horas Hombre (HH) Metrics - PARTICIÓN COMPLETA SIN PÉRDIDA DE HORAS
@@ -396,7 +407,7 @@ export async function GET(request) {
         menorPuenteGruaNombre: kpiMenorPuenteGruaNombre,
         menorDisponibilidadTejedoras: kpiMenorTejedoras,
         menorTejedoraNombre: kpiMenorTejedoraNombre,
-        disponibilidadMediaAutoelevadores: kpiMediaAutoelevadores,
+        disponibilidadMediaAutoelevadores: kpiMediaAutoelevadoresSL1,
         // Sucursal comercial San Luis
         disponibilidadR39: kpiR39 ? kpiR39.availability_pct : null,
         disponibilidadR40: kpiR40 ? kpiR40.availability_pct : null,
@@ -413,7 +424,8 @@ export async function GET(request) {
           P09: kpiP09_SL1,
           puentesGruas,
           tejedoras,
-          autoelevadores,
+          autoelevadoresSL1,
+          S16: kpiS16, SA02: kpiSA02,
           R39: kpiR39, R40: kpiR40, R43: kpiR43, R44: kpiR44,
           Q03: kpiQ03, S09: kpiS09, S14: kpiS14
         },
