@@ -776,6 +776,20 @@ export default function SupervisorView() {
                         </span>
                       </div>
                       <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Preventivos condicional/sistemáticos</span>
+
+                      {metrics.sl2KPIs.hhMetrics?.preventivoBreakdown && metrics.sl2KPIs.hhMetrics.preventivoBreakdown.length > 0 && (
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px dashed #bbf7d0', fontSize: '0.75rem', color: '#475569' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#1e293b' }}>Desglose por subcategoría:</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            {metrics.sl2KPIs.hhMetrics.preventivoBreakdown.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>• {item.name}:</span>
+                                <strong>{item.hours} hs</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* 12) % HH Varios */}

@@ -231,6 +231,7 @@ export async function GET(request) {
     let hhVarios = 0;
     let hhAusentismo = 0;
 
+    const hhPreventivoBreakdown = {};
     const hhVariosBreakdown = {};
     const hhAusentismoBreakdown = {};
 
@@ -262,6 +263,8 @@ export async function GET(request) {
       } else if (PREVENTIVE_PATTERNS.some(p => natureLower.includes(p))) {
         // 11) Trabajos Preventivos
         hhPreventivo += taskHH;
+        const prevName = r.nature ? r.nature.trim() : catName;
+        hhPreventivoBreakdown[prevName] = (hhPreventivoBreakdown[prevName] || 0) + taskHH;
       } else {
         // 12) Trabajos Varios (Mantenimiento Edilicio / Varios + cualquier otra naturaleza de máquina no clasificada)
         hhVarios += taskHH;
@@ -334,6 +337,7 @@ export async function GET(request) {
           pctHHPreventivo,
           pctHHVarios,
           pctHHAusentismo,
+          preventivoBreakdown: Object.entries(hhPreventivoBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours),
           variosBreakdown: Object.entries(hhVariosBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours),
           ausentismoBreakdown: Object.entries(hhAusentismoBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours)
         }
