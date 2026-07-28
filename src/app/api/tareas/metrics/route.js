@@ -216,6 +216,7 @@ export async function GET(request) {
       `SELECT 
          t.task_type,
          t.nature,
+         t.category,
          t.man_hours,
          t.total_time_minutes
        FROM tasks t
@@ -229,6 +230,9 @@ export async function GET(request) {
     let hhPreventivo = 0;
     let hhVarios = 0;
     let hhAusentismo = 0;
+
+    const hhVariosBreakdown = {};
+    const hhAusentismoBreakdown = {};
 
     const PREVENTIVE_PATTERNS = [
       'preventivo', 'preventivos', 'condicional', 'semanal', 'mensual', 'trimestral', 'semestral', 'anual'
@@ -245,11 +249,13 @@ export async function GET(request) {
 
       const natureLower = (r.nature || '').toLowerCase();
       const typeLower = (r.task_type || '').toLowerCase();
+      const catName = r.category ? r.category.trim() : 'Sin subcategoría';
 
       // Clasificación exhaustiva (if / else if / else if / else)
       if (typeLower.includes('ausentismo') || typeLower.includes('no productivo')) {
         // 13) Ausentismo
         hhAusentismo += taskHH;
+        hhAusentismoBreakdown[catName] = (hhAusentismoBreakdown[catName] || 0) + taskHH;
       } else if (natureLower.includes('falla')) {
         // 10) Trabajos Correctivos (Falla)
         hhCorrectivo += taskHH;
@@ -259,6 +265,7 @@ export async function GET(request) {
       } else {
         // 12) Trabajos Varios (Mantenimiento Edilicio / Varios + cualquier otra naturaleza de máquina no clasificada)
         hhVarios += taskHH;
+        hhVariosBreakdown[catName] = (hhVariosBreakdown[catName] || 0) + taskHH;
       }
     });
 
@@ -326,7 +333,9 @@ export async function GET(request) {
           pctHHCorrectivo,
           pctHHPreventivo,
           pctHHVarios,
-          pctHHAusentismo
+          pctHHAusentismo,
+          variosBreakdown: Object.entries(hhVariosBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours),
+          ausentismoBreakdown: Object.entries(hhAusentismoBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours)
         }
       },
       machinesAvailabilityList,
