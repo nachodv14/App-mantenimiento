@@ -236,7 +236,8 @@ export async function GET(request) {
     const hhAusentismoBreakdown = {};
 
     const PREVENTIVE_PATTERNS = [
-      'preventivo', 'preventivos', 'condicional', 'semanal', 'mensual', 'trimestral', 'semestral', 'anual'
+      'preventivo', 'preventivos', 'condicional', 'semanal', 'mensual', 'trimestral', 'semestral', 'anual',
+      'inspeccion', 'inspección', 'mejora', 'mejoras', 'montaje'
     ];
 
     hhRes.rows.forEach(r => {
@@ -256,19 +257,23 @@ export async function GET(request) {
       if (typeLower.includes('ausentismo') || typeLower.includes('no productivo')) {
         // 13) Ausentismo
         hhAusentismo += taskHH;
-        hhAusentismoBreakdown[catName] = (hhAusentismoBreakdown[catName] || 0) + taskHH;
+        const ausName = r.category && r.category.trim() ? r.category.trim() : 'Sin subcategoría';
+        hhAusentismoBreakdown[ausName] = (hhAusentismoBreakdown[ausName] || 0) + taskHH;
       } else if (natureLower.includes('falla')) {
         // 10) Trabajos Correctivos (Falla)
         hhCorrectivo += taskHH;
       } else if (PREVENTIVE_PATTERNS.some(p => natureLower.includes(p))) {
         // 11) Trabajos Preventivos
         hhPreventivo += taskHH;
-        const prevName = r.nature ? r.nature.trim() : catName;
+        const prevName = r.nature && r.nature.trim() ? r.nature.trim() : (r.category && r.category.trim() ? r.category.trim() : 'Preventivo sin especificar');
         hhPreventivoBreakdown[prevName] = (hhPreventivoBreakdown[prevName] || 0) + taskHH;
       } else {
-        // 12) Trabajos Varios (Mantenimiento Edilicio / Varios + cualquier otra naturaleza de máquina no clasificada)
+        // 12) Trabajos Varios (Mantenimiento Edilicio / Varios + tareas de máquinas con otra naturaleza)
         hhVarios += taskHH;
-        hhVariosBreakdown[catName] = (hhVariosBreakdown[catName] || 0) + taskHH;
+        const varName = r.category && r.category.trim() 
+          ? r.category.trim() 
+          : (r.nature && r.nature.trim() ? r.nature.trim() : (r.task_type && r.task_type.trim() ? r.task_type.trim() : 'Varios / Sin especificar'));
+        hhVariosBreakdown[varName] = (hhVariosBreakdown[varName] || 0) + taskHH;
       }
     });
 
