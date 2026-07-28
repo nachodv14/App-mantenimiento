@@ -642,6 +642,201 @@ export default function SupervisorView() {
               </div>
             )}
 
+            {/* SECCIÓN SL1: INDICADORES MENSUALES CLAVE */}
+            {user.plant === 'SL1' && metrics?.sl1KPIs && (
+              <>
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    📊 Indicadores de Disponibilidad de Equipos (Planta SL1)
+                  </h3>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+                    
+                    {/* 1) H08 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>1) Disponibilidad H08</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina H08</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadH08)}
+                    </div>
+
+                    {/* 2) H09 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>2) Disponibilidad H09</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina H09</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadH09)}
+                    </div>
+
+                    {/* 3) MEP02 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>3) Disponibilidad MEP02</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina MEP02</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadMEP02)}
+                    </div>
+
+                    {/* 4) Media P08-P09 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #0284c7' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>4) Disponibilidad media P08-P09</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Promedio de máquinas P08 y P09</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadMediaP08P09)}
+                    </div>
+
+                    {/* 5) Menor disponibilidad Puentes Grúas */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #d97706' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>5) Menor disponibilidad Puentes Grúas</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                          {metrics.sl1KPIs.menorPuenteGruaNombre ? `Equipo: ${metrics.sl1KPIs.menorPuenteGruaNombre}` : 'Mínimo valor de puentes grúas'}
+                        </span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.menorDisponibilidadPuentesGruas)}
+                    </div>
+
+                    {/* 6) Menor disponibilidad Tejedoras */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #7c3aed' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>6) Menor disponibilidad Tejedoras</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                          {metrics.sl1KPIs.menorTejedoraNombre ? `Equipo: ${metrics.sl1KPIs.menorTejedoraNombre}` : 'Mínimo valor de tejedoras'}
+                        </span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.menorDisponibilidadTejedoras)}
+                    </div>
+
+                    {/* 7) Disponibilidad media autoelevadores */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #059669' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>7) Disponibilidad media Autoelevadores</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Promedio de flota autoelevadores</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadMediaAutoelevadores)}
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* HORAS HOMBRE METRICS (8 AL 11 DE SL1) */}
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    ⏱️ Distribución de Horas Hombre (% HH Aprobadas)
+                  </h3>
+
+                  <div style={{ marginBottom: '1.25rem', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem 1.25rem', borderRadius: '6px', fontSize: '0.95rem', color: '#166534', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <span>📌 Total Horas Hombre cargadas en el período: <strong>{metrics.sl1KPIs.hhMetrics?.totalHHLoaded} hs</strong></span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                    
+                    {/* 8) % HH Correctivos */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #dc2626' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>8) TRABAJOS CORRECTIVOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#dc2626' }}>
+                          {metrics.sl1KPIs.hhMetrics?.pctHHCorrectivo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.sl1KPIs.hhMetrics?.hhCorrectivo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Tareas en "Fallas"</span>
+                    </div>
+
+                    {/* 9) % HH Preventivos */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #16a34a' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>9) TRABAJOS PREVENTIVOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#16a34a' }}>
+                          {metrics.sl1KPIs.hhMetrics?.pctHHPreventivo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.sl1KPIs.hhMetrics?.hhPreventivo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Preventivos condicional/sistemáticos</span>
+
+                      {metrics.sl1KPIs.hhMetrics?.preventivoBreakdown && metrics.sl1KPIs.hhMetrics.preventivoBreakdown.length > 0 && (
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px dashed #bbf7d0', fontSize: '0.75rem', color: '#475569' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#1e293b' }}>Desglose por subcategoría:</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            {metrics.sl1KPIs.hhMetrics.preventivoBreakdown.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>• {item.name}:</span>
+                                <strong>{item.hours} hs</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 10) % HH Varios */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #2563eb' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>10) TRABAJOS VARIOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#2563eb' }}>
+                          {metrics.sl1KPIs.hhMetrics?.pctHHVarios}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.sl1KPIs.hhMetrics?.hhVarios} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Mantenimiento edilicio / varios</span>
+
+                      {metrics.sl1KPIs.hhMetrics?.variosBreakdown && metrics.sl1KPIs.hhMetrics.variosBreakdown.length > 0 && (
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px dashed #cbd5e1', fontSize: '0.75rem', color: '#475569' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#1e293b' }}>Desglose por subcategoría:</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            {metrics.sl1KPIs.hhMetrics.variosBreakdown.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>• {item.name}:</span>
+                                <strong>{item.hours} hs</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 11) % HH Ausentismo */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #d97706' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>11) AUSENTISMO / NO PRODUCTIVO</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#d97706' }}>
+                          {metrics.sl1KPIs.hhMetrics?.pctHHAusentismo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.sl1KPIs.hhMetrics?.hhAusentismo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Ausentismo / no productivo</span>
+
+                      {metrics.sl1KPIs.hhMetrics?.ausentismoBreakdown && metrics.sl1KPIs.hhMetrics.ausentismoBreakdown.length > 0 && (
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px dashed #fed7aa', fontSize: '0.75rem', color: '#475569' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#1e293b' }}>Desglose por subcategoría:</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            {metrics.sl1KPIs.hhMetrics.ausentismoBreakdown.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>• {item.name}:</span>
+                                <strong>{item.hours} hs</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* SECCIÓN SL2: INDICADORES MENSUALES CLAVE */}
             {user.plant === 'SL2' && metrics?.sl2KPIs && (
               <>

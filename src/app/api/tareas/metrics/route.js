@@ -160,12 +160,13 @@ export async function GET(request) {
       };
     });
 
-    // 5. Cálculos específicos para los KPIs de la planta SL2
+    // 5. Cálculos específicos para los KPIs de las plantas (SL2 y SL1)
     const findMachAvail = (pattern) => {
       const match = machinesAvailabilityList.find(m => m.name.toUpperCase().includes(pattern.toUpperCase()));
       return match ? match : null;
     };
 
+    // KPIs SL2
     const kpiFL02 = findMachAvail('FL02');
     const kpiM01 = findMachAvail('M01');
     const kpiM03 = findMachAvail('M03');
@@ -175,7 +176,6 @@ export async function GET(request) {
     const kpiP05 = findMachAvail('P05');
     const kpiP06 = findMachAvail('P06');
 
-    // Media P05-P06
     let kpiMediaP05P06 = null;
     const availP05 = kpiP05?.availability_pct;
     const availP06 = kpiP06?.availability_pct;
@@ -185,6 +185,37 @@ export async function GET(request) {
       kpiMediaP05P06 = availP05;
     } else if (availP06 !== null && availP06 !== undefined) {
       kpiMediaP05P06 = availP06;
+    }
+
+    // KPIs SL1
+    const kpiH08 = findMachAvail('H08');
+    const kpiH09 = findMachAvail('H09');
+    const kpiMEP02 = findMachAvail('MEP02') || findMachAvail('MEP');
+    const kpiP08_SL1 = findMachAvail('P08');
+    const kpiP09_SL1 = findMachAvail('P09');
+
+    let kpiMediaP08P09_SL1 = null;
+    const availP08_SL1 = kpiP08_SL1?.availability_pct;
+    const availP09_SL1 = kpiP09_SL1?.availability_pct;
+    if (availP08_SL1 !== null && availP08_SL1 !== undefined && availP09_SL1 !== null && availP09_SL1 !== undefined) {
+      kpiMediaP08P09_SL1 = parseFloat(((availP08_SL1 + availP09_SL1) / 2).toFixed(2));
+    } else if (availP08_SL1 !== null && availP08_SL1 !== undefined) {
+      kpiMediaP08P09_SL1 = availP08_SL1;
+    } else if (availP09_SL1 !== null && availP09_SL1 !== undefined) {
+      kpiMediaP08P09_SL1 = availP09_SL1;
+    }
+
+    // Tejedoras (SL1)
+    const tejedoras = machinesAvailabilityList.filter(m => 
+      m.name.toLowerCase().includes('tejedora') || (m.sector && m.sector.toLowerCase().includes('tejedora'))
+    );
+    let kpiMenorTejedoras = null;
+    let kpiMenorTejedoraNombre = null;
+    const validTejedoras = tejedoras.filter(m => m.availability_pct !== null && m.availability_pct !== undefined);
+    if (validTejedoras.length > 0) {
+      validTejedoras.sort((a, b) => a.availability_pct - b.availability_pct);
+      kpiMenorTejedoras = validTejedoras[0].availability_pct;
+      kpiMenorTejedoraNombre = validTejedoras[0].name;
     }
 
     // Puentes Grúas
@@ -330,6 +361,41 @@ export async function GET(request) {
           P05: kpiP05,
           P06: kpiP06,
           puentesGruas,
+          autoelevadores
+        },
+        hhMetrics: {
+          totalHHLoaded: parseFloat(totalHHLoaded.toFixed(2)),
+          hhCorrectivo: parseFloat(hhCorrectivo.toFixed(2)),
+          hhPreventivo: parseFloat(hhPreventivo.toFixed(2)),
+          hhVarios: parseFloat(hhVarios.toFixed(2)),
+          hhAusentismo: parseFloat(hhAusentismo.toFixed(2)),
+          pctHHCorrectivo,
+          pctHHPreventivo,
+          pctHHVarios,
+          pctHHAusentismo,
+          preventivoBreakdown: Object.entries(hhPreventivoBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours),
+          variosBreakdown: Object.entries(hhVariosBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours),
+          ausentismoBreakdown: Object.entries(hhAusentismoBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours)
+        }
+      },
+      sl1KPIs: {
+        disponibilidadH08: kpiH08 ? kpiH08.availability_pct : null,
+        disponibilidadH09: kpiH09 ? kpiH09.availability_pct : null,
+        disponibilidadMEP02: kpiMEP02 ? kpiMEP02.availability_pct : null,
+        disponibilidadMediaP08P09: kpiMediaP08P09_SL1,
+        menorDisponibilidadPuentesGruas: kpiMenorPuentesGruas,
+        menorPuenteGruaNombre: kpiMenorPuenteGruaNombre,
+        menorDisponibilidadTejedoras: kpiMenorTejedoras,
+        menorTejedoraNombre: kpiMenorTejedoraNombre,
+        disponibilidadMediaAutoelevadores: kpiMediaAutoelevadores,
+        details: {
+          H08: kpiH08,
+          H09: kpiH09,
+          MEP02: kpiMEP02,
+          P08: kpiP08_SL1,
+          P09: kpiP09_SL1,
+          puentesGruas,
+          tejedoras,
           autoelevadores
         },
         hhMetrics: {
