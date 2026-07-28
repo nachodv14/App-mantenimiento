@@ -192,9 +192,12 @@ export async function GET(request) {
       m.name.toLowerCase().includes('puente') || (m.sector && m.sector.toLowerCase().includes('puente'))
     );
     let kpiMenorPuentesGruas = null;
-    const validPuentesAvail = puentesGruas.map(m => m.availability_pct).filter(v => v !== null && v !== undefined);
-    if (validPuentesAvail.length > 0) {
-      kpiMenorPuentesGruas = Math.min(...validPuentesAvail);
+    let kpiMenorPuenteGruaNombre = null;
+    const validPuentes = puentesGruas.filter(m => m.availability_pct !== null && m.availability_pct !== undefined);
+    if (validPuentes.length > 0) {
+      validPuentes.sort((a, b) => a.availability_pct - b.availability_pct);
+      kpiMenorPuentesGruas = validPuentes[0].availability_pct;
+      kpiMenorPuenteGruaNombre = validPuentes[0].name;
     }
 
     // Autoelevadores
@@ -300,6 +303,7 @@ export async function GET(request) {
         disponibilidadMediaP05P06: kpiMediaP05P06,
         disponibilidadMediaP08P09: kpiMediaP05P06,
         menorDisponibilidadPuentesGruas: kpiMenorPuentesGruas,
+        menorPuenteGruaNombre: kpiMenorPuenteGruaNombre,
         disponibilidadMediaAutoelevadores: kpiMediaAutoelevadores,
         details: {
           FL02: kpiFL02,

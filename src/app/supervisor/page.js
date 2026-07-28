@@ -719,7 +719,9 @@ export default function SupervisorView() {
                     <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #d97706' }}>
                       <div>
                         <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>8) Menor disponibilidad Puentes Grúas</strong>
-                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Mínimo valor de puentes grúas</span>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                          {metrics.sl2KPIs.menorPuenteGruaNombre ? `Equipo: ${metrics.sl2KPIs.menorPuenteGruaNombre}` : 'Mínimo valor de puentes grúas'}
+                        </span>
                       </div>
                       {renderKpiBadge(metrics.sl2KPIs.menorDisponibilidadPuentesGruas)}
                     </div>
@@ -744,7 +746,6 @@ export default function SupervisorView() {
 
                   <div style={{ marginBottom: '1.25rem', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem 1.25rem', borderRadius: '6px', fontSize: '0.95rem', color: '#166534', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <span>📌 Total Horas Hombre cargadas en el período: <strong>{metrics.sl2KPIs.hhMetrics?.totalHHLoaded} hs</strong></span>
-                    <span style={{ fontSize: '0.85rem', color: '#15803d' }}>Suma (Indicadores 10 + 11 + 12 + 13) = 100%</span>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
@@ -774,7 +775,7 @@ export default function SupervisorView() {
                           {metrics.sl2KPIs.hhMetrics?.hhPreventivo} hs
                         </span>
                       </div>
-                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Preventivos condicional/periódicos</span>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Preventivos condicional/sistemáticos</span>
                     </div>
 
                     {/* 12) % HH Varios */}
