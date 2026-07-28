@@ -187,7 +187,7 @@ export async function GET(request) {
       kpiMediaP05P06 = availP06;
     }
 
-    // KPIs SL1
+    // KPIs SL1 - Planta
     const kpiH08 = findMachAvail('H08');
     const kpiH09 = findMachAvail('H09');
     const kpiMEP02 = findMachAvail('MEP02') || findMachAvail('MEP');
@@ -204,6 +204,15 @@ export async function GET(request) {
     } else if (availP09_SL1 !== null && availP09_SL1 !== undefined) {
       kpiMediaP08P09_SL1 = availP09_SL1;
     }
+
+    // KPIs SL1 - Sucursal comercial San Luis
+    const kpiR39 = findMachAvail('R39');
+    const kpiR40 = findMachAvail('R40');
+    const kpiR43 = findMachAvail('R43');
+    const kpiR44 = findMachAvail('R44');
+    const kpiQ03 = findMachAvail('Q03');
+    const kpiS09 = findMachAvail('S09');
+    const kpiS14 = findMachAvail('S14');
 
     // Tejedoras (SL1)
     const tejedoras = machinesAvailabilityList.filter(m => 
@@ -388,6 +397,14 @@ export async function GET(request) {
         menorDisponibilidadTejedoras: kpiMenorTejedoras,
         menorTejedoraNombre: kpiMenorTejedoraNombre,
         disponibilidadMediaAutoelevadores: kpiMediaAutoelevadores,
+        // Sucursal comercial San Luis
+        disponibilidadR39: kpiR39 ? kpiR39.availability_pct : null,
+        disponibilidadR40: kpiR40 ? kpiR40.availability_pct : null,
+        disponibilidadR43: kpiR43 ? kpiR43.availability_pct : null,
+        disponibilidadR44: kpiR44 ? kpiR44.availability_pct : null,
+        disponibilidadQ03: kpiQ03 ? kpiQ03.availability_pct : null,
+        disponibilidadS09: kpiS09 ? kpiS09.availability_pct : null,
+        disponibilidadS14: kpiS14 ? kpiS14.availability_pct : null,
         details: {
           H08: kpiH08,
           H09: kpiH09,
@@ -396,7 +413,9 @@ export async function GET(request) {
           P09: kpiP09_SL1,
           puentesGruas,
           tejedoras,
-          autoelevadores
+          autoelevadores,
+          R39: kpiR39, R40: kpiR40, R43: kpiR43, R44: kpiR44,
+          Q03: kpiQ03, S09: kpiS09, S14: kpiS14
         },
         hhMetrics: {
           totalHHLoaded: parseFloat(totalHHLoaded.toFixed(2)),

@@ -722,6 +722,80 @@ export default function SupervisorView() {
                   </div>
                 </div>
 
+                {/* SUCURSAL COMERCIAL SAN LUIS */}
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    🏪 Indicadores de Disponibilidad — Sucursal Comercial San Luis
+                  </h3>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+
+                    {/* 1) R39 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>1) Disponibilidad R39</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina R39</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadR39)}
+                    </div>
+
+                    {/* 2) R40 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>2) Disponibilidad R40</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina R40</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadR40)}
+                    </div>
+
+                    {/* 3) R43 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>3) Disponibilidad R43</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina R43</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadR43)}
+                    </div>
+
+                    {/* 4) R44 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>4) Disponibilidad R44</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina R44</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadR44)}
+                    </div>
+
+                    {/* 5) Q03 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>5) Disponibilidad Q03</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina Q03</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadQ03)}
+                    </div>
+
+                    {/* 6) S09 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>6) Disponibilidad S09</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina S09</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadS09)}
+                    </div>
+
+                    {/* 7) S14 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>7) Disponibilidad S14</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina S14</span>
+                      </div>
+                      {renderKpiBadge(metrics.sl1KPIs.disponibilidadS14)}
+                    </div>
+
+                  </div>
+                </div>
+
                 {/* HORAS HOMBRE METRICS (8 AL 11 DE SL1) */}
                 <div>
                   <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
