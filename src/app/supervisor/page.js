@@ -706,13 +706,13 @@ export default function SupervisorView() {
                       {renderKpiBadge(metrics.sl2KPIs.disponibilidadM07)}
                     </div>
 
-                    {/* 7) Media P08-P09 */}
+                    {/* 7) Media P05-P06 */}
                     <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #0284c7' }}>
                       <div>
-                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>7) Disponibilidad media P08-P09</strong>
-                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Promedio de máquinas P08 y P09</span>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>7) Disponibilidad media P05-P06</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Promedio de máquinas P05 y P06</span>
                       </div>
-                      {renderKpiBadge(metrics.sl2KPIs.disponibilidadMediaP08P09)}
+                      {renderKpiBadge(metrics.sl2KPIs.disponibilidadMediaP05P06 ?? metrics.sl2KPIs.disponibilidadMediaP08P09)}
                     </div>
 
                     {/* 8) Menor disponibilidad Puentes Grúas */}

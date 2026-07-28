@@ -172,19 +172,19 @@ export async function GET(request) {
     const kpiM05 = findMachAvail('M05');
     const kpiM06 = findMachAvail('M06');
     const kpiM07 = findMachAvail('M07');
-    const kpiP08 = findMachAvail('P08');
-    const kpiP09 = findMachAvail('P09');
+    const kpiP05 = findMachAvail('P05');
+    const kpiP06 = findMachAvail('P06');
 
-    // Media P08-P09
-    let kpiMediaP08P09 = null;
-    const availP08 = kpiP08?.availability_pct;
-    const availP09 = kpiP09?.availability_pct;
-    if (availP08 !== null && availP08 !== undefined && availP09 !== null && availP09 !== undefined) {
-      kpiMediaP08P09 = parseFloat(((availP08 + availP09) / 2).toFixed(2));
-    } else if (availP08 !== null && availP08 !== undefined) {
-      kpiMediaP08P09 = availP08;
-    } else if (availP09 !== null && availP09 !== undefined) {
-      kpiMediaP08P09 = availP09;
+    // Media P05-P06
+    let kpiMediaP05P06 = null;
+    const availP05 = kpiP05?.availability_pct;
+    const availP06 = kpiP06?.availability_pct;
+    if (availP05 !== null && availP05 !== undefined && availP06 !== null && availP06 !== undefined) {
+      kpiMediaP05P06 = parseFloat(((availP05 + availP06) / 2).toFixed(2));
+    } else if (availP05 !== null && availP05 !== undefined) {
+      kpiMediaP05P06 = availP05;
+    } else if (availP06 !== null && availP06 !== undefined) {
+      kpiMediaP05P06 = availP06;
     }
 
     // Puentes Grúas
@@ -297,7 +297,8 @@ export async function GET(request) {
         disponibilidadM05: kpiM05 ? kpiM05.availability_pct : null,
         disponibilidadM06: kpiM06 ? kpiM06.availability_pct : null,
         disponibilidadM07: kpiM07 ? kpiM07.availability_pct : null,
-        disponibilidadMediaP08P09: kpiMediaP08P09,
+        disponibilidadMediaP05P06: kpiMediaP05P06,
+        disponibilidadMediaP08P09: kpiMediaP05P06,
         menorDisponibilidadPuentesGruas: kpiMenorPuentesGruas,
         disponibilidadMediaAutoelevadores: kpiMediaAutoelevadores,
         details: {
@@ -307,8 +308,8 @@ export async function GET(request) {
           M05: kpiM05,
           M06: kpiM06,
           M07: kpiM07,
-          P08: kpiP08,
-          P09: kpiP09,
+          P05: kpiP05,
+          P06: kpiP06,
           puentesGruas,
           autoelevadores
         },
