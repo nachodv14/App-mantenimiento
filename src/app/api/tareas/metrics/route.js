@@ -298,13 +298,29 @@ export async function GET(request) {
     }
 
     // 6. Horas Hombre (HH) Metrics - PARTICIÓN COMPLETA SIN PÉRDIDA DE HORAS
+    // Auto-corregir man_hours desfasados tras ediciones de horario
+    try {
+      await query(`
+        UPDATE tasks 
+        SET man_hours = (total_time_minutes / 60.0) * (
+          CASE 
+            WHEN companions IS NOT NULL AND jsonb_typeof(companions::jsonb) = 'array' 
+            THEN jsonb_array_length(companions::jsonb) + 1 
+            ELSE 1 
+          END
+        )
+        WHERE total_time_minutes IS NOT NULL;
+      `);
+    } catch(e) {}
+
     const hhRes = await query(
       `SELECT 
          t.task_type,
          t.nature,
          t.category,
          t.man_hours,
-         t.total_time_minutes
+         t.total_time_minutes,
+         t.companions
        FROM tasks t
        WHERE t.status = 'APPROVED'
          AND ($1 = 'ALL' OR t.plant = $1)
@@ -327,12 +343,20 @@ export async function GET(request) {
     ];
 
     hhRes.rows.forEach(r => {
-      // Calcular horas de esta tarea (preferir man_hours, si es null usar total_time_minutes / 60)
+      let compsCount = 0;
+      if (r.companions) {
+        try {
+          const comps = typeof r.companions === 'string' ? JSON.parse(r.companions) : r.companions;
+          if (Array.isArray(comps)) compsCount = comps.length;
+        } catch (e) {}
+      }
+
+      // Calcular horas de esta tarea (usar minutos reales ajustados por operarios acompañantes)
       let taskHH = 0;
-      if (r.man_hours !== null && r.man_hours !== undefined && !isNaN(parseFloat(r.man_hours))) {
+      if (r.total_time_minutes !== null && r.total_time_minutes !== undefined && !isNaN(parseFloat(r.total_time_minutes))) {
+        taskHH = (parseFloat(r.total_time_minutes) / 60.0) * (compsCount + 1);
+      } else if (r.man_hours !== null && r.man_hours !== undefined && !isNaN(parseFloat(r.man_hours))) {
         taskHH = parseFloat(r.man_hours);
-      } else if (r.total_time_minutes !== null && r.total_time_minutes !== undefined) {
-        taskHH = parseFloat(r.total_time_minutes) / 60.0;
       }
 
       const natureLower = (r.nature || '').toLowerCase();

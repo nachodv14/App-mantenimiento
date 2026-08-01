@@ -46,7 +46,18 @@ export async function PUT(request, { params }) {
     let paramIndex = 5;
 
     if (start_time && end_time) {
-      updateQuery += `, start_time = $${paramIndex++}, end_time = $${paramIndex++}, total_time_minutes = (EXTRACT(EPOCH FROM ($${paramIndex - 1}::time - $${paramIndex - 2}::time))/60 + 1440)::int % 1440`;
+      const resTask = await query('SELECT companions FROM tasks WHERE id = $1', [id]);
+      let compsCount = 0;
+      if (resTask.rows.length > 0 && resTask.rows[0].companions) {
+        try {
+          const comps = typeof resTask.rows[0].companions === 'string' ? JSON.parse(resTask.rows[0].companions) : resTask.rows[0].companions;
+          if (Array.isArray(comps)) compsCount = comps.length;
+        } catch(e) {}
+      }
+
+      updateQuery += `, start_time = $${paramIndex++}, end_time = $${paramIndex++}, 
+        total_time_minutes = (EXTRACT(EPOCH FROM ($${paramIndex - 1}::time - $${paramIndex - 2}::time))/60 + 1440)::int % 1440,
+        man_hours = (((EXTRACT(EPOCH FROM ($${paramIndex - 1}::time - $${paramIndex - 2}::time))/60 + 1440)::int % 1440) / 60.0) * ${compsCount + 1}`;
       params.push(start_time, end_time);
     }
 
