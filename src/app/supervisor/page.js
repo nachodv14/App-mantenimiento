@@ -911,6 +911,226 @@ export default function SupervisorView() {
               </>
             )}
 
+            {/* SECCIÓN RAM: INDICADORES MENSUALES CLAVE */}
+            {user.plant === 'RAM' && metrics?.ramKPIs && (
+              <>
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    📊 Indicadores de Disponibilidad de Equipos (Planta RAM)
+                  </h3>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+
+                    {/* 1) H06 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>1) Disponibilidad H06</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina H06</span>
+                      </div>
+                      {renderKpiBadge(metrics.ramKPIs.disponibilidadH06)}
+                    </div>
+
+                    {/* 2) Media REC01-REC02 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #0284c7' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>2) Disponibilidad media REC01-REC02</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Promedio de máquinas REC01 y REC02</span>
+                      </div>
+                      {renderKpiBadge(metrics.ramKPIs.disponibilidadMediaREC01REC02)}
+                    </div>
+
+                    {/* 3) MEP01 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>3) Disponibilidad MEP01</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina MEP01</span>
+                      </div>
+                      {renderKpiBadge(metrics.ramKPIs.disponibilidadMEP01)}
+                    </div>
+
+                    {/* 4) P04 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>4) Disponibilidad P04</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina P04</span>
+                      </div>
+                      {renderKpiBadge(metrics.ramKPIs.disponibilidadP04)}
+                    </div>
+
+                    {/* 5) Menor disponibilidad Puentes Grúas */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #d97706' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>5) Menor disponibilidad Puentes Grúas</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                          {metrics.ramKPIs.menorPuenteGruaNombre ? `Equipo: ${metrics.ramKPIs.menorPuenteGruaNombre}` : 'Mínimo valor de puentes grúas'}
+                        </span>
+                      </div>
+                      {renderKpiBadge(metrics.ramKPIs.menorDisponibilidadPuentesGruas)}
+                    </div>
+
+                    {/* 6) TR02 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>6) Disponibilidad TR02</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina TR02</span>
+                      </div>
+                      {renderKpiBadge(metrics.ramKPIs.disponibilidadTR02)}
+                    </div>
+
+                    {/* 7) TR03 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>7) Disponibilidad TR03</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina TR03</span>
+                      </div>
+                      {renderKpiBadge(metrics.ramKPIs.disponibilidadTR03)}
+                    </div>
+
+                    {/* 8) TR04 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>8) Disponibilidad TR04</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina TR04</span>
+                      </div>
+                      {renderKpiBadge(metrics.ramKPIs.disponibilidadTR04)}
+                    </div>
+
+                    {/* 9) DRUIDS01 */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>9) Disponibilidad DRUIDS01</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina DRUIDS01</span>
+                      </div>
+                      {renderKpiBadge(metrics.ramKPIs.disponibilidadDRUIDS01)}
+                    </div>
+
+                    {/* 10) Media Autoelevadores */}
+                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid #059669' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>10) Disponibilidad media Autoelevadores</strong>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Promedio de máquinas S05, S06 y S07</span>
+                      </div>
+                      {renderKpiBadge(metrics.ramKPIs.disponibilidadMediaAutoelevadores)}
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* HORAS HOMBRE METRICS (11 AL 14 DE RAM) */}
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    ⏱️ Distribución de Horas Hombre (% HH Aprobadas)
+                  </h3>
+
+                  <div style={{ marginBottom: '1.25rem', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem 1.25rem', borderRadius: '6px', fontSize: '0.95rem', color: '#166534', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <span>📌 Total Horas Hombre cargadas en el período: <strong>{metrics.ramKPIs.hhMetrics?.totalHHLoaded} hs</strong></span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+
+                    {/* 11) % HH Correctivos */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #dc2626' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>11) TRABAJOS CORRECTIVOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#dc2626' }}>
+                          {metrics.ramKPIs.hhMetrics?.pctHHCorrectivo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.ramKPIs.hhMetrics?.hhCorrectivo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Tareas en "Fallas"</span>
+                    </div>
+
+                    {/* 12) % HH Preventivos */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #16a34a' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>12) TRABAJOS PREVENTIVOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#16a34a' }}>
+                          {metrics.ramKPIs.hhMetrics?.pctHHPreventivo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.ramKPIs.hhMetrics?.hhPreventivo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Preventivos condicional/sistemáticos</span>
+
+                      {metrics.ramKPIs.hhMetrics?.preventivoBreakdown && metrics.ramKPIs.hhMetrics.preventivoBreakdown.length > 0 && (
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px dashed #bbf7d0', fontSize: '0.75rem', color: '#475569' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#1e293b' }}>Desglose por subcategoría:</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            {metrics.ramKPIs.hhMetrics.preventivoBreakdown.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>• {item.name}:</span>
+                                <strong>{item.hours} hs</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 13) % HH Varios */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #2563eb' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>13) TRABAJOS VARIOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#2563eb' }}>
+                          {metrics.ramKPIs.hhMetrics?.pctHHVarios}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.ramKPIs.hhMetrics?.hhVarios} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Mantenimiento edilicio / varios</span>
+
+                      {metrics.ramKPIs.hhMetrics?.variosBreakdown && metrics.ramKPIs.hhMetrics.variosBreakdown.length > 0 && (
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px dashed #cbd5e1', fontSize: '0.75rem', color: '#475569' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#1e293b' }}>Desglose por subcategoría:</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            {metrics.ramKPIs.hhMetrics.variosBreakdown.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>• {item.name}:</span>
+                                <strong>{item.hours} hs</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 14) % HH Ausentismo */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #d97706' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>14) AUSENTISMO / NO PRODUCTIVO</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#d97706' }}>
+                          {metrics.ramKPIs.hhMetrics?.pctHHAusentismo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.ramKPIs.hhMetrics?.hhAusentismo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Ausentismo / no productivo</span>
+
+                      {metrics.ramKPIs.hhMetrics?.ausentismoBreakdown && metrics.ramKPIs.hhMetrics.ausentismoBreakdown.length > 0 && (
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px dashed #fed7aa', fontSize: '0.75rem', color: '#475569' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#1e293b' }}>Desglose por subcategoría:</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            {metrics.ramKPIs.hhMetrics.ausentismoBreakdown.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>• {item.name}:</span>
+                                <strong>{item.hours} hs</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* SECCIÓN SL2: INDICADORES MENSUALES CLAVE */}
             {user.plant === 'SL2' && metrics?.sl2KPIs && (
               <>

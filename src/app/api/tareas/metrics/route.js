@@ -262,6 +262,41 @@ export async function GET(request) {
       kpiMediaAutoelevadoresSL1 = parseFloat((sumAutoSL1 / validAutoSL1.length).toFixed(2));
     }
 
+    // KPIs RAM
+    const kpiH06 = findMachAvail('H06');
+    const kpiREC01 = findMachAvail('REC01');
+    const kpiREC02 = findMachAvail('REC02');
+    const kpiMEP01 = findMachAvail('MEP01');
+    const kpiP04 = findMachAvail('P04');
+    const kpiTR02 = findMachAvail('TR02');
+    const kpiTR03 = findMachAvail('TR03');
+    const kpiTR04 = findMachAvail('TR04');
+    const kpiDRUIDS01 = findMachAvail('DRUIDS01') || findMachAvail('DRUIDS');
+
+    // Media REC01-REC02
+    let kpiMediaREC01REC02 = null;
+    const availREC01 = kpiREC01?.availability_pct;
+    const availREC02 = kpiREC02?.availability_pct;
+    if (availREC01 !== null && availREC01 !== undefined && availREC02 !== null && availREC02 !== undefined) {
+      kpiMediaREC01REC02 = parseFloat(((availREC01 + availREC02) / 2).toFixed(2));
+    } else if (availREC01 !== null && availREC01 !== undefined) {
+      kpiMediaREC01REC02 = availREC01;
+    } else if (availREC02 !== null && availREC02 !== undefined) {
+      kpiMediaREC01REC02 = availREC02;
+    }
+
+    // Autoelevadores RAM — S05, S06, S07 específicamente
+    const kpiS05 = findMachAvail('S05');
+    const kpiS06 = findMachAvail('S06');
+    const kpiS07 = findMachAvail('S07');
+    const autoelevadoresRAM = [kpiS05, kpiS06, kpiS07].filter(m => m !== null && m !== undefined);
+    let kpiMediaAutoelevadoresRAM = null;
+    const validAutoRAM = autoelevadoresRAM.map(m => m.availability_pct).filter(v => v !== null && v !== undefined);
+    if (validAutoRAM.length > 0) {
+      const sumAutoRAM = validAutoRAM.reduce((acc, curr) => acc + curr, 0);
+      kpiMediaAutoelevadoresRAM = parseFloat((sumAutoRAM / validAutoRAM.length).toFixed(2));
+    }
+
     // 6. Horas Hombre (HH) Metrics - PARTICIÓN COMPLETA SIN PÉRDIDA DE HORAS
     const hhRes = await query(
       `SELECT 
@@ -428,6 +463,41 @@ export async function GET(request) {
           S16: kpiS16, SA02: kpiSA02,
           R39: kpiR39, R40: kpiR40, R43: kpiR43, R44: kpiR44,
           Q03: kpiQ03, S09: kpiS09, S14: kpiS14
+        },
+        hhMetrics: {
+          totalHHLoaded: parseFloat(totalHHLoaded.toFixed(2)),
+          hhCorrectivo: parseFloat(hhCorrectivo.toFixed(2)),
+          hhPreventivo: parseFloat(hhPreventivo.toFixed(2)),
+          hhVarios: parseFloat(hhVarios.toFixed(2)),
+          hhAusentismo: parseFloat(hhAusentismo.toFixed(2)),
+          pctHHCorrectivo,
+          pctHHPreventivo,
+          pctHHVarios,
+          pctHHAusentismo,
+          preventivoBreakdown: Object.entries(hhPreventivoBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours),
+          variosBreakdown: Object.entries(hhVariosBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours),
+          ausentismoBreakdown: Object.entries(hhAusentismoBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours)
+        }
+      },
+      ramKPIs: {
+        disponibilidadH06: kpiH06 ? kpiH06.availability_pct : null,
+        disponibilidadMediaREC01REC02: kpiMediaREC01REC02,
+        disponibilidadMEP01: kpiMEP01 ? kpiMEP01.availability_pct : null,
+        disponibilidadP04: kpiP04 ? kpiP04.availability_pct : null,
+        menorDisponibilidadPuentesGruas: kpiMenorPuentesGruas,
+        menorPuenteGruaNombre: kpiMenorPuenteGruaNombre,
+        disponibilidadTR02: kpiTR02 ? kpiTR02.availability_pct : null,
+        disponibilidadTR03: kpiTR03 ? kpiTR03.availability_pct : null,
+        disponibilidadTR04: kpiTR04 ? kpiTR04.availability_pct : null,
+        disponibilidadDRUIDS01: kpiDRUIDS01 ? kpiDRUIDS01.availability_pct : null,
+        disponibilidadMediaAutoelevadores: kpiMediaAutoelevadoresRAM,
+        details: {
+          H06: kpiH06, REC01: kpiREC01, REC02: kpiREC02,
+          MEP01: kpiMEP01, P04: kpiP04,
+          TR02: kpiTR02, TR03: kpiTR03, TR04: kpiTR04,
+          DRUIDS01: kpiDRUIDS01,
+          puentesGruas,
+          autoelevadoresRAM, S05: kpiS05, S06: kpiS06, S07: kpiS07
         },
         hhMetrics: {
           totalHHLoaded: parseFloat(totalHHLoaded.toFixed(2)),
