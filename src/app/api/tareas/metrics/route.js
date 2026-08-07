@@ -298,69 +298,88 @@ export async function GET(request) {
     }
 
     // Consulta de paradas específicas por líneas para DRUIDS01 (RAM)
-    const druidsTasksRes = await query(
-      `SELECT t.stop_time_minutes, t.affected_lines, t.description
-       FROM tasks t
-       JOIN machines m ON t.machine_id = m.id
-       WHERE t.status = 'APPROVED'
-         AND UPPER(m.name) LIKE '%DRUIDS%'
-         AND t.task_date >= $1 AND t.task_date <= $2`,
-      [startDateStr, endDateStr]
-    );
+    // Buscamos el objeto de máquina ya cargado para evitar JOIN con posible incompatibilidad de tipos
+    const druidsMachineObj = machines.find(m => m.name && m.name.toUpperCase().includes('DRUIDS'));
 
-    const druidsLineStopMinutes = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0 };
-    let druidsFullEquipoStopMinutes = 0;
-
-    druidsTasksRes.rows.forEach(r => {
-      const stopMins = parseInt(r.stop_time_minutes || 0, 10);
-      if (stopMins <= 0) return;
-
-      const affText = ((r.affected_lines || '') + ' ' + (r.description || '')).toLowerCase();
-      const isFullEquipo = affText.includes('equipo completo') || affText.includes('todo el equipo');
-
-      if (isFullEquipo) {
-        // Opción B: Resta horas únicamente al indicador general de la máquina
-        druidsFullEquipoStopMinutes += stopMins;
-      } else {
-        let foundLine = false;
-        for (let i = 1; i <= 8; i++) {
-          if (affText.includes(`línea ${i}`) || affText.includes(`linea ${i}`)) {
-            druidsLineStopMinutes[i] += stopMins;
-            foundLine = true;
-          }
-        }
-        if (!foundLine) {
-          druidsFullEquipoStopMinutes += stopMins;
-        }
-      }
-    });
-
-    const druidsMachine = findMachAvail('DRUIDS01') || findMachAvail('DRUIDS');
     let druidsLineBreakdown = [];
     let kpiDRUIDS01_Final = null;
 
-    if (druidsMachine && druidsMachine.is_configured && druidsMachine.total_available_hours > 0) {
-      const totalAvailHs = druidsMachine.total_available_hours;
-      
-      let sumLinePcts = 0;
-      for (let i = 1; i <= 8; i++) {
-        const lineStopHs = (druidsLineStopMinutes[i] || 0) / 60.0;
-        const linePct = Math.max(0, Math.min(100, ((totalAvailHs - lineStopHs) / totalAvailHs) * 100));
-        const roundedLinePct = parseFloat(linePct.toFixed(2));
-        sumLinePcts += roundedLinePct;
-        druidsLineBreakdown.push({
-          line: `Línea ${i}`,
-          availability_pct: roundedLinePct,
-          stop_hours: parseFloat(lineStopHs.toFixed(2))
-        });
+    if (druidsMachineObj) {
+      let druidsTasksRows = [];
+      try {
+        const druidsTasksRes = await query(
+          `SELECT stop_time_minutes, affected_lines, description
+           FROM tasks
+           WHERE status = 'APPROVED'
+             AND machine_id = $1
+             AND task_date >= $2 AND task_date <= $3`,
+          [druidsMachineObj.id, startDateStr, endDateStr]
+        );
+        druidsTasksRows = druidsTasksRes.rows;
+      } catch(e) {
+        console.error('Error fetching DRUIDS01 tasks:', e.message);
       }
 
-      const lineAvgPct = sumLinePcts / 8.0;
-      const fullEquipoStopHs = (druidsFullEquipoStopMinutes || 0) / 60.0;
-      const fullEquipoPenaltyPct = (fullEquipoStopHs / totalAvailHs) * 100;
-      
-      const finalGeneralPct = Math.max(0, Math.min(100, lineAvgPct - fullEquipoPenaltyPct));
-      kpiDRUIDS01_Final = parseFloat(finalGeneralPct.toFixed(2));
+      const druidsLineStopMinutes = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0 };
+      let druidsFullEquipoStopMinutes = 0;
+
+      druidsTasksRows.forEach(r => {
+        const stopMins = parseInt(r.stop_time_minutes || 0, 10);
+        if (stopMins <= 0) return;
+
+        // Parsear affected_lines desde JSON si es string, o usarlo directamente
+        let affLines = [];
+        try {
+          affLines = typeof r.affected_lines === 'string'
+            ? JSON.parse(r.affected_lines)
+            : (Array.isArray(r.affected_lines) ? r.affected_lines : []);
+        } catch(e) { affLines = []; }
+
+        const affText = (affLines.join(' ') + ' ' + (r.description || '')).toLowerCase();
+        const isFullEquipo = affText.includes('equipo completo') || affText.includes('todo el equipo');
+
+        if (isFullEquipo) {
+          // Opción B: Resta horas únicamente al indicador general de la máquina
+          druidsFullEquipoStopMinutes += stopMins;
+        } else {
+          let foundLine = false;
+          for (let i = 1; i <= 8; i++) {
+            if (affText.includes(`línea ${i}`) || affText.includes(`linea ${i}`)) {
+              druidsLineStopMinutes[i] += stopMins;
+              foundLine = true;
+            }
+          }
+          // Si la tarea no indicó línea específica, afecta el general
+          if (!foundLine) {
+            druidsFullEquipoStopMinutes += stopMins;
+          }
+        }
+      });
+
+      const druidsMachineAvail = findMachAvail('DRUIDS01') || findMachAvail('DRUIDS');
+      if (druidsMachineAvail && druidsMachineAvail.is_configured && druidsMachineAvail.total_available_hours > 0) {
+        const totalAvailHs = druidsMachineAvail.total_available_hours;
+
+        let sumLinePcts = 0;
+        for (let i = 1; i <= 8; i++) {
+          const lineStopHs = (druidsLineStopMinutes[i] || 0) / 60.0;
+          const linePct = Math.max(0, Math.min(100, ((totalAvailHs - lineStopHs) / totalAvailHs) * 100));
+          const roundedLinePct = parseFloat(linePct.toFixed(2));
+          sumLinePcts += roundedLinePct;
+          druidsLineBreakdown.push({
+            line: `Línea ${i}`,
+            availability_pct: roundedLinePct,
+            stop_hours: parseFloat(lineStopHs.toFixed(2))
+          });
+        }
+
+        const lineAvgPct = sumLinePcts / 8.0;
+        const fullEquipoStopHs = druidsFullEquipoStopMinutes / 60.0;
+        const fullEquipoPenaltyPct = (fullEquipoStopHs / totalAvailHs) * 100;
+
+        const finalGeneralPct = Math.max(0, Math.min(100, lineAvgPct - fullEquipoPenaltyPct));
+        kpiDRUIDS01_Final = parseFloat(finalGeneralPct.toFixed(2));
+      }
     }
 
     // KPIs PIL
