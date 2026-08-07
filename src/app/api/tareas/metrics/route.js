@@ -301,6 +301,20 @@ export async function GET(request) {
     const kpiP10 = findMachAvail('P10');
     const kpiS11 = findMachAvail('S11');
 
+    // KPIs CBA (48 Máquinas)
+    const cbaCodes = [
+      'H01','H02','H03','H04','H07','P03','T01','S02','S03','S04','PL01',
+      'SR01','SR07','SR11','SR13','SR02','SR03','U01','G07','Q01','Q02',
+      'R03','R04','R05','R06','R20','R21','R22','R07','R08','R09','R10',
+      'R11','R12','R13','R14','R15','R16','R17','R18','R19','R23','R24',
+      'UR07','UR13','UR15','UR16','X100'
+    ];
+    const cbaKpisObj = {};
+    cbaCodes.forEach(code => {
+      const match = findMachAvail(code);
+      cbaKpisObj[code] = match ? match.availability_pct : null;
+    });
+
     // 6. Horas Hombre (HH) Metrics - PARTICIÓN COMPLETA SIN PÉRDIDA DE HORAS
     // Auto-corregir man_hours desfasados tras ediciones de horario
     try {
@@ -552,6 +566,23 @@ export async function GET(request) {
           S11: kpiS11,
           puentesGruas
         },
+        hhMetrics: {
+          totalHHLoaded: parseFloat(totalHHLoaded.toFixed(2)),
+          hhCorrectivo: parseFloat(hhCorrectivo.toFixed(2)),
+          hhPreventivo: parseFloat(hhPreventivo.toFixed(2)),
+          hhVarios: parseFloat(hhVarios.toFixed(2)),
+          hhAusentismo: parseFloat(hhAusentismo.toFixed(2)),
+          pctHHCorrectivo,
+          pctHHPreventivo,
+          pctHHVarios,
+          pctHHAusentismo,
+          preventivoBreakdown: Object.entries(hhPreventivoBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours),
+          variosBreakdown: Object.entries(hhVariosBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours),
+          ausentismoBreakdown: Object.entries(hhAusentismoBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours)
+        }
+      },
+      cbaKPIs: {
+        availabilities: cbaKpisObj,
         hhMetrics: {
           totalHHLoaded: parseFloat(totalHHLoaded.toFixed(2)),
           hhCorrectivo: parseFloat(hhCorrectivo.toFixed(2)),

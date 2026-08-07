@@ -911,6 +911,191 @@ export default function SupervisorView() {
               </>
             )}
 
+            {/* SECCIÓN CBA: INDICADORES MENSUALES CLAVE */}
+            {user.plant === 'CBA' && metrics?.cbaKPIs && (
+              <>
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    📊 Indicadores de Disponibilidad de Equipos (Planta CBA)
+                  </h3>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+                    {[
+                      { num: 1, code: 'H01', desc: 'Schnell Formula' },
+                      { num: 2, code: 'H02', desc: 'Schnell Coil' },
+                      { num: 3, code: 'H03', desc: 'Schnell Pilotera CM PRO 1600' },
+                      { num: 4, code: 'H04', desc: 'Schnell Acu6' },
+                      { num: 5, code: 'H07', desc: 'Reta 12' },
+                      { num: 6, code: 'P03', desc: 'Compresor Schulz Tornillo' },
+                      { num: 7, code: 'T01', desc: 'Máquina T01' },
+                      { num: 8, code: 'S02', desc: 'Autoelevador S02' },
+                      { num: 9, code: 'S03', desc: 'Autoelevador S03' },
+                      { num: 10, code: 'S04', desc: 'Autoelevador S04' },
+                      { num: 11, code: 'PL01', desc: 'Planchadora Marafon' },
+                      { num: 12, code: 'SR01', desc: 'Fraccionadora alambre' },
+                      { num: 13, code: 'SR07', desc: 'Fraccionadora alambre' },
+                      { num: 14, code: 'SR11', desc: 'Fraccionadora alambre' },
+                      { num: 15, code: 'SR13', desc: 'Fraccionadora alambre grande' },
+                      { num: 16, code: 'SR02', desc: 'Máquina de púas' },
+                      { num: 17, code: 'SR03', desc: 'Máquina de púas' },
+                      { num: 18, code: 'U01', desc: 'Separadora hierros' },
+                      { num: 19, code: 'G07', desc: 'Dobladora de hierros' },
+                      { num: 20, code: 'Q01', desc: 'Guillotina chapa acanalada' },
+                      { num: 21, code: 'Q02', desc: 'Guillotina chapa trapezoidal' },
+                      { num: 22, code: 'R03', desc: 'Puente Grúa PRODUCCION' },
+                      { num: 23, code: 'R04', desc: 'Puente Grúa PRODUCCION' },
+                      { num: 24, code: 'R05', desc: 'Puente Grúa PRODUCCION' },
+                      { num: 25, code: 'R06', desc: 'Puente Grúa PRODUCCION' },
+                      { num: 26, code: 'R20', desc: 'Puente Grúa PRODUCCION' },
+                      { num: 27, code: 'R21', desc: 'Puente Grúa PRODUCCION' },
+                      { num: 28, code: 'R22', desc: 'Puente Grúa PRODUCCION' },
+                      { num: 29, code: 'R07', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 30, code: 'R08', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 31, code: 'R09', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 32, code: 'R10', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 33, code: 'R11', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 34, code: 'R12', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 35, code: 'R13', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 36, code: 'R14', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 37, code: 'R15', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 38, code: 'R16', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 39, code: 'R17', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 40, code: 'R18', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 41, code: 'R19', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 42, code: 'R23', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 43, code: 'R24', desc: 'Puente Grúa DEPOSITO' },
+                      { num: 44, code: 'UR07', desc: 'Punzonadora neumatica aluminio' },
+                      { num: 45, code: 'UR13', desc: 'Soldadora doble cabezal ozgenc' },
+                      { num: 46, code: 'UR15', desc: 'Soldadora pvc 4 cabazales' },
+                      { num: 47, code: 'UR16', desc: 'Limpiadora ozgenc' },
+                      { num: 48, code: 'X100', desc: 'Balanza de camiones' }
+                    ].map(item => (
+                      <div key={item.code} className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>{item.num}) Disponibilidad {item.code}</strong>
+                          <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{item.desc}</span>
+                        </div>
+                        {renderKpiBadge(metrics.cbaKPIs.availabilities?.[item.code])}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* HORAS HOMBRE METRICS (49 AL 52 DE CBA) */}
+                <div>
+                  <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    ⏱️ Distribución de Horas Hombre (% HH Aprobadas)
+                  </h3>
+
+                  <div style={{ marginBottom: '1.25rem', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem 1.25rem', borderRadius: '6px', fontSize: '0.95rem', color: '#166534', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <span>📌 Total Horas Hombre cargadas en el período: <strong>{metrics.cbaKPIs.hhMetrics?.totalHHLoaded} hs</strong></span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+
+                    {/* 49) % HH Correctivos */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #dc2626' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>49) TRABAJOS CORRECTIVOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#dc2626' }}>
+                          {metrics.cbaKPIs.hhMetrics?.pctHHCorrectivo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.cbaKPIs.hhMetrics?.hhCorrectivo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Tareas en "Fallas"</span>
+                    </div>
+
+                    {/* 50) % HH Preventivos */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #16a34a' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>50) TRABAJOS PREVENTIVOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#16a34a' }}>
+                          {metrics.cbaKPIs.hhMetrics?.pctHHPreventivo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.cbaKPIs.hhMetrics?.hhPreventivo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Preventivos condicional/sistemáticos</span>
+
+                      {metrics.cbaKPIs.hhMetrics?.preventivoBreakdown && metrics.cbaKPIs.hhMetrics.preventivoBreakdown.length > 0 && (
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px dashed #bbf7d0', fontSize: '0.75rem', color: '#475569' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#1e293b' }}>Desglose por subcategoría:</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            {metrics.cbaKPIs.hhMetrics.preventivoBreakdown.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>• {item.name}:</span>
+                                <strong>{item.hours} hs</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 51) % HH Varios */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #2563eb' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>51) TRABAJOS VARIOS</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#2563eb' }}>
+                          {metrics.cbaKPIs.hhMetrics?.pctHHVarios}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.cbaKPIs.hhMetrics?.hhVarios} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Mantenimiento edilicio / varios</span>
+
+                      {metrics.cbaKPIs.hhMetrics?.variosBreakdown && metrics.cbaKPIs.hhMetrics.variosBreakdown.length > 0 && (
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px dashed #cbd5e1', fontSize: '0.75rem', color: '#475569' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#1e293b' }}>Desglose por subcategoría:</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            {metrics.cbaKPIs.hhMetrics.variosBreakdown.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>• {item.name}:</span>
+                                <strong>{item.hours} hs</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 52) % HH Ausentismo */}
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #d97706' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 'bold' }}>52) AUSENTISMO / NO PRODUCTIVO</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#d97706' }}>
+                          {metrics.cbaKPIs.hhMetrics?.pctHHAusentismo}%
+                        </span>
+                        <span style={{ fontSize: '0.9rem', color: '#475569' }}>
+                          {metrics.cbaKPIs.hhMetrics?.hhAusentismo} hs
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>Ausentismo / no productivo</span>
+
+                      {metrics.cbaKPIs.hhMetrics?.ausentismoBreakdown && metrics.cbaKPIs.hhMetrics.ausentismoBreakdown.length > 0 && (
+                        <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px dashed #fed7aa', fontSize: '0.75rem', color: '#475569' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.25rem', color: '#1e293b' }}>Desglose por subcategoría:</strong>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            {metrics.cbaKPIs.hhMetrics.ausentismoBreakdown.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>• {item.name}:</span>
+                                <strong>{item.hours} hs</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* SECCIÓN PIL: INDICADORES MENSUALES CLAVE */}
             {user.plant === 'PIL' && metrics?.pilKPIs && (
               <>
