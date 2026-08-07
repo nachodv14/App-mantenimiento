@@ -1338,12 +1338,44 @@ export default function SupervisorView() {
                     </div>
 
                     {/* 9) DRUIDS01 */}
-                    <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>9) Disponibilidad DRUIDS01</strong>
-                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Máquina DRUIDS01</span>
+                    <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #0284c7' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <strong style={{ fontSize: '1.1rem', display: 'block', color: '#1e293b' }}>9) Disponibilidad DRUIDS01</strong>
+                          <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Promedio general de las 8 líneas</span>
+                        </div>
+                        {renderKpiBadge(metrics.ramKPIs.disponibilidadDRUIDS01)}
                       </div>
-                      {renderKpiBadge(metrics.ramKPIs.disponibilidadDRUIDS01)}
+
+                      {metrics.ramKPIs.druidsLineBreakdown && metrics.ramKPIs.druidsLineBreakdown.length > 0 && (
+                        <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px dashed #cbd5e1' }}>
+                          <strong style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: '#334155' }}>
+                            Desglose por líneas individuales:
+                          </strong>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.5rem' }}>
+                            {metrics.ramKPIs.druidsLineBreakdown.map((item, idx) => {
+                              const pct = item.availability_pct;
+                              let bg = '#dcfce7';
+                              let color = '#166534';
+                              if (pct < 93) {
+                                bg = '#fee2e2';
+                                color = '#991b1b';
+                              } else if (pct <= 96) {
+                                bg = '#fef08a';
+                                color = '#854d0e';
+                              }
+                              return (
+                                <div key={idx} style={{ background: '#f8fafc', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>{item.line}:</span>
+                                  <span style={{ background: bg, color: color, padding: '0.15rem 0.45rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                    {pct}%
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* 10) Media Autoelevadores */}

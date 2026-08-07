@@ -223,15 +223,19 @@ export async function POST(request) {
         if (finalDeviation) finalDeviation += linesText;
       }
 
+      try {
+        await query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS affected_lines text;`);
+      } catch(e) {}
+
       const text = `
         INSERT INTO tasks (
           plant, task_date, shift, operator_id, companions,
           start_time, end_time, total_time_minutes, man_hours,
           description, task_type, category, machine_id, nature,
           deviation, observaciones, affects_availability, final_state, status,
-          start_out_time, end_out_time, stop_time_minutes
+          start_out_time, end_out_time, stop_time_minutes, affected_lines
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
         ) RETURNING id
       `;
 
@@ -257,7 +261,8 @@ export async function POST(request) {
         'PENDING',
         taskStartOutTime,
         taskEndOutTime,
-        stopTimeMinutes
+        stopTimeMinutes,
+        JSON.stringify(t.affected_lines || [])
       ];
 
       const insertResult = await query(text, params);
