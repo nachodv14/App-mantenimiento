@@ -297,6 +297,10 @@ export async function GET(request) {
       kpiMediaAutoelevadoresRAM = parseFloat((sumAutoRAM / validAutoRAM.length).toFixed(2));
     }
 
+    // KPIs PIL
+    const kpiP10 = findMachAvail('P10');
+    const kpiS11 = findMachAvail('S11');
+
     // 6. Horas Hombre (HH) Metrics - PARTICIÓN COMPLETA SIN PÉRDIDA DE HORAS
     // Auto-corregir man_hours desfasados tras ediciones de horario
     try {
@@ -522,6 +526,31 @@ export async function GET(request) {
           DRUIDS01: kpiDRUIDS01,
           puentesGruas,
           autoelevadoresRAM, S05: kpiS05, S06: kpiS06, S07: kpiS07
+        },
+        hhMetrics: {
+          totalHHLoaded: parseFloat(totalHHLoaded.toFixed(2)),
+          hhCorrectivo: parseFloat(hhCorrectivo.toFixed(2)),
+          hhPreventivo: parseFloat(hhPreventivo.toFixed(2)),
+          hhVarios: parseFloat(hhVarios.toFixed(2)),
+          hhAusentismo: parseFloat(hhAusentismo.toFixed(2)),
+          pctHHCorrectivo,
+          pctHHPreventivo,
+          pctHHVarios,
+          pctHHAusentismo,
+          preventivoBreakdown: Object.entries(hhPreventivoBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours),
+          variosBreakdown: Object.entries(hhVariosBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours),
+          ausentismoBreakdown: Object.entries(hhAusentismoBreakdown).map(([name, hs]) => ({ name, hours: parseFloat(hs.toFixed(2)) })).sort((a,b) => b.hours - a.hours)
+        }
+      },
+      pilKPIs: {
+        disponibilidadP10: kpiP10 ? kpiP10.availability_pct : null,
+        menorDisponibilidadPuentesGruas: kpiMenorPuentesGruas,
+        menorPuenteGruaNombre: kpiMenorPuenteGruaNombre,
+        disponibilidadS11: kpiS11 ? kpiS11.availability_pct : null,
+        details: {
+          P10: kpiP10,
+          S11: kpiS11,
+          puentesGruas
         },
         hhMetrics: {
           totalHHLoaded: parseFloat(totalHHLoaded.toFixed(2)),
