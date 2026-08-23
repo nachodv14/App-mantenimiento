@@ -30,14 +30,28 @@ export default function SupervisorView() {
   const [pendingDateTo, setPendingDateTo] = useState("");
   const [pendingOperator, setPendingOperator] = useState("");
 
-  // Estado y Filtros RPMTO001
+  // Estado y Filtros Agenda RPMTO001
   const [rpmtoTasks, setRpmtoTasks] = useState([]);
-  const [rpmtoDateFrom, setRpmtoDateFrom] = useState("");
-  const [rpmtoDateTo, setRpmtoDateTo] = useState("");
-  const [rpmtoOperator, setRpmtoOperator] = useState("");
-  const [rpmtoShift, setRpmtoShift] = useState("");
-  const [rpmtoStatus, setRpmtoStatus] = useState("");
+  const [rpmtoShowAll, setRpmtoShowAll] = useState(false);
+  const [rpmtoFilterStatus, setRpmtoFilterStatus] = useState("");
+  const [rpmtoFilterMachine, setRpmtoFilterMachine] = useState("");
   const [rpmtoSearch, setRpmtoSearch] = useState("");
+  const [rpmtoModalOpen, setRpmtoModalOpen] = useState(false);
+  const [rpmtoEditingTask, setRpmtoEditingTask] = useState(null);
+  const [rpmtoSaving, setRpmtoSaving] = useState(false);
+  const [rpmtoForm, setRpmtoForm] = useState({
+    id: null,
+    status: 'Azul: En posibilidad de realización',
+    machine_code: '',
+    pending_work: '',
+    criticality: 50,
+    requested_by: '',
+    request_date: new Date().toISOString().slice(0, 10),
+    execution_date: '',
+    supplies_needed: '',
+    supplies_status: 'Recursos disponibles',
+    observation: ''
+  });
 
   // Filtros Indicadores (Meses & Días Hábiles)
   const now = new Date();
@@ -86,9 +100,14 @@ export default function SupervisorView() {
         const data = await res.json();
         if (data.tasks) setTasks(data.tasks);
       } else if (tab === "rpmto001") {
-        const res = await fetch(`/api/tareas/history?plant=${plant}&limit=500`, { cache: "no-store" });
-        const data = await res.json();
-        if (data.tasks) setRpmtoTasks(data.tasks);
+        const [resTasks, resMach] = await Promise.all([
+          fetch(`/api/rpmto001?plant=${plant}`, { cache: "no-store" }),
+          fetch(`/api/machines/availability?plant=${plant}`, { cache: "no-store" })
+        ]);
+        const dataTasks = await resTasks.json();
+        const dataMach = await resMach.json();
+        if (dataTasks.tasks) setRpmtoTasks(dataTasks.tasks);
+        if (dataMach.machines) setMachineAvailability(dataMach.machines);
       } else if (tab === "history") {
         const res = await fetch(`/api/tareas/history?plant=${plant}`, { cache: "no-store" });
         const data = await res.json();
@@ -423,68 +442,201 @@ export default function SupervisorView() {
     return match;
   });
 
-  // Filtros y Métricas para solapa RPMTO001
-  const uniqueRpmtoOperators = [...new Set(rpmtoTasks.map(t => t.operator_name))].filter(Boolean).sort();
-  const uniqueRpmtoShifts = [...new Set(rpmtoTasks.map(t => t.shift))].filter(Boolean).sort();
+  // Opciones Oficiales RPMTO001
+  const RPMTO_STATUSES = [
+    { value: 'Azul: En posibilidad de realización', label: '🔵 Azul: En posibilidad de realización (insumos disponibles)', short: 'Posibilidad de realización', bg: '#dbeafe', color: '#1e3a8a', border: '#93c5fd', badgeBg: '#1e40af' },
+    { value: 'Amarillo: Tarea pendiente insumos', label: '🟡 Amarillo: Tarea pendiente (comprar/fabricar insumos)', short: 'Pendiente insumos', bg: '#fef9c3', color: '#713f12', border: '#fde047', badgeBg: '#854d0e' },
+    { value: 'Verde: Tarea realizada', label: '🟢 Verde: Tarea realizada', short: 'Realizada', bg: '#dcfce7', color: '#14532d', border: '#86efac', badgeBg: '#166534' },
+    { value: 'Rojo: Tarea cancelada', label: '🔴 Rojo: Tarea cancelada', short: 'Cancelada', bg: '#fee2e2', color: '#7f1d1d', border: '#fca5a5', badgeBg: '#991b1b' }
+  ];
+
+  const getRpmtoRowStyle = (status) => {
+    const s = (status || '').toLowerCase();
+    if (s.includes('verde') || s.includes('realizada')) {
+      return { background: '#dcfce7', color: '#14532d', borderBottom: '1px solid #bbf7d0', isClosed: true };
+    }
+    if (s.includes('amarillo') || s.includes('pendiente')) {
+      return { background: '#fef9c3', color: '#713f12', borderBottom: '1px solid #fef08a', isClosed: false };
+    }
+    if (s.includes('azul') || s.includes('posibilidad')) {
+      return { background: '#dbeafe', color: '#1e3a8a', borderBottom: '1px solid #bfdbfe', isClosed: false };
+    }
+    if (s.includes('rojo') || s.includes('cancelada')) {
+      return { background: '#fee2e2', color: '#7f1d1d', borderBottom: '1px solid #fecaca', isClosed: true };
+    }
+    return { background: '#ffffff', color: '#1e293b', borderBottom: '1px solid #e2e8f0', isClosed: false };
+  };
+
+  const getCriticalityBadge = (val) => {
+    const n = parseInt(val, 10) || 50;
+    let bg = '#e0f2fe';
+    let text = '#0369a1';
+    if (n >= 80) {
+      bg = '#fee2e2';
+      text = '#991b1b';
+    } else if (n >= 50) {
+      bg = '#fef3c7';
+      text = '#92400e';
+    }
+    return (
+      <span style={{ background: bg, color: text, padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.85rem' }}>
+        {n} / 100
+      </span>
+    );
+  };
+
+  const handleOpenRpmtoModal = (taskToEdit = null) => {
+    if (taskToEdit) {
+      setRpmtoEditingTask(taskToEdit);
+      setRpmtoForm({
+        id: taskToEdit.id,
+        status: taskToEdit.status || 'Azul: En posibilidad de realización',
+        machine_code: taskToEdit.machine_code || '',
+        pending_work: taskToEdit.pending_work || '',
+        criticality: taskToEdit.criticality || 50,
+        requested_by: taskToEdit.requested_by || '',
+        request_date: taskToEdit.request_date_fmt || (taskToEdit.request_date ? taskToEdit.request_date.slice(0, 10) : new Date().toISOString().slice(0, 10)),
+        execution_date: taskToEdit.execution_date_fmt || (taskToEdit.execution_date ? taskToEdit.execution_date.slice(0, 10) : ''),
+        supplies_needed: taskToEdit.supplies_needed || '',
+        supplies_status: taskToEdit.supplies_status || 'Recursos disponibles',
+        observation: taskToEdit.observation || ''
+      });
+    } else {
+      setRpmtoEditingTask(null);
+      setRpmtoForm({
+        id: null,
+        status: 'Azul: En posibilidad de realización',
+        machine_code: '',
+        pending_work: '',
+        criticality: 50,
+        requested_by: '',
+        request_date: new Date().toISOString().slice(0, 10),
+        execution_date: '',
+        supplies_needed: '',
+        supplies_status: 'Recursos disponibles',
+        observation: ''
+      });
+    }
+    setRpmtoModalOpen(true);
+  };
+
+  const handleSaveRpmtoTask = async (e) => {
+    e.preventDefault();
+    if (!rpmtoForm.pending_work.trim()) {
+      alert('Por favor describe el trabajo pendiente.');
+      return;
+    }
+    setRpmtoSaving(true);
+    try {
+      const isEdit = Boolean(rpmtoForm.id);
+      const url = '/api/rpmto001';
+      const method = isEdit ? 'PUT' : 'POST';
+      const payload = {
+        ...rpmtoForm,
+        plant: user.plant
+      };
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRpmtoModalOpen(false);
+        fetchData('rpmto001', user.plant);
+      } else {
+        alert(data.error || 'Error al guardar la tarea');
+      }
+    } catch (err) {
+      console.error('Error saving RPMTO task:', err);
+      alert('Error de conexión al guardar tarea');
+    } finally {
+      setRpmtoSaving(false);
+    }
+  };
+
+  const handleQuickStatusChange = async (taskId, newStatus) => {
+    try {
+      setRpmtoTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+      const res = await fetch('/api/rpmto001', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: taskId, status: newStatus })
+      });
+      if (!res.ok) {
+        fetchData('rpmto001', user.plant);
+      }
+    } catch (err) {
+      console.error('Error changing status:', err);
+      fetchData('rpmto001', user.plant);
+    }
+  };
+
+  const handleDeleteRpmtoTask = async (taskId) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta tarea de la agenda?')) return;
+    try {
+      const res = await fetch(`/api/rpmto001?id=${taskId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setRpmtoTasks(prev => prev.filter(t => t.id !== taskId));
+      } else {
+        alert('Error al eliminar la tarea');
+      }
+    } catch (err) {
+      console.error('Error deleting task:', err);
+    }
+  };
+
+  // Filtrado dinámico de tareas RPMTO001
+  const uniqueRpmtoMachines = [...new Set(rpmtoTasks.map(t => t.machine_code))].filter(Boolean).sort();
 
   const filteredRpmtoTasks = rpmtoTasks.filter(t => {
-    let match = true;
-    if (rpmtoOperator && t.operator_name !== rpmtoOperator) match = false;
-    if (rpmtoShift && t.shift !== rpmtoShift) match = false;
-    if (rpmtoStatus && t.status !== rpmtoStatus) match = false;
-    if (rpmtoDateFrom) {
-      const dateStr = t.task_date ? t.task_date.slice(0, 10) : '';
-      if (dateStr < rpmtoDateFrom) match = false;
+    const rowStyle = getRpmtoRowStyle(t.status);
+    // Si no está en "ver todas", ocultar realizadas y canceladas
+    if (!rpmtoShowAll && rowStyle.isClosed) {
+      return false;
     }
-    if (rpmtoDateTo) {
-      const dateStr = t.task_date ? t.task_date.slice(0, 10) : '';
-      if (dateStr > rpmtoDateTo) match = false;
+    if (rpmtoFilterStatus && t.status !== rpmtoFilterStatus) {
+      return false;
+    }
+    if (rpmtoFilterMachine && t.machine_code !== rpmtoFilterMachine) {
+      return false;
     }
     if (rpmtoSearch) {
       const term = rpmtoSearch.toLowerCase();
-      const mach = (t.machine_name || '').toLowerCase();
-      const desc = (t.description || '').toLowerCase();
-      const nat = (t.nature || '').toLowerCase();
-      const type = (t.task_type || '').toLowerCase();
-      const cat = (t.category || '').toLowerCase();
-      if (!mach.includes(term) && !desc.includes(term) && !nat.includes(term) && !type.includes(term) && !cat.includes(term)) {
-        match = false;
+      const mach = (t.machine_code || '').toLowerCase();
+      const work = (t.pending_work || '').toLowerCase();
+      const req = (t.requested_by || '').toLowerCase();
+      const sup = (t.supplies_needed || '').toLowerCase();
+      const obs = (t.observation || '').toLowerCase();
+      if (!mach.includes(term) && !work.includes(term) && !req.includes(term) && !sup.includes(term) && !obs.includes(term)) {
+        return false;
       }
     }
-    return match;
+    return true;
   });
-
-  const rpmtoTotalHH = filteredRpmtoTasks.reduce((acc, t) => acc + (parseFloat(t.man_hours) || (t.total_time_minutes || 0) / 60), 0);
-  const rpmtoFallasCount = filteredRpmtoTasks.filter(t => (t.nature || '').toLowerCase().includes('falla')).length;
-  const rpmtoPrevCount = filteredRpmtoTasks.filter(t => (t.nature || '').toLowerCase().includes('preventiv')).length;
 
   const exportRpmtoCSV = () => {
     if (filteredRpmtoTasks.length === 0) return;
-    const headers = ['ID', 'Fecha', 'Planta', 'Turno', 'Operario Responsable', 'Acompañantes', 'Tipo de Registro', 'Máquina / Sector', 'Naturaleza', 'Hora Inicio', 'Hora Fin', 'HH Totales', 'Parada Minutos', 'Descripción', 'Desviación', 'Estado', 'Obs Supervisor'];
+    const headers = ['ID', 'Estado Tarea', 'Codigo Maquina', 'Trabajos Pendientes', 'Criterio Criticidad', 'Solicito', 'Fecha Solicitud', 'Fecha Ejecucion', 'Insumos Necesarios', 'Estado Insumos', 'Observacion'];
     const rows = filteredRpmtoTasks.map(t => [
       t.id,
-      t.task_date_fmt || t.task_date,
-      t.plant,
-      t.shift || '',
-      `"${t.operator_name || ''}"`,
-      `"${getCompanionsText(t.companions)}"`,
-      `"${t.task_type || ''}"`,
-      `"${t.machine_name || t.category || ''}"`,
-      `"${t.nature || ''}"`,
-      t.start_time_fmt || t.start_time,
-      t.end_time_fmt || t.end_time,
-      t.man_hours || '',
-      t.stop_time_minutes || 0,
-      `"${(t.description || '').replace(/"/g, '""')}"`,
-      `"${(t.deviation || '').replace(/"/g, '""')}"`,
-      t.status,
-      `"${(t.supervisor_obs || '').replace(/"/g, '""')}"`
+      `"${t.status || ''}"`,
+      `"${t.machine_code || ''}"`,
+      `"${(t.pending_work || '').replace(/"/g, '""')}"`,
+      t.criticality || 50,
+      `"${t.requested_by || ''}"`,
+      t.request_date_fmt || t.request_date || '',
+      t.execution_date_fmt || t.execution_date || '',
+      `"${(t.supplies_needed || '').replace(/"/g, '""')}"`,
+      `"${t.supplies_status || ''}"`,
+      `"${(t.observation || '').replace(/"/g, '""')}"`
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `RPMTO001_${user?.plant || 'PLANTA'}_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `RPMTO001_Agenda_${user?.plant || 'PLANTA'}_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -603,233 +755,505 @@ export default function SupervisorView() {
         {activeTab === 'rpmto001' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             
-            {/* Cabecera Oficial y Controles */}
+            {/* Panel de Controles y Cabecera de la Agenda RPMTO001 */}
             <div className="card" style={{ padding: '1.5rem', background: '#f8fafc', border: '1px solid #cbd5e1' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
                 <div>
-                  <h3 style={{ margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    📋 Registro de Parte Diario de Mantenimiento (RPMTO001)
-                  </h3>
-                  <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                    Planta: <strong>{user.plant}</strong> | Formulario Oficial de Registro de Órdenes de Trabajo e Intervenciones
+                  <h2 style={{ margin: '0 0 0.35rem 0', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    📋 Agenda de Tareas Pendientes (RPMTO001)
+                  </h2>
+                  <span style={{ fontSize: '0.9rem', color: '#64748b' }}>
+                    Planta: <strong>{user.plant}</strong> | Gestión y planificación de trabajos pendientes, criticidad y recursos
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {/* Toggle para ver todas vs solo pendientes */}
+                  <button
+                    onClick={() => setRpmtoShowAll(!rpmtoShowAll)}
+                    className="btn"
+                    style={{
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.9rem',
+                      background: rpmtoShowAll ? '#334155' : '#e2e8f0',
+                      color: rpmtoShowAll ? '#fff' : '#1e293b',
+                      border: '1px solid #cbd5e1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {rpmtoShowAll ? '👁️ Mostrando Todas (incluye cerradas)' : '⏳ Mostrando solo Activas / Pendientes'}
+                  </button>
+
+                  <button
+                    onClick={() => handleOpenRpmtoModal()}
+                    className="btn btn-primary"
+                    style={{ padding: '0.5rem 1.25rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 'bold' }}
+                  >
+                    ➕ Nueva Tarea Pendiente
+                  </button>
+
                   <button
                     onClick={exportRpmtoCSV}
                     disabled={filteredRpmtoTasks.length === 0}
-                    className="btn btn-primary"
-                    style={{ padding: '0.4rem 0.9rem', fontSize: '0.85rem', background: '#0284c7' }}
+                    className="btn"
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: '#0284c7', color: '#fff' }}
                   >
                     📥 Exportar CSV
                   </button>
-                  <button
-                    onClick={() => window.print()}
-                    className="btn btn-primary"
-                    style={{ padding: '0.4rem 0.9rem', fontSize: '0.85rem', background: '#475569' }}
-                  >
-                    🖨️ Imprimir
-                  </button>
                 </div>
               </div>
 
-              {/* Filtros RPMTO001 */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', alignItems: 'end' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
-                    Desde Fecha
-                  </label>
-                  <input
-                    type="date"
-                    value={rpmtoDateFrom}
-                    onChange={(e) => setRpmtoDateFrom(e.target.value)}
-                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
-                  />
+              {/* Leyenda de Estados y Colores Oficiales */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                <div style={{ background: '#dbeafe', border: '1px solid #93c5fd', color: '#1e3a8a', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600 }}>
+                  🔵 <strong>Azul:</strong> Posibilidad de realización (insumos listos)
                 </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
-                    Hasta Fecha
-                  </label>
-                  <input
-                    type="date"
-                    value={rpmtoDateTo}
-                    onChange={(e) => setRpmtoDateTo(e.target.value)}
-                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
-                  />
+                <div style={{ background: '#fef9c3', border: '1px solid #fde047', color: '#713f12', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600 }}>
+                  🟡 <strong>Amarillo:</strong> Pendiente (comprar/fabricar insumos)
                 </div>
+                <div style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#14532d', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600 }}>
+                  🟢 <strong>Verde:</strong> Tarea realizada (cerrada)
+                </div>
+                <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#7f1d1d', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600 }}>
+                  🔴 <strong>Rojo:</strong> Tarea cancelada (cerrada)
+                </div>
+              </div>
 
+              {/* Barra de Filtros y Búsqueda */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'end' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
-                    Operario Responsable
+                    Filtrar por Estado
                   </label>
                   <select
-                    value={rpmtoOperator}
-                    onChange={(e) => setRpmtoOperator(e.target.value)}
-                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    value={rpmtoFilterStatus}
+                    onChange={(e) => setRpmtoFilterStatus(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                   >
-                    <option value="">Todos los operarios</option>
-                    {uniqueRpmtoOperators.map(op => <option key={op} value={op}>{op}</option>)}
+                    <option value="">Todos los estados visibles</option>
+                    {RPMTO_STATUSES.map(st => (
+                      <option key={st.value} value={st.value}>{st.short}</option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
-                    Turno
+                    Filtrar por Máquina / Código
                   </label>
                   <select
-                    value={rpmtoShift}
-                    onChange={(e) => setRpmtoShift(e.target.value)}
-                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    value={rpmtoFilterMachine}
+                    onChange={(e) => setRpmtoFilterMachine(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                   >
-                    <option value="">Todos los turnos</option>
-                    {uniqueRpmtoShifts.map(s => <option key={s} value={s}>{s}</option>)}
+                    <option value="">Todas las máquinas</option>
+                    {uniqueRpmtoMachines.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
-                    Estado OT
-                  </label>
-                  <select
-                    value={rpmtoStatus}
-                    onChange={(e) => setRpmtoStatus(e.target.value)}
-                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
-                  >
-                    <option value="">Todos los estados</option>
-                    <option value="APPROVED">✅ Aprobadas</option>
-                    <option value="PENDING">⏳ Pendientes</option>
-                    <option value="REJECTED">❌ Rechazadas</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
-                    Buscar Texto
+                    Buscar en Agenda
                   </label>
                   <input
                     type="text"
-                    placeholder="Máquina, sector, tarea..."
+                    placeholder="Buscar tarea, solicitó, insumos..."
                     value={rpmtoSearch}
                     onChange={(e) => setRpmtoSearch(e.target.value)}
-                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                   />
-                </div>
-              </div>
-
-              {/* Resumen de Métricas del Filtro RPMTO001 */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
-                <div style={{ background: '#fff', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'bold', display: 'block' }}>REGISTROS</span>
-                  <strong style={{ fontSize: '1.3rem', color: '#1e293b' }}>{filteredRpmtoTasks.length}</strong>
-                </div>
-                <div style={{ background: '#fff', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', display: 'block' }}>TOTAL HORAS HOMBRE</span>
-                  <strong style={{ fontSize: '1.3rem', color: '#0284c7' }}>{rpmtoTotalHH.toFixed(2)} hs</strong>
-                </div>
-                <div style={{ background: '#fff', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#dc2626', fontWeight: 'bold', display: 'block' }}>FALLAS / CORRECTIVOS</span>
-                  <strong style={{ fontSize: '1.3rem', color: '#dc2626' }}>{rpmtoFallasCount}</strong>
-                </div>
-                <div style={{ background: '#fff', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 'bold', display: 'block' }}>PREVENTIVOS</span>
-                  <strong style={{ fontSize: '1.3rem', color: '#16a34a' }}>{rpmtoPrevCount}</strong>
                 </div>
               </div>
             </div>
 
-            {/* Tabla Principal RPMTO001 */}
-            <div className="card" style={{ padding: '1rem', overflowX: 'auto' }}>
+            {/* Tabla Agenda RPMTO001 con Renglones Pintados */}
+            <div className="card" style={{ padding: '0', overflowX: 'auto', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
                 <thead>
-                  <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>Fecha</th>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>Turno</th>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>Operario Responsable</th>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>Tipo / Activo</th>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>Naturaleza</th>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>Horario</th>
-                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>HH</th>
-                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Parada</th>
-                    <th style={{ padding: '0.75rem 0.5rem' }}>Descripción / Desvío</th>
-                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Estado</th>
+                  <tr style={{ background: '#1e293b', color: '#fff', borderBottom: '2px solid #0f172a' }}>
+                    <th style={{ padding: '0.85rem 0.65rem', minWidth: '180px' }}>Estado tarea</th>
+                    <th style={{ padding: '0.85rem 0.65rem', minWidth: '90px' }}>Código</th>
+                    <th style={{ padding: '0.85rem 0.65rem', minWidth: '240px' }}>Trabajos pendientes</th>
+                    <th style={{ padding: '0.85rem 0.65rem', textAlign: 'center', minWidth: '95px' }}>Criterio</th>
+                    <th style={{ padding: '0.85rem 0.65rem', minWidth: '110px' }}>Solicitó</th>
+                    <th style={{ padding: '0.85rem 0.65rem', minWidth: '115px' }}>Fecha solicitud</th>
+                    <th style={{ padding: '0.85rem 0.65rem', minWidth: '115px' }}>Fecha ejecución</th>
+                    <th style={{ padding: '0.85rem 0.65rem', minWidth: '160px' }}>Insumos necesarios</th>
+                    <th style={{ padding: '0.85rem 0.65rem', minWidth: '150px' }}>Estado insumos</th>
+                    <th style={{ padding: '0.85rem 0.65rem', minWidth: '160px' }}>Observación</th>
+                    <th style={{ padding: '0.85rem 0.65rem', textAlign: 'center', minWidth: '90px' }}>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRpmtoTasks.map(t => (
-                    <tr key={t.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '0.75rem 0.5rem', whiteSpace: 'nowrap', fontWeight: 'bold' }}>
-                        {t.task_date_fmt}
-                      </td>
-                      <td style={{ padding: '0.75rem 0.5rem', whiteSpace: 'nowrap' }}>
-                        <span style={{ background: '#f1f5f9', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.78rem' }}>
-                          {t.shift || '-'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '0.75rem 0.5rem' }}>
-                        <strong style={{ display: 'block', color: '#1e293b' }}>{t.operator_name}</strong>
-                        {getCompanionsText(t.companions) && (
-                          <span style={{ fontSize: '0.75rem', color: '#0369a1' }}>
-                            👥 +{getCompanionsText(t.companions)}
+                  {filteredRpmtoTasks.map(t => {
+                    const rowStyle = getRpmtoRowStyle(t.status);
+                    return (
+                      <tr
+                        key={t.id}
+                        style={{
+                          background: rowStyle.background,
+                          color: rowStyle.color,
+                          borderBottom: rowStyle.borderBottom,
+                          transition: 'background 0.2s ease'
+                        }}
+                      >
+                        {/* 1. Estado tarea (Selector dinámico in-situ) */}
+                        <td style={{ padding: '0.75rem 0.65rem' }}>
+                          <select
+                            value={t.status}
+                            onChange={(e) => handleQuickStatusChange(t.id, e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '0.35rem 0.5rem',
+                              borderRadius: '6px',
+                              fontSize: '0.82rem',
+                              fontWeight: 'bold',
+                              border: '1px solid rgba(0,0,0,0.15)',
+                              background: '#fff',
+                              color: rowStyle.color,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {RPMTO_STATUSES.map(st => (
+                              <option key={st.value} value={st.value}>{st.short}</option>
+                            ))}
+                          </select>
+                        </td>
+
+                        {/* 2. Código */}
+                        <td style={{ padding: '0.75rem 0.65rem', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                          {t.machine_code || '-'}
+                        </td>
+
+                        {/* 3. Trabajos pendientes */}
+                        <td style={{ padding: '0.75rem 0.65rem', fontWeight: 600 }}>
+                          {t.pending_work}
+                        </td>
+
+                        {/* 4. Criterio (10 a 100) */}
+                        <td style={{ padding: '0.75rem 0.65rem', textAlign: 'center' }}>
+                          {getCriticalityBadge(t.criticality)}
+                        </td>
+
+                        {/* 5. Solicitó */}
+                        <td style={{ padding: '0.75rem 0.65rem' }}>
+                          {t.requested_by || '-'}
+                        </td>
+
+                        {/* 6. Fecha solicitud */}
+                        <td style={{ padding: '0.75rem 0.65rem', whiteSpace: 'nowrap' }}>
+                          {t.request_date_fmt || t.request_date || '-'}
+                        </td>
+
+                        {/* 7. Fecha ejecución */}
+                        <td style={{ padding: '0.75rem 0.65rem', whiteSpace: 'nowrap' }}>
+                          {t.execution_date_fmt || t.execution_date || '-'}
+                        </td>
+
+                        {/* 8. Insumos necesarios */}
+                        <td style={{ padding: '0.75rem 0.65rem' }}>
+                          {t.supplies_needed || '-'}
+                        </td>
+
+                        {/* 9. Estado insumos */}
+                        <td style={{ padding: '0.75rem 0.65rem' }}>
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: '4px',
+                            fontSize: '0.78rem',
+                            fontWeight: 'bold',
+                            background: t.supplies_status === 'Recursos disponibles' ? '#dcfce7' : '#fee2e2',
+                            color: t.supplies_status === 'Recursos disponibles' ? '#166534' : '#991b1b'
+                          }}>
+                            {t.supplies_status || 'Recursos disponibles'}
                           </span>
-                        )}
-                      </td>
-                      <td style={{ padding: '0.75rem 0.5rem' }}>
-                        <strong style={{ color: 'var(--primary)', display: 'block' }}>
-                          {t.machine_name || t.category || '-'}
-                        </strong>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{t.task_type}</span>
-                      </td>
-                      <td style={{ padding: '0.75rem 0.5rem' }}>
-                        <span style={{
-                          display: 'inline-block',
-                          padding: '0.15rem 0.5rem',
-                          borderRadius: '4px',
-                          fontSize: '0.78rem',
-                          fontWeight: 'bold',
-                          background: (t.nature || '').toLowerCase().includes('falla') ? '#fee2e2' : (t.nature || '').toLowerCase().includes('preventiv') ? '#dcfce7' : '#f1f5f9',
-                          color: (t.nature || '').toLowerCase().includes('falla') ? '#dc2626' : (t.nature || '').toLowerCase().includes('preventiv') ? '#166534' : '#475569'
-                        }}>
-                          {t.nature || '-'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '0.75rem 0.5rem', whiteSpace: 'nowrap', color: '#475569' }}>
-                        {t.start_time_fmt} - {t.end_time_fmt}
-                      </td>
-                      <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontWeight: 'bold', color: '#0284c7' }}>
-                        {t.man_hours ? parseFloat(t.man_hours).toFixed(2) : ((t.total_time_minutes || 0) / 60).toFixed(2)} hs
-                      </td>
-                      <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontWeight: 'bold', color: t.stop_time_minutes > 0 ? '#ea580c' : '#94a3b8' }}>
-                        {t.stop_time_minutes > 0 ? `${t.stop_time_minutes} min` : '-'}
-                      </td>
-                      <td style={{ padding: '0.75rem 0.5rem', maxWidth: '300px' }}>
-                        <div style={{ color: '#1e293b' }}>{t.description}</div>
-                        {t.deviation && (
-                          <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: '#b91c1c', background: '#fff1f2', padding: '0.15rem 0.35rem', borderRadius: '3px' }}>
-                            ⚠️ {t.deviation}
-                          </div>
-                        )}
-                        {t.supervisor_obs && (
-                          <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: '#475569', background: '#f8fafc', padding: '0.15rem 0.35rem', borderRadius: '3px' }}>
-                            💬 Obs: {t.supervisor_obs}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                        {getStatusBadge(t.status)}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+
+                        {/* 10. Observación */}
+                        <td style={{ padding: '0.75rem 0.65rem', fontSize: '0.85rem' }}>
+                          {t.observation || '-'}
+                        </td>
+
+                        {/* 11. Acciones */}
+                        <td style={{ padding: '0.75rem 0.65rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                          <button
+                            onClick={() => handleOpenRpmtoModal(t)}
+                            title="Editar tarea completa"
+                            style={{
+                              background: '#fff',
+                              border: '1px solid #cbd5e1',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              marginRight: '0.35rem'
+                            }}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRpmtoTask(t.id)}
+                            title="Eliminar de la agenda"
+                            style={{
+                              background: '#fff',
+                              border: '1px solid #fca5a5',
+                              color: '#dc2626',
+                              padding: '0.25rem 0.5rem',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
                   {filteredRpmtoTasks.length === 0 && (
                     <tr>
-                      <td colSpan="10" style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
-                        No se encontraron registros en el parte diario RPMTO001 con los filtros seleccionados.
+                      <td colSpan="11" style={{ padding: '3.5rem', textAlign: 'center', color: '#64748b', background: '#fff' }}>
+                        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📋</div>
+                        <h4 style={{ margin: '0 0 0.5rem 0', color: '#1e293b' }}>No hay tareas en la agenda con los filtros actuales</h4>
+                        <p style={{ margin: '0 0 1.25rem 0', fontSize: '0.9rem' }}>
+                          {!rpmtoShowAll ? 'Las tareas realizadas o canceladas están ocultas. Puedes usar el botón "Mostrando solo Activas" para ver el histórico completo.' : 'No se encontraron registros.'}
+                        </p>
+                        <button
+                          onClick={() => handleOpenRpmtoModal()}
+                          className="btn btn-primary"
+                          style={{ padding: '0.5rem 1.25rem' }}
+                        >
+                          ➕ Agregar Primera Tarea
+                        </button>
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
+
+            {/* MODAL CREAR / EDITAR TAREA RPMTO001 */}
+            {rpmtoModalOpen && (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(15, 23, 42, 0.65)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999,
+                padding: '1rem'
+              }}>
+                <div className="card" style={{
+                  width: '100%',
+                  maxWidth: '700px',
+                  maxHeight: '90vh',
+                  overflowY: 'auto',
+                  background: '#fff',
+                  padding: '2rem',
+                  borderRadius: '12px',
+                  boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                    <h3 style={{ margin: 0, color: 'var(--primary)' }}>
+                      {rpmtoEditingTask ? '✏️ Editar Tarea de Agenda RPMTO001' : '➕ Nueva Tarea Pendiente (RPMTO001)'}
+                    </h3>
+                    <button
+                      onClick={() => setRpmtoModalOpen(false)}
+                      style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#64748b' }}
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveRpmtoTask} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    {/* Fila 1: Estado tarea y Código máquina */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', marginBottom: '0.3rem' }}>
+                          Estado tarea *
+                        </label>
+                        <select
+                          value={rpmtoForm.status}
+                          onChange={(e) => setRpmtoForm({ ...rpmtoForm, status: e.target.value })}
+                          style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                        >
+                          {RPMTO_STATUSES.map(st => (
+                            <option key={st.value} value={st.value}>{st.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', marginBottom: '0.3rem' }}>
+                          Código máquina *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ej: S07, H01, P05"
+                          list="rpmto-plant-machines"
+                          value={rpmtoForm.machine_code}
+                          onChange={(e) => setRpmtoForm({ ...rpmtoForm, machine_code: e.target.value.toUpperCase() })}
+                          style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                        />
+                        <datalist id="rpmto-plant-machines">
+                          {machineAvailability.map(m => (
+                            <option key={m.id} value={m.name}>{m.name} - {m.sector}</option>
+                          ))}
+                        </datalist>
+                      </div>
+                    </div>
+
+                    {/* Fila 2: Trabajos pendientes */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', marginBottom: '0.3rem' }}>
+                        Trabajos pendientes a resolver *
+                      </label>
+                      <textarea
+                        rows="3"
+                        placeholder="Ej: Realizar un análisis de proveedores para filtros del autoelevador S07..."
+                        value={rpmtoForm.pending_work}
+                        onChange={(e) => setRpmtoForm({ ...rpmtoForm, pending_work: e.target.value })}
+                        required
+                        style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', resize: 'vertical' }}
+                      />
+                    </div>
+
+                    {/* Fila 3: Criterio criticidad y Solicitó */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', marginBottom: '0.3rem' }}>
+                          Criterio (Criticidad 10 a 100) *
+                        </label>
+                        <select
+                          value={rpmtoForm.criticality}
+                          onChange={(e) => setRpmtoForm({ ...rpmtoForm, criticality: parseInt(e.target.value, 10) })}
+                          style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                        >
+                          {[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(val => (
+                            <option key={val} value={val}>
+                              {val} {val >= 80 ? '(Alta Criticidad)' : val >= 50 ? '(Media)' : '(Baja)'}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', marginBottom: '0.3rem' }}>
+                          Solicitó (Persona / Área)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ej: Aguirre, Producción, etc."
+                          value={rpmtoForm.requested_by}
+                          onChange={(e) => setRpmtoForm({ ...rpmtoForm, requested_by: e.target.value })}
+                          style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Fila 4: Fechas de Solicitud y Ejecución */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', marginBottom: '0.3rem' }}>
+                          Fecha solicitud
+                        </label>
+                        <input
+                          type="date"
+                          value={rpmtoForm.request_date}
+                          onChange={(e) => setRpmtoForm({ ...rpmtoForm, request_date: e.target.value })}
+                          style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', marginBottom: '0.3rem' }}>
+                          Fecha estimada de ejecución
+                        </label>
+                        <input
+                          type="date"
+                          value={rpmtoForm.execution_date}
+                          onChange={(e) => setRpmtoForm({ ...rpmtoForm, execution_date: e.target.value })}
+                          style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Fila 5: Insumos necesarios y Estado insumos */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', marginBottom: '0.3rem' }}>
+                          Insumos necesarios
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Ej: 2 Filtros de aceite, sellos hidráulicos..."
+                          value={rpmtoForm.supplies_needed}
+                          onChange={(e) => setRpmtoForm({ ...rpmtoForm, supplies_needed: e.target.value })}
+                          style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', marginBottom: '0.3rem' }}>
+                          Estado insumos *
+                        </label>
+                        <select
+                          value={rpmtoForm.supplies_status}
+                          onChange={(e) => setRpmtoForm({ ...rpmtoForm, supplies_status: e.target.value })}
+                          style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                        >
+                          <option value="Recursos disponibles">Recursos disponibles</option>
+                          <option value="Necesario compra/fabricación">Necesario compra/fabricación</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Fila 6: Observaciones */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', marginBottom: '0.3rem' }}>
+                        Observación
+                      </label>
+                      <textarea
+                        rows="2"
+                        placeholder="Observaciones adicionales, seguimiento con compras, etc..."
+                        value={rpmtoForm.observation}
+                        onChange={(e) => setRpmtoForm({ ...rpmtoForm, observation: e.target.value })}
+                        style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', resize: 'vertical' }}
+                      />
+                    </div>
+
+                    {/* Botones de acción */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.25rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setRpmtoModalOpen(false)}
+                        className="btn"
+                        style={{ padding: '0.6rem 1.25rem', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1' }}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={rpmtoSaving}
+                        className="btn btn-primary"
+                        style={{ padding: '0.6rem 1.5rem', fontWeight: 'bold' }}
+                      >
+                        {rpmtoSaving ? 'Guardando...' : (rpmtoEditingTask ? '💾 Actualizar Tarea' : '➕ Guardar en Agenda')}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
 
           </div>
         )}
