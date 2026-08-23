@@ -101,12 +101,21 @@ export async function GET(request) {
     const machines = machinesRes.rows;
 
     // 3. Obtener paradas e intervenciones de máquinas (Approved tasks)
+    // Se filtran estrictamente las intervenciones correctivas / por falla
     const machineDowntimeRes = await query(
       `SELECT 
          t.machine_id,
          COUNT(t.id)::int as total_interventions,
-         COUNT(CASE WHEN (LOWER(COALESCE(t.nature, '')) LIKE '%falla%' OR COALESCE(t.stop_time_minutes, 0) > 0 OR t.affects_availability = true) THEN 1 END)::int as failure_interventions,
-         COALESCE(SUM(CASE WHEN (LOWER(COALESCE(t.nature, '')) LIKE '%falla%' OR COALESCE(t.stop_time_minutes, 0) > 0 OR t.affects_availability = true) THEN GREATEST(COALESCE(t.stop_time_minutes, 0), COALESCE(t.total_time_minutes, 0)) ELSE 0 END), 0)::int as failure_stop_minutes,
+         COUNT(CASE WHEN (
+           (LOWER(COALESCE(t.nature, '')) LIKE '%falla%' OR LOWER(COALESCE(t.task_type, '')) LIKE '%correctiv%')
+           AND LOWER(COALESCE(t.nature, '')) NOT LIKE '%preventiv%'
+           AND LOWER(COALESCE(t.task_type, '')) NOT LIKE '%ausentismo%'
+         ) THEN 1 END)::int as failure_interventions,
+         COALESCE(SUM(CASE WHEN (
+           (LOWER(COALESCE(t.nature, '')) LIKE '%falla%' OR LOWER(COALESCE(t.task_type, '')) LIKE '%correctiv%')
+           AND LOWER(COALESCE(t.nature, '')) NOT LIKE '%preventiv%'
+           AND LOWER(COALESCE(t.task_type, '')) NOT LIKE '%ausentismo%'
+         ) THEN COALESCE(NULLIF(t.stop_time_minutes, 0), t.total_time_minutes, 0) ELSE 0 END), 0)::int as failure_stop_minutes,
          COALESCE(SUM(t.stop_time_minutes), 0)::int as total_stop_minutes,
          COALESCE(SUM(t.total_time_minutes), 0)::int as total_work_minutes
        FROM tasks t
@@ -121,12 +130,16 @@ export async function GET(request) {
     const plantFailuresRes = await query(
       `SELECT 
          COUNT(t.id)::int as total_failure_interventions,
-         COALESCE(SUM(CASE WHEN COALESCE(t.stop_time_minutes, 0) > 0 THEN t.stop_time_minutes ELSE COALESCE(t.total_time_minutes, 0) END), 0)::int as total_failure_stop_minutes
+         COALESCE(SUM(COALESCE(NULLIF(t.stop_time_minutes, 0), t.total_time_minutes, 0)), 0)::int as total_failure_stop_minutes
        FROM tasks t
        WHERE t.status = 'APPROVED'
          AND ($1 = 'ALL' OR t.plant = $1)
          AND t.task_date >= $2 AND t.task_date <= $3
-         AND (LOWER(COALESCE(t.nature, '')) LIKE '%falla%' OR COALESCE(t.stop_time_minutes, 0) > 0 OR t.affects_availability = true)`,
+         AND (
+           (LOWER(COALESCE(t.nature, '')) LIKE '%falla%' OR LOWER(COALESCE(t.task_type, '')) LIKE '%correctiv%')
+           AND LOWER(COALESCE(t.nature, '')) NOT LIKE '%preventiv%'
+           AND LOWER(COALESCE(t.task_type, '')) NOT LIKE '%ausentismo%'
+         )`,
       [plant, startDateStr, endDateStr]
     );
 
@@ -151,10 +164,13 @@ export async function GET(request) {
         unconfiguredMachines.push(m.name);
       }
 
-      const totalAvailableHours = isConfigured ? dailyHours * totalBusinessDays : 0;
+      // Si no tiene horario personalizado configurado, se asume el estándar de 8 hs/día para cálculo operativo
+      const effectiveDailyHours = isConfigured ? dailyHours : 8.0;
+      const totalAvailableHours = isConfigured ? (dailyHours * totalBusinessDays) : (effectiveDailyHours * totalBusinessDays);
       const dtInfo = downtimeMap[m.id] || { interventions: 0, failure_interventions: 0, failure_stop_minutes: 0, stop_minutes: 0, work_minutes: 0 };
       const stopHours = dtInfo.stop_minutes / 60;
-      const operatingHours = isConfigured ? Math.max(0, totalAvailableHours - stopHours) : 0;
+      const failureStopHours = dtInfo.failure_stop_minutes / 60;
+      const operatingHours = Math.max(0, totalAvailableHours - failureStopHours);
 
       let availabilityPct = null;
       if (isConfigured && totalAvailableHours > 0) {
@@ -180,9 +196,9 @@ export async function GET(request) {
         productive_start: m.productive_start,
         productive_end: m.productive_end,
         is_configured: isConfigured,
-        daily_hours: dailyHours,
-        total_available_hours: totalAvailableHours,
-        stop_hours: stopHours,
+        daily_hours: isConfigured ? dailyHours : null,
+        total_available_hours: parseFloat(totalAvailableHours.toFixed(1)),
+        stop_hours: parseFloat(stopHours.toFixed(1)),
         operating_hours: parseFloat(operatingHours.toFixed(1)),
         interventions: dtInfo.interventions,
         failure_interventions: failureCount,
@@ -553,9 +569,9 @@ export async function GET(request) {
     let totalPlantOperatingHours = 0;
     let totalPlantAvailableHours = 0;
     machinesAvailabilityList.forEach(m => {
-      if (m.is_configured && m.total_available_hours > 0) {
+      if (m.total_available_hours > 0) {
         totalPlantAvailableHours += m.total_available_hours;
-        totalPlantOperatingHours += Math.max(0, m.total_available_hours - m.stop_hours);
+        totalPlantOperatingHours += (m.operating_hours || 0);
       }
     });
 
@@ -566,7 +582,7 @@ export async function GET(request) {
     const plantTMDR_Minutes = plantTotalFailures > 0 ? parseFloat((plantTotalFailureStopMins / plantTotalFailures).toFixed(1)) : 0;
     const plantTMDR_Hours = plantTotalFailures > 0 ? parseFloat(((plantTotalFailureStopMins / 60.0) / plantTotalFailures).toFixed(2)) : 0;
 
-    // TMEF: tiempo total operativo de las máquinas / paradas por falla
+    // TMEF: tiempo total operativo acumulado de los equipos / paradas por falla
     const plantTMEF_Hours = plantTotalFailures > 0 
       ? parseFloat((totalPlantOperatingHours / plantTotalFailures).toFixed(1)) 
       : (totalPlantOperatingHours > 0 ? parseFloat(totalPlantOperatingHours.toFixed(1)) : null);
@@ -578,7 +594,8 @@ export async function GET(request) {
       total_failures: plantTotalFailures,
       total_stop_minutes: plantTotalFailureStopMins,
       total_operating_hours: parseFloat(totalPlantOperatingHours.toFixed(1)),
-      total_available_hours: parseFloat(totalPlantAvailableHours.toFixed(1))
+      total_available_hours: parseFloat(totalPlantAvailableHours.toFixed(1)),
+      total_machines_evaluated: machinesAvailabilityList.length
     };
 
     return NextResponse.json({

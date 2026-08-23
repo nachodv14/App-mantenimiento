@@ -1842,27 +1842,41 @@ export default function SupervisorView() {
 
               {/* Máquinas Intervenidas */}
               <div className="card" style={{ padding: '1.5rem' }}>
-                <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#b91c1c' }}>⚙️ Máquinas Más Intervenidas</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Top máquinas con mayor cantidad de intervenciones en el período.</p>
+                <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', color: '#b91c1c' }}>⚙️ Máquinas Más Intervenidas y Confiabilidad</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>Top máquinas con mayor cantidad de intervenciones y sus indicadores de TMDR y TMEF.</p>
 
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e5e7eb' }}>
                       <th style={{ padding: '0.75rem' }}>Máquina</th>
-                      <th style={{ padding: '0.75rem' }}>Intervenciones</th>
-                      <th style={{ padding: '0.75rem' }}>Tiempo de Parada</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'center' }}>Total Tareas</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'center' }}>Fallas</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'center' }}>Parada Falla</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'center', color: '#ea580c' }}>TMDR</th>
+                      <th style={{ padding: '0.75rem', textAlign: 'center', color: '#0284c7' }}>TMEF</th>
                     </tr>
                   </thead>
                   <tbody>
                     {metrics?.machineMetrics?.map((m, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
                         <td style={{ padding: '0.75rem', fontWeight: 600 }}>{m.name}</td>
-                        <td style={{ padding: '0.75rem' }}>{m.interventions}</td>
-                        <td style={{ padding: '0.75rem', color: '#0ea5e9', fontWeight: 'bold' }}>{(m.stop_hours || 0).toFixed(1)} hs</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>{m.interventions}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center', fontWeight: 'bold', color: m.failure_interventions > 0 ? '#dc2626' : '#16a34a' }}>
+                          {m.failure_interventions || 0}
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center', color: '#475569' }}>
+                          {m.failure_stop_minutes > 0 ? `${m.failure_stop_minutes} min` : '-'}
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center', fontWeight: 'bold', color: '#ea580c' }}>
+                          {m.tmdr_minutes > 0 ? `${m.tmdr_minutes} min` : '-'}
+                        </td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center', fontWeight: 'bold', color: '#0284c7' }}>
+                          {m.tmef_hours !== null ? `${m.tmef_hours} hs` : (m.operating_hours > 0 ? `${m.operating_hours} hs (Sin fallas)` : '-')}
+                        </td>
                       </tr>
                     ))}
                     {(!metrics?.machineMetrics || metrics.machineMetrics.length === 0) && (
-                      <tr><td colSpan="3" style={{ padding: '1rem', textAlign: 'center' }}>Sin datos en este período</td></tr>
+                      <tr><td colSpan="6" style={{ padding: '1rem', textAlign: 'center' }}>Sin datos en este período</td></tr>
                     )}
                   </tbody>
                 </table>
