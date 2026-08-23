@@ -12,6 +12,7 @@ export async function GET(request) {
   }
 
   try {
+    const limit = parseInt(searchParams.get('limit') || '500', 10);
     const q = `
       SELECT t.*, 
              TO_CHAR(t.task_date, 'DD/MM/YYYY') as task_date_fmt,
@@ -23,10 +24,10 @@ export async function GET(request) {
       LEFT JOIN users o ON t.operator_id = o.id
       LEFT JOIN machines m ON t.machine_id = m.id
       WHERE ($1 = 'ALL' OR t.plant = $1)
-      ORDER BY t.created_at DESC
-      LIMIT 100
+      ORDER BY t.task_date DESC, t.created_at DESC
+      LIMIT $2
     `;
-    const result = await query(q, [plant]);
+    const result = await query(q, [plant, limit]);
     return NextResponse.json({ tasks: result.rows });
   } catch (error) {
     console.error('Error fetching history tasks:', error);

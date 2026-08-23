@@ -30,6 +30,15 @@ export default function SupervisorView() {
   const [pendingDateTo, setPendingDateTo] = useState("");
   const [pendingOperator, setPendingOperator] = useState("");
 
+  // Estado y Filtros RPMTO001
+  const [rpmtoTasks, setRpmtoTasks] = useState([]);
+  const [rpmtoDateFrom, setRpmtoDateFrom] = useState("");
+  const [rpmtoDateTo, setRpmtoDateTo] = useState("");
+  const [rpmtoOperator, setRpmtoOperator] = useState("");
+  const [rpmtoShift, setRpmtoShift] = useState("");
+  const [rpmtoStatus, setRpmtoStatus] = useState("");
+  const [rpmtoSearch, setRpmtoSearch] = useState("");
+
   // Filtros Indicadores (Meses & Días Hábiles)
   const now = new Date();
   const defaultYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -76,6 +85,10 @@ export default function SupervisorView() {
         const res = await fetch(`/api/tareas/pending?plant=${plant}`, { cache: "no-store" });
         const data = await res.json();
         if (data.tasks) setTasks(data.tasks);
+      } else if (tab === "rpmto001") {
+        const res = await fetch(`/api/tareas/history?plant=${plant}&limit=500`, { cache: "no-store" });
+        const data = await res.json();
+        if (data.tasks) setRpmtoTasks(data.tasks);
       } else if (tab === "history") {
         const res = await fetch(`/api/tareas/history?plant=${plant}`, { cache: "no-store" });
         const data = await res.json();
@@ -357,6 +370,12 @@ export default function SupervisorView() {
         Tareas Pendientes
       </button>
       <button
+        onClick={() => setActiveTab('rpmto001')}
+        style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1.1rem', cursor: 'pointer', fontWeight: activeTab === 'rpmto001' ? 'bold' : 'normal', color: activeTab === 'rpmto001' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'rpmto001' ? '3px solid var(--primary)' : 'none' }}
+      >
+        📋 RPMTO001
+      </button>
+      <button
         onClick={() => setActiveTab('history')}
         style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1.1rem', cursor: 'pointer', fontWeight: activeTab === 'history' ? 'bold' : 'normal', color: activeTab === 'history' ? 'var(--primary)' : 'var(--text-muted)', borderBottom: activeTab === 'history' ? '3px solid var(--primary)' : 'none' }}
       >
@@ -403,6 +422,73 @@ export default function SupervisorView() {
     }
     return match;
   });
+
+  // Filtros y Métricas para solapa RPMTO001
+  const uniqueRpmtoOperators = [...new Set(rpmtoTasks.map(t => t.operator_name))].filter(Boolean).sort();
+  const uniqueRpmtoShifts = [...new Set(rpmtoTasks.map(t => t.shift))].filter(Boolean).sort();
+
+  const filteredRpmtoTasks = rpmtoTasks.filter(t => {
+    let match = true;
+    if (rpmtoOperator && t.operator_name !== rpmtoOperator) match = false;
+    if (rpmtoShift && t.shift !== rpmtoShift) match = false;
+    if (rpmtoStatus && t.status !== rpmtoStatus) match = false;
+    if (rpmtoDateFrom) {
+      const dateStr = t.task_date ? t.task_date.slice(0, 10) : '';
+      if (dateStr < rpmtoDateFrom) match = false;
+    }
+    if (rpmtoDateTo) {
+      const dateStr = t.task_date ? t.task_date.slice(0, 10) : '';
+      if (dateStr > rpmtoDateTo) match = false;
+    }
+    if (rpmtoSearch) {
+      const term = rpmtoSearch.toLowerCase();
+      const mach = (t.machine_name || '').toLowerCase();
+      const desc = (t.description || '').toLowerCase();
+      const nat = (t.nature || '').toLowerCase();
+      const type = (t.task_type || '').toLowerCase();
+      const cat = (t.category || '').toLowerCase();
+      if (!mach.includes(term) && !desc.includes(term) && !nat.includes(term) && !type.includes(term) && !cat.includes(term)) {
+        match = false;
+      }
+    }
+    return match;
+  });
+
+  const rpmtoTotalHH = filteredRpmtoTasks.reduce((acc, t) => acc + (parseFloat(t.man_hours) || (t.total_time_minutes || 0) / 60), 0);
+  const rpmtoFallasCount = filteredRpmtoTasks.filter(t => (t.nature || '').toLowerCase().includes('falla')).length;
+  const rpmtoPrevCount = filteredRpmtoTasks.filter(t => (t.nature || '').toLowerCase().includes('preventiv')).length;
+
+  const exportRpmtoCSV = () => {
+    if (filteredRpmtoTasks.length === 0) return;
+    const headers = ['ID', 'Fecha', 'Planta', 'Turno', 'Operario Responsable', 'Acompañantes', 'Tipo de Registro', 'Máquina / Sector', 'Naturaleza', 'Hora Inicio', 'Hora Fin', 'HH Totales', 'Parada Minutos', 'Descripción', 'Desviación', 'Estado', 'Obs Supervisor'];
+    const rows = filteredRpmtoTasks.map(t => [
+      t.id,
+      t.task_date_fmt || t.task_date,
+      t.plant,
+      t.shift || '',
+      `"${t.operator_name || ''}"`,
+      `"${getCompanionsText(t.companions)}"`,
+      `"${t.task_type || ''}"`,
+      `"${t.machine_name || t.category || ''}"`,
+      `"${t.nature || ''}"`,
+      t.start_time_fmt || t.start_time,
+      t.end_time_fmt || t.end_time,
+      t.man_hours || '',
+      t.stop_time_minutes || 0,
+      `"${(t.description || '').replace(/"/g, '""')}"`,
+      `"${(t.deviation || '').replace(/"/g, '""')}"`,
+      t.status,
+      `"${(t.supervisor_obs || '').replace(/"/g, '""')}"`
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `RPMTO001_${user?.plant || 'PLANTA'}_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <>
@@ -511,6 +597,241 @@ export default function SupervisorView() {
               </div>
             )}
           </>
+        )}
+
+        {/* TAB: RPMTO001 */}
+        {activeTab === 'rpmto001' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            
+            {/* Cabecera Oficial y Controles */}
+            <div className="card" style={{ padding: '1.5rem', background: '#f8fafc', border: '1px solid #cbd5e1' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    📋 Registro de Parte Diario de Mantenimiento (RPMTO001)
+                  </h3>
+                  <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                    Planta: <strong>{user.plant}</strong> | Formulario Oficial de Registro de Órdenes de Trabajo e Intervenciones
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={exportRpmtoCSV}
+                    disabled={filteredRpmtoTasks.length === 0}
+                    className="btn btn-primary"
+                    style={{ padding: '0.4rem 0.9rem', fontSize: '0.85rem', background: '#0284c7' }}
+                  >
+                    📥 Exportar CSV
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="btn btn-primary"
+                    style={{ padding: '0.4rem 0.9rem', fontSize: '0.85rem', background: '#475569' }}
+                  >
+                    🖨️ Imprimir
+                  </button>
+                </div>
+              </div>
+
+              {/* Filtros RPMTO001 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', alignItems: 'end' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
+                    Desde Fecha
+                  </label>
+                  <input
+                    type="date"
+                    value={rpmtoDateFrom}
+                    onChange={(e) => setRpmtoDateFrom(e.target.value)}
+                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
+                    Hasta Fecha
+                  </label>
+                  <input
+                    type="date"
+                    value={rpmtoDateTo}
+                    onChange={(e) => setRpmtoDateTo(e.target.value)}
+                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
+                    Operario Responsable
+                  </label>
+                  <select
+                    value={rpmtoOperator}
+                    onChange={(e) => setRpmtoOperator(e.target.value)}
+                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  >
+                    <option value="">Todos los operarios</option>
+                    {uniqueRpmtoOperators.map(op => <option key={op} value={op}>{op}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
+                    Turno
+                  </label>
+                  <select
+                    value={rpmtoShift}
+                    onChange={(e) => setRpmtoShift(e.target.value)}
+                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  >
+                    <option value="">Todos los turnos</option>
+                    {uniqueRpmtoShifts.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
+                    Estado OT
+                  </label>
+                  <select
+                    value={rpmtoStatus}
+                    onChange={(e) => setRpmtoStatus(e.target.value)}
+                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  >
+                    <option value="">Todos los estados</option>
+                    <option value="APPROVED">✅ Aprobadas</option>
+                    <option value="PENDING">⏳ Pendientes</option>
+                    <option value="REJECTED">❌ Rechazadas</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
+                    Buscar Texto
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Máquina, sector, tarea..."
+                    value={rpmtoSearch}
+                    onChange={(e) => setRpmtoSearch(e.target.value)}
+                    style={{ width: '100%', padding: '0.45rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Resumen de Métricas del Filtro RPMTO001 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
+                <div style={{ background: '#fff', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'bold', display: 'block' }}>REGISTROS</span>
+                  <strong style={{ fontSize: '1.3rem', color: '#1e293b' }}>{filteredRpmtoTasks.length}</strong>
+                </div>
+                <div style={{ background: '#fff', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#0369a1', fontWeight: 'bold', display: 'block' }}>TOTAL HORAS HOMBRE</span>
+                  <strong style={{ fontSize: '1.3rem', color: '#0284c7' }}>{rpmtoTotalHH.toFixed(2)} hs</strong>
+                </div>
+                <div style={{ background: '#fff', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#dc2626', fontWeight: 'bold', display: 'block' }}>FALLAS / CORRECTIVOS</span>
+                  <strong style={{ fontSize: '1.3rem', color: '#dc2626' }}>{rpmtoFallasCount}</strong>
+                </div>
+                <div style={{ background: '#fff', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 'bold', display: 'block' }}>PREVENTIVOS</span>
+                  <strong style={{ fontSize: '1.3rem', color: '#16a34a' }}>{rpmtoPrevCount}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabla Principal RPMTO001 */}
+            <div className="card" style={{ padding: '1rem', overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Fecha</th>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Turno</th>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Operario Responsable</th>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Tipo / Activo</th>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Naturaleza</th>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Horario</th>
+                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>HH</th>
+                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Parada</th>
+                    <th style={{ padding: '0.75rem 0.5rem' }}>Descripción / Desvío</th>
+                    <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRpmtoTasks.map(t => (
+                    <tr key={t.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '0.75rem 0.5rem', whiteSpace: 'nowrap', fontWeight: 'bold' }}>
+                        {t.task_date_fmt}
+                      </td>
+                      <td style={{ padding: '0.75rem 0.5rem', whiteSpace: 'nowrap' }}>
+                        <span style={{ background: '#f1f5f9', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.78rem' }}>
+                          {t.shift || '-'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.75rem 0.5rem' }}>
+                        <strong style={{ display: 'block', color: '#1e293b' }}>{t.operator_name}</strong>
+                        {getCompanionsText(t.companions) && (
+                          <span style={{ fontSize: '0.75rem', color: '#0369a1' }}>
+                            👥 +{getCompanionsText(t.companions)}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '0.75rem 0.5rem' }}>
+                        <strong style={{ color: 'var(--primary)', display: 'block' }}>
+                          {t.machine_name || t.category || '-'}
+                        </strong>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{t.task_type}</span>
+                      </td>
+                      <td style={{ padding: '0.75rem 0.5rem' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '4px',
+                          fontSize: '0.78rem',
+                          fontWeight: 'bold',
+                          background: (t.nature || '').toLowerCase().includes('falla') ? '#fee2e2' : (t.nature || '').toLowerCase().includes('preventiv') ? '#dcfce7' : '#f1f5f9',
+                          color: (t.nature || '').toLowerCase().includes('falla') ? '#dc2626' : (t.nature || '').toLowerCase().includes('preventiv') ? '#166534' : '#475569'
+                        }}>
+                          {t.nature || '-'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.75rem 0.5rem', whiteSpace: 'nowrap', color: '#475569' }}>
+                        {t.start_time_fmt} - {t.end_time_fmt}
+                      </td>
+                      <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontWeight: 'bold', color: '#0284c7' }}>
+                        {t.man_hours ? parseFloat(t.man_hours).toFixed(2) : ((t.total_time_minutes || 0) / 60).toFixed(2)} hs
+                      </td>
+                      <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontWeight: 'bold', color: t.stop_time_minutes > 0 ? '#ea580c' : '#94a3b8' }}>
+                        {t.stop_time_minutes > 0 ? `${t.stop_time_minutes} min` : '-'}
+                      </td>
+                      <td style={{ padding: '0.75rem 0.5rem', maxWidth: '300px' }}>
+                        <div style={{ color: '#1e293b' }}>{t.description}</div>
+                        {t.deviation && (
+                          <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: '#b91c1c', background: '#fff1f2', padding: '0.15rem 0.35rem', borderRadius: '3px' }}>
+                            ⚠️ {t.deviation}
+                          </div>
+                        )}
+                        {t.supervisor_obs && (
+                          <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: '#475569', background: '#f8fafc', padding: '0.15rem 0.35rem', borderRadius: '3px' }}>
+                            💬 Obs: {t.supervisor_obs}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        {getStatusBadge(t.status)}
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredRpmtoTasks.length === 0 && (
+                    <tr>
+                      <td colSpan="10" style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
+                        No se encontraron registros en el parte diario RPMTO001 con los filtros seleccionados.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
         )}
 
         {/* TAB: HISTORIAL */}
