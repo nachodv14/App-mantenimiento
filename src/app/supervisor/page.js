@@ -442,12 +442,12 @@ export default function SupervisorView() {
     return match;
   });
 
-  // Opciones Oficiales RPMTO001
+  // Opciones Oficiales RPMTO001 con tonalidades vivas y bien diferenciadas
   const RPMTO_STATUSES = [
-    { value: 'Azul: En posibilidad de realización', label: '🔵 Azul: En posibilidad de realización (insumos disponibles)', short: 'Posibilidad de realización', bg: '#dbeafe', color: '#1e3a8a', border: '#93c5fd', badgeBg: '#1e40af' },
-    { value: 'Amarillo: Tarea pendiente insumos', label: '🟡 Amarillo: Tarea pendiente (comprar/fabricar insumos)', short: 'Pendiente insumos', bg: '#fef9c3', color: '#713f12', border: '#fde047', badgeBg: '#854d0e' },
-    { value: 'Verde: Tarea realizada', label: '🟢 Verde: Tarea realizada', short: 'Realizada', bg: '#dcfce7', color: '#14532d', border: '#86efac', badgeBg: '#166534' },
-    { value: 'Rojo: Tarea cancelada', label: '🔴 Rojo: Tarea cancelada', short: 'Cancelada', bg: '#fee2e2', color: '#7f1d1d', border: '#fca5a5', badgeBg: '#991b1b' }
+    { value: 'Azul: En posibilidad de realización', label: '🔵 Azul: En posibilidad de realización (insumos disponibles)', short: 'Posibilidad de realización', bg: '#93c5fd', color: '#1e3a8a', border: '#60a5fa', badgeBg: '#2563eb' },
+    { value: 'Amarillo: Tarea pendiente insumos', label: '🟡 Amarillo: Tarea pendiente (comprar/fabricar insumos)', short: 'Pendiente insumos', bg: '#fef08a', color: '#713f12', border: '#facc15', badgeBg: '#d97706' },
+    { value: 'Verde: Tarea realizada', label: '🟢 Verde: Tarea realizada', short: 'Realizada', bg: '#86efac', color: '#064e3b', border: '#4ade80', badgeBg: '#059669' },
+    { value: 'Rojo: Tarea cancelada', label: '🔴 Rojo: Tarea cancelada', short: 'Cancelada', bg: '#fca5a5', color: '#7f1d1d', border: '#f87171', badgeBg: '#dc2626' }
   ];
 
   const formatMachineCodeOnly = (str) => {
@@ -469,16 +469,16 @@ export default function SupervisorView() {
   const getRpmtoRowStyle = (status) => {
     const s = (status || '').toLowerCase();
     if (s.includes('verde') || s.includes('realizada')) {
-      return { background: '#dcfce7', color: '#14532d', borderBottom: '1px solid #bbf7d0', isClosed: true };
+      return { background: '#86efac', color: '#064e3b', borderBottom: '2px solid #4ade80', isClosed: true };
     }
     if (s.includes('amarillo') || s.includes('pendiente')) {
-      return { background: '#fef9c3', color: '#713f12', borderBottom: '1px solid #fef08a', isClosed: false };
+      return { background: '#fef08a', color: '#713f12', borderBottom: '2px solid #facc15', isClosed: false };
     }
     if (s.includes('azul') || s.includes('posibilidad')) {
-      return { background: '#dbeafe', color: '#1e3a8a', borderBottom: '1px solid #bfdbfe', isClosed: false };
+      return { background: '#93c5fd', color: '#1e3a8a', borderBottom: '2px solid #60a5fa', isClosed: false };
     }
     if (s.includes('rojo') || s.includes('cancelada')) {
-      return { background: '#fee2e2', color: '#7f1d1d', borderBottom: '1px solid #fecaca', isClosed: true };
+      return { background: '#fca5a5', color: '#7f1d1d', borderBottom: '2px solid #f87171', isClosed: true };
     }
     return { background: '#ffffff', color: '#1e293b', borderBottom: '1px solid #e2e8f0', isClosed: false };
   };
@@ -824,16 +824,16 @@ export default function SupervisorView() {
 
               {/* Leyenda de Estados y Colores Oficiales */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                <div style={{ background: '#dbeafe', border: '1px solid #93c5fd', color: '#1e3a8a', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600 }}>
+                <div style={{ background: '#93c5fd', border: '1px solid #60a5fa', color: '#1e3a8a', padding: '0.65rem 0.9rem', borderRadius: '8px', fontSize: '0.84rem', fontWeight: 'bold', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                   🔵 <strong>Azul:</strong> Posibilidad de realización (insumos listos)
                 </div>
-                <div style={{ background: '#fef9c3', border: '1px solid #fde047', color: '#713f12', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600 }}>
+                <div style={{ background: '#fef08a', border: '1px solid #facc15', color: '#713f12', padding: '0.65rem 0.9rem', borderRadius: '8px', fontSize: '0.84rem', fontWeight: 'bold', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                   🟡 <strong>Amarillo:</strong> Pendiente (comprar/fabricar insumos)
                 </div>
-                <div style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#14532d', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600 }}>
+                <div style={{ background: '#86efac', border: '1px solid #4ade80', color: '#064e3b', padding: '0.65rem 0.9rem', borderRadius: '8px', fontSize: '0.84rem', fontWeight: 'bold', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                   🟢 <strong>Verde:</strong> Tarea realizada (cerrada)
                 </div>
-                <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#7f1d1d', padding: '0.6rem 0.8rem', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 600 }}>
+                <div style={{ background: '#fca5a5', border: '1px solid #f87171', color: '#7f1d1d', padding: '0.65rem 0.9rem', borderRadius: '8px', fontSize: '0.84rem', fontWeight: 'bold', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                   🔴 <strong>Rojo:</strong> Tarea cancelada (cerrada)
                 </div>
               </div>
