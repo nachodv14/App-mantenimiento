@@ -547,6 +547,8 @@ export async function GET(request) {
       GROUP BY o.full_name
       ORDER BY total_minutes DESC NULLS LAST
     `;
+    const resOp = await query(qOperators, [plant, startDateStr, endDateStr]);
+
     // 7. Cálculo de Indicadores de Confiabilidad y Mantenibilidad (TMDR y TMEF) a nivel de planta
     let totalPlantOperatingHours = 0;
     let totalPlantAvailableHours = 0;
