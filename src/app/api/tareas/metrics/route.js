@@ -105,6 +105,8 @@ export async function GET(request) {
       `SELECT 
          t.machine_id,
          COUNT(t.id)::int as total_interventions,
+         COUNT(CASE WHEN (LOWER(COALESCE(t.nature, '')) LIKE '%falla%' OR COALESCE(t.stop_time_minutes, 0) > 0 OR t.affects_availability = true) THEN 1 END)::int as failure_interventions,
+         COALESCE(SUM(CASE WHEN (LOWER(COALESCE(t.nature, '')) LIKE '%falla%' OR COALESCE(t.stop_time_minutes, 0) > 0 OR t.affects_availability = true) THEN GREATEST(COALESCE(t.stop_time_minutes, 0), COALESCE(t.total_time_minutes, 0)) ELSE 0 END), 0)::int as failure_stop_minutes,
          COALESCE(SUM(t.stop_time_minutes), 0)::int as total_stop_minutes,
          COALESCE(SUM(t.total_time_minutes), 0)::int as total_work_minutes
        FROM tasks t
@@ -116,16 +118,30 @@ export async function GET(request) {
       [plant, startDateStr, endDateStr]
     );
 
+    const plantFailuresRes = await query(
+      `SELECT 
+         COUNT(t.id)::int as total_failure_interventions,
+         COALESCE(SUM(CASE WHEN COALESCE(t.stop_time_minutes, 0) > 0 THEN t.stop_time_minutes ELSE COALESCE(t.total_time_minutes, 0) END), 0)::int as total_failure_stop_minutes
+       FROM tasks t
+       WHERE t.status = 'APPROVED'
+         AND ($1 = 'ALL' OR t.plant = $1)
+         AND t.task_date >= $2 AND t.task_date <= $3
+         AND (LOWER(COALESCE(t.nature, '')) LIKE '%falla%' OR COALESCE(t.stop_time_minutes, 0) > 0 OR t.affects_availability = true)`,
+      [plant, startDateStr, endDateStr]
+    );
+
     const downtimeMap = {};
     machineDowntimeRes.rows.forEach(r => {
       downtimeMap[r.machine_id] = {
         interventions: r.total_interventions,
+        failure_interventions: r.failure_interventions,
+        failure_stop_minutes: r.failure_stop_minutes,
         stop_minutes: r.total_stop_minutes,
         work_minutes: r.total_work_minutes
       };
     });
 
-    // 4. Calcular la disponibilidad de cada máquina
+    // 4. Calcular la disponibilidad, TMDR y TMEF de cada máquina
     const unconfiguredMachines = [];
     const machinesAvailabilityList = machines.map(m => {
       const dailyHours = getDailyProductiveHours(m.productive_start, m.productive_end);
@@ -136,13 +152,26 @@ export async function GET(request) {
       }
 
       const totalAvailableHours = isConfigured ? dailyHours * totalBusinessDays : 0;
-      const dtInfo = downtimeMap[m.id] || { interventions: 0, stop_minutes: 0, work_minutes: 0 };
+      const dtInfo = downtimeMap[m.id] || { interventions: 0, failure_interventions: 0, failure_stop_minutes: 0, stop_minutes: 0, work_minutes: 0 };
       const stopHours = dtInfo.stop_minutes / 60;
+      const operatingHours = isConfigured ? Math.max(0, totalAvailableHours - stopHours) : 0;
 
       let availabilityPct = null;
       if (isConfigured && totalAvailableHours > 0) {
         availabilityPct = Math.max(0, Math.min(100, ((totalAvailableHours - stopHours) / totalAvailableHours) * 100));
       }
+
+      const failureCount = dtInfo.failure_interventions || 0;
+      const failureStopMins = dtInfo.failure_stop_minutes || 0;
+
+      // TMDR: minutos totales de parada por falla / intervenciones correctivas
+      const tmdrMinutes = failureCount > 0 ? parseFloat((failureStopMins / failureCount).toFixed(1)) : 0;
+      const tmdrHours = failureCount > 0 ? parseFloat(((failureStopMins / 60.0) / failureCount).toFixed(2)) : 0;
+
+      // TMEF: tiempo total operativo de la máquina / paradas por falla
+      const tmefHours = failureCount > 0 
+        ? parseFloat((operatingHours / failureCount).toFixed(1)) 
+        : (operatingHours > 0 ? parseFloat(operatingHours.toFixed(1)) : null);
 
       return {
         id: m.id,
@@ -154,7 +183,13 @@ export async function GET(request) {
         daily_hours: dailyHours,
         total_available_hours: totalAvailableHours,
         stop_hours: stopHours,
+        operating_hours: parseFloat(operatingHours.toFixed(1)),
         interventions: dtInfo.interventions,
+        failure_interventions: failureCount,
+        failure_stop_minutes: failureStopMins,
+        tmdr_minutes: tmdrMinutes,
+        tmdr_hours: tmdrHours,
+        tmef_hours: tmefHours,
         work_minutes: dtInfo.work_minutes,
         availability_pct: availabilityPct !== null ? parseFloat(availabilityPct.toFixed(2)) : null
       };
@@ -512,7 +547,37 @@ export async function GET(request) {
       GROUP BY o.full_name
       ORDER BY total_minutes DESC NULLS LAST
     `;
-    const resOp = await query(qOperators, [plant, startDateStr, endDateStr]);
+    // 7. Cálculo de Indicadores de Confiabilidad y Mantenibilidad (TMDR y TMEF) a nivel de planta
+    let totalPlantOperatingHours = 0;
+    let totalPlantAvailableHours = 0;
+    machinesAvailabilityList.forEach(m => {
+      if (m.is_configured && m.total_available_hours > 0) {
+        totalPlantAvailableHours += m.total_available_hours;
+        totalPlantOperatingHours += Math.max(0, m.total_available_hours - m.stop_hours);
+      }
+    });
+
+    const plantTotalFailures = plantFailuresRes.rows[0]?.total_failure_interventions || 0;
+    const plantTotalFailureStopMins = plantFailuresRes.rows[0]?.total_failure_stop_minutes || 0;
+
+    // TMDR: minutos totales de parada por falla / intervenciones correctivas
+    const plantTMDR_Minutes = plantTotalFailures > 0 ? parseFloat((plantTotalFailureStopMins / plantTotalFailures).toFixed(1)) : 0;
+    const plantTMDR_Hours = plantTotalFailures > 0 ? parseFloat(((plantTotalFailureStopMins / 60.0) / plantTotalFailures).toFixed(2)) : 0;
+
+    // TMEF: tiempo total operativo de las máquinas / paradas por falla
+    const plantTMEF_Hours = plantTotalFailures > 0 
+      ? parseFloat((totalPlantOperatingHours / plantTotalFailures).toFixed(1)) 
+      : (totalPlantOperatingHours > 0 ? parseFloat(totalPlantOperatingHours.toFixed(1)) : null);
+
+    const reliabilityMetrics = {
+      tmdr_minutes: plantTMDR_Minutes,
+      tmdr_hours: plantTMDR_Hours,
+      tmef_hours: plantTMEF_Hours,
+      total_failures: plantTotalFailures,
+      total_stop_minutes: plantTotalFailureStopMins,
+      total_operating_hours: parseFloat(totalPlantOperatingHours.toFixed(1)),
+      total_available_hours: parseFloat(totalPlantAvailableHours.toFixed(1))
+    };
 
     return NextResponse.json({
       fromMonth,
@@ -521,7 +586,9 @@ export async function GET(request) {
       totalBusinessDays,
       monthlyDaysBreakdown,
       unconfiguredMachines,
+      reliabilityMetrics,
       sl2KPIs: {
+        reliabilityMetrics,
         disponibilidadFL02: kpiFL02 ? kpiFL02.availability_pct : null,
         disponibilidadM01: kpiM01 ? kpiM01.availability_pct : null,
         disponibilidadM03: kpiM03 ? kpiM03.availability_pct : null,
@@ -561,6 +628,7 @@ export async function GET(request) {
         }
       },
       sl1KPIs: {
+        reliabilityMetrics,
         disponibilidadH08: kpiH08 ? kpiH08.availability_pct : null,
         disponibilidadH09: kpiH09 ? kpiH09.availability_pct : null,
         disponibilidadMEP02: kpiMEP02 ? kpiMEP02.availability_pct : null,
@@ -607,6 +675,7 @@ export async function GET(request) {
         }
       },
       ramKPIs: {
+        reliabilityMetrics,
         disponibilidadH06: kpiH06 ? kpiH06.availability_pct : null,
         disponibilidadMediaREC01REC02: kpiMediaREC01REC02,
         disponibilidadMEP01: kpiMEP01 ? kpiMEP01.availability_pct : null,
@@ -643,6 +712,7 @@ export async function GET(request) {
         }
       },
       pilKPIs: {
+        reliabilityMetrics,
         disponibilidadP10: kpiP10 ? kpiP10.availability_pct : null,
         menorDisponibilidadPuentesGruas: kpiMenorPuentesGruas,
         menorPuenteGruaNombre: kpiMenorPuenteGruaNombre,
@@ -668,6 +738,7 @@ export async function GET(request) {
         }
       },
       cbaKPIs: {
+        reliabilityMetrics,
         availabilities: cbaKpisObj,
         hhMetrics: {
           totalHHLoaded: parseFloat(totalHHLoaded.toFixed(2)),

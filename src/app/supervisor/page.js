@@ -255,6 +255,95 @@ export default function SupervisorView() {
     );
   };
 
+  const renderReliabilityKpis = (reliability) => {
+    if (!reliability) return null;
+    const { tmdr_minutes, tmdr_hours, tmef_hours, total_failures, total_stop_minutes, total_operating_hours } = reliability;
+
+    return (
+      <div style={{ marginTop: '0.5rem', marginBottom: '1.75rem' }}>
+        <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          📈 Indicadores de Eficiencia y Confiabilidad (TMDR y TMEF)
+        </h3>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.25rem' }}>
+          {/* TMDR: Tiempo Promedio de Reparación */}
+          <div className="card" style={{ padding: '1.5rem', borderLeft: '5px solid #ea580c', background: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#ea580c', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Eficiencia del Equipo Técnico
+                </span>
+                <h4 style={{ margin: '0.35rem 0 0.5rem 0', fontSize: '1.2rem', color: '#1e293b', fontWeight: 700 }}>
+                  ⏱️ Tiempo promedio de reparación (TMDR)
+                </h4>
+              </div>
+              <span style={{ background: '#ffedd5', color: '#9a3412', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                MTTR
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', margin: '0.75rem 0' }}>
+              <span style={{ fontSize: '2.2rem', fontWeight: '800', color: '#ea580c' }}>
+                {tmdr_minutes > 0 ? `${tmdr_minutes} min` : '0 min'}
+              </span>
+              {tmdr_hours > 0 && (
+                <span style={{ fontSize: '1rem', color: '#64748b', fontWeight: '500' }}>
+                  ({tmdr_hours} hs)
+                </span>
+              )}
+            </div>
+
+            <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.85rem', color: '#475569', lineHeight: 1.4 }}>
+              Duración media de las intervenciones correctivas para solucionar una falla técnica.
+            </p>
+
+            <div style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', paddingTop: '0.6rem', fontSize: '0.8rem', color: '#64748b', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <span>Minutos totales de parada por falla: <strong>{total_stop_minutes || 0} min</strong></span>
+              <span>Intervenciones correctivas: <strong>{total_failures || 0}</strong></span>
+            </div>
+          </div>
+
+          {/* TMEF: Tiempo Promedio Entre Fallas */}
+          <div className="card" style={{ padding: '1.5rem', borderLeft: '5px solid #0284c7', background: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Confiabilidad del Activo
+                </span>
+                <h4 style={{ margin: '0.35rem 0 0.5rem 0', fontSize: '1.2rem', color: '#1e293b', fontWeight: 700 }}>
+                  🛡️ Tiempo promedio entre fallas (TMEF)
+                </h4>
+              </div>
+              <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                MTBF
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', margin: '0.75rem 0' }}>
+              <span style={{ fontSize: '2.2rem', fontWeight: '800', color: tmef_hours !== null ? '#0284c7' : '#16a34a' }}>
+                {tmef_hours !== null ? `${tmef_hours} hs` : 'Sin fallas'}
+              </span>
+              {tmef_hours === null && (
+                <span style={{ fontSize: '0.9rem', color: '#16a34a', fontWeight: '600' }}>
+                  (100% Operativo)
+                </span>
+              )}
+            </div>
+
+            <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.85rem', color: '#475569', lineHeight: 1.4 }}>
+              Intervalo promedio de operación continua de los equipos sin presentar fallas.
+            </p>
+
+            <div style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', paddingTop: '0.6rem', fontSize: '0.8rem', color: '#64748b', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <span>Tiempo total operativo: <strong>{total_operating_hours || 0} hs</strong></span>
+              <span>Número total de paradas: <strong>{total_failures || 0}</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (!user) {
     return <div style={{ padding: "2rem", textAlign: "center" }}>Cargando panel de supervisor...</div>;
   }
@@ -645,6 +734,7 @@ export default function SupervisorView() {
             {/* SECCIÓN SL1: INDICADORES MENSUALES CLAVE */}
             {user.plant === 'SL1' && metrics?.sl1KPIs && (
               <>
+                {renderReliabilityKpis(metrics.sl1KPIs.reliabilityMetrics || metrics.reliabilityMetrics)}
                 <div>
                   <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     📊 Indicadores de Disponibilidad de Equipos (Planta SL1)
@@ -914,6 +1004,7 @@ export default function SupervisorView() {
             {/* SECCIÓN CBA: INDICADORES MENSUALES CLAVE */}
             {user.plant === 'CBA' && metrics?.cbaKPIs && (
               <>
+                {renderReliabilityKpis(metrics.cbaKPIs.reliabilityMetrics || metrics.reliabilityMetrics)}
                 <div>
                   <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     📊 Indicadores de Disponibilidad de Equipos (Planta CBA)
@@ -1099,6 +1190,7 @@ export default function SupervisorView() {
             {/* SECCIÓN PIL: INDICADORES MENSUALES CLAVE */}
             {user.plant === 'PIL' && metrics?.pilKPIs && (
               <>
+                {renderReliabilityKpis(metrics.pilKPIs.reliabilityMetrics || metrics.reliabilityMetrics)}
                 <div>
                   <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     📊 Indicadores de Disponibilidad de Equipos (Planta PIL)
@@ -1256,6 +1348,7 @@ export default function SupervisorView() {
             {/* SECCIÓN RAM: INDICADORES MENSUALES CLAVE */}
             {user.plant === 'RAM' && metrics?.ramKPIs && (
               <>
+                {renderReliabilityKpis(metrics.ramKPIs.reliabilityMetrics || metrics.reliabilityMetrics)}
                 <div>
                   <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     📊 Indicadores de Disponibilidad de Equipos (Planta RAM)
@@ -1508,6 +1601,7 @@ export default function SupervisorView() {
             {/* SECCIÓN SL2: INDICADORES MENSUALES CLAVE */}
             {user.plant === 'SL2' && metrics?.sl2KPIs && (
               <>
+                {renderReliabilityKpis(metrics.sl2KPIs.reliabilityMetrics || metrics.reliabilityMetrics)}
                 <div>
                   <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1.25rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     📊 Indicadores de Disponibilidad de Equipos (Planta SL2)
