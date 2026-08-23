@@ -632,30 +632,93 @@ export default function SupervisorView() {
     return true;
   });
 
-  const exportRpmtoCSV = () => {
+  const exportRpmtoExcel = () => {
     if (filteredRpmtoTasks.length === 0) return;
-    const headers = ['ID', 'Estado Tarea', 'Codigo Maquina', 'Trabajos Pendientes', 'Criterio Criticidad', 'Solicito', 'Fecha Solicitud', 'Fecha Ejecucion', 'Insumos Necesarios', 'Estado Insumos', 'Observacion'];
-    const rows = filteredRpmtoTasks.map(t => [
-      t.id,
-      `"${t.status || ''}"`,
-      `"${t.machine_code || ''}"`,
-      `"${(t.pending_work || '').replace(/"/g, '""')}"`,
-      t.criticality || 50,
-      `"${t.requested_by || ''}"`,
-      t.request_date_fmt || t.request_date || '',
-      t.execution_date_fmt || t.execution_date || '',
-      `"${(t.supplies_needed || '').replace(/"/g, '""')}"`,
-      `"${t.supplies_status || ''}"`,
-      `"${(t.observation || '').replace(/"/g, '""')}"`
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+  <style>
+    body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th { background-color: #1e293b; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; padding: 10px 8px; text-align: left; font-size: 11pt; }
+    td { border: 1px solid #cbd5e1; padding: 8px 10px; vertical-align: middle; font-size: 10.5pt; }
+  </style>
+</head>
+<body>
+  <h2 style="color: #0f172a; font-family: Calibri, sans-serif;">📋 Agenda de Tareas Pendientes (RPMTO001) - Planta ${user?.plant || 'GENERAL'}</h2>
+  <p style="color: #64748b; font-size: 10pt; font-family: Calibri, sans-serif;">Fecha de exportación: ${new Date().toLocaleDateString('es-AR')}</p>
+  <table border="1">
+    <thead>
+      <tr>
+        <th style="background-color: #1e293b; color: #ffffff; text-align: left;">Estado tarea</th>
+        <th style="background-color: #1e293b; color: #ffffff; text-align: center;">Código</th>
+        <th style="background-color: #1e293b; color: #ffffff; text-align: left;">Trabajos pendientes</th>
+        <th style="background-color: #1e293b; color: #ffffff; text-align: center;">Criterio</th>
+        <th style="background-color: #1e293b; color: #ffffff; text-align: left;">Solicitó</th>
+        <th style="background-color: #1e293b; color: #ffffff; text-align: center;">Fecha solicitud</th>
+        <th style="background-color: #1e293b; color: #ffffff; text-align: center;">Fecha ejecución</th>
+        <th style="background-color: #1e293b; color: #ffffff; text-align: left;">Insumos necesarios</th>
+        <th style="background-color: #1e293b; color: #ffffff; text-align: left;">Estado insumos</th>
+        <th style="background-color: #1e293b; color: #ffffff; text-align: left;">Observación</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+    filteredRpmtoTasks.forEach(t => {
+      const s = (t.status || '').toLowerCase();
+      let bg = '#ffffff';
+      let color = '#1e293b';
+      let statusLabel = t.status || '';
+
+      if (s.includes('verde') || s.includes('realizada')) {
+        bg = '#86efac';
+        color = '#064e3b';
+        statusLabel = 'Tarea realizada';
+      } else if (s.includes('amarillo') || s.includes('pendiente')) {
+        bg = '#fef08a';
+        color = '#713f12';
+        statusLabel = 'Tarea pendiente (insumos)';
+      } else if (s.includes('azul') || s.includes('posibilidad')) {
+        bg = '#93c5fd';
+        color = '#1e3a8a';
+        statusLabel = 'Posibilidad de realización';
+      } else if (s.includes('rojo') || s.includes('cancelada')) {
+        bg = '#fca5a5';
+        color = '#7f1d1d';
+        statusLabel = 'Tarea cancelada';
+      }
+
+      html += `
+      <tr style="background-color: ${bg}; color: ${color};">
+        <td style="background-color: ${bg}; color: ${color}; font-weight: bold;">${statusLabel}</td>
+        <td style="background-color: ${bg}; color: ${color}; font-weight: bold; text-align: center;">${formatMachineCodeOnly(t.machine_code)}</td>
+        <td style="background-color: ${bg}; color: ${color}; font-weight: 500;">${t.pending_work || ''}</td>
+        <td style="background-color: ${bg}; color: ${color}; text-align: center; font-weight: bold;">${t.criticality || 50}</td>
+        <td style="background-color: ${bg}; color: ${color};">${t.requested_by || '-'}</td>
+        <td style="background-color: ${bg}; color: ${color}; text-align: center;">${t.request_date_fmt || t.request_date || '-'}</td>
+        <td style="background-color: ${bg}; color: ${color}; text-align: center;">${t.execution_date_fmt || t.execution_date || '-'}</td>
+        <td style="background-color: ${bg}; color: ${color};">${t.supplies_needed || '-'}</td>
+        <td style="background-color: ${bg}; color: ${color}; font-weight: bold;">${t.supplies_status || 'Recursos disponibles'}</td>
+        <td style="background-color: ${bg}; color: ${color};">${t.observation || '-'}</td>
+      </tr>`;
+    });
+
+    html += `
+    </tbody>
+  </table>
+</body>
+</html>`;
+
+    const blob = new Blob(['\uFEFF', html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `RPMTO001_Agenda_${user?.plant || 'PLANTA'}_${new Date().toISOString().slice(0,10)}.csv`);
+    link.href = url;
+    link.download = `RPMTO001_Agenda_${user?.plant || 'PLANTA'}_${new Date().toISOString().slice(0, 10)}.xls`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -812,12 +875,12 @@ export default function SupervisorView() {
                   </button>
 
                   <button
-                    onClick={exportRpmtoCSV}
+                    onClick={exportRpmtoExcel}
                     disabled={filteredRpmtoTasks.length === 0}
                     className="btn"
-                    style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: '#0284c7', color: '#fff' }}
+                    style={{ padding: '0.5rem 1.1rem', fontSize: '0.9rem', background: '#107569', color: '#fff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                   >
-                    📥 Exportar CSV
+                    📊 Exportar a Excel
                   </button>
                 </div>
               </div>
