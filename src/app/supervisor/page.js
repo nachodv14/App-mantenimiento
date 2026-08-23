@@ -450,6 +450,22 @@ export default function SupervisorView() {
     { value: 'Rojo: Tarea cancelada', label: '🔴 Rojo: Tarea cancelada', short: 'Cancelada', bg: '#fee2e2', color: '#7f1d1d', border: '#fca5a5', badgeBg: '#991b1b' }
   ];
 
+  const formatMachineCodeOnly = (str) => {
+    if (!str) return '-';
+    const clean = str.trim();
+    const parenMatch = clean.match(/\(([^)]+)\)/);
+    if (parenMatch && parenMatch[1].trim().length <= 10) {
+      return parenMatch[1].trim();
+    }
+    if (clean.includes(' - ')) {
+      const parts = clean.split(' - ').map(p => p.trim());
+      if (parts[0].length <= 8) return parts[0];
+      if (parts[1] && parts[1].length <= 8) return parts[1];
+      return parts[0];
+    }
+    return clean;
+  };
+
   const getRpmtoRowStyle = (status) => {
     const s = (status || '').toLowerCase();
     if (s.includes('verde') || s.includes('realizada')) {
@@ -588,7 +604,7 @@ export default function SupervisorView() {
   };
 
   // Filtrado dinámico de tareas RPMTO001
-  const uniqueRpmtoMachines = [...new Set(rpmtoTasks.map(t => t.machine_code))].filter(Boolean).sort();
+  const uniqueRpmtoMachines = [...new Set(rpmtoTasks.map(t => formatMachineCodeOnly(t.machine_code)))].filter(x => x && x !== '-').sort();
 
   const filteredRpmtoTasks = rpmtoTasks.filter(t => {
     const rowStyle = getRpmtoRowStyle(t.status);
@@ -599,7 +615,7 @@ export default function SupervisorView() {
     if (rpmtoFilterStatus && t.status !== rpmtoFilterStatus) {
       return false;
     }
-    if (rpmtoFilterMachine && t.machine_code !== rpmtoFilterMachine) {
+    if (rpmtoFilterMachine && formatMachineCodeOnly(t.machine_code) !== rpmtoFilterMachine) {
       return false;
     }
     if (rpmtoSearch) {
@@ -926,8 +942,8 @@ export default function SupervisorView() {
                         </td>
 
                         {/* 2. Código */}
-                        <td style={{ padding: '0.75rem 0.65rem', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                          {t.machine_code || '-'}
+                        <td style={{ padding: '0.75rem 0.65rem', fontWeight: 'bold', fontSize: '0.95rem', whiteSpace: 'nowrap' }}>
+                          {formatMachineCodeOnly(t.machine_code)}
                         </td>
 
                         {/* 3. Trabajos pendientes */}
@@ -1105,9 +1121,14 @@ export default function SupervisorView() {
                           style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                         />
                         <datalist id="rpmto-plant-machines">
-                          {machineAvailability.map(m => (
-                            <option key={m.id} value={m.name}>{m.name} - {m.sector}</option>
-                          ))}
+                          {machineAvailability.map(m => {
+                            const code = formatMachineCodeOnly(m.name);
+                            return (
+                              <option key={m.id} value={code}>
+                                {code} - {m.name} ({m.sector})
+                              </option>
+                            );
+                          })}
                         </datalist>
                       </div>
                     </div>
