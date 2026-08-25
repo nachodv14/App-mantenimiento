@@ -14,9 +14,9 @@ export async function GET(request) {
   try {
     const q = `
       SELECT t.*, 
-             TO_CHAR(t.task_date, 'DD/MM/YYYY') as task_date_fmt,
-             TO_CHAR(t.start_time, 'HH24:MI') as start_time_fmt,
-             TO_CHAR(t.end_time, 'HH24:MI') as end_time_fmt,
+             FORMAT(t.task_date, 'dd/MM/yyyy') as task_date_fmt,
+             FORMAT(t.start_time, 'HH:mm') as start_time_fmt,
+             FORMAT(t.end_time, 'HH:mm') as end_time_fmt,
              o.full_name as operator_name, 
              m.name as machine_name 
       FROM tasks t 

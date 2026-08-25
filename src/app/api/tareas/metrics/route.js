@@ -66,7 +66,7 @@ export async function GET(request) {
 
     // 1. Obtener días hábiles guardados o por defecto para cada mes del rango
     const dbDaysRes = await query(
-      `SELECT year_month, business_days FROM monthly_business_days WHERE plant = $1 AND year_month = ANY($2)`,
+      `SELECT year_month, business_days FROM monthly_business_days WHERE plant = $1 AND year_month IN (SELECT value FROM string_split($2, ','))`,
       [plant, months]
     );
 

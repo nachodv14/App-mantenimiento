@@ -182,7 +182,7 @@ export async function POST(request) {
     const machineIds = data.tasks.filter(t => t.machine_id).map(t => t.machine_id);
     let machineConfigs = {};
     if (machineIds.length > 0) {
-      const mcRes = await query(`SELECT id, productive_start, productive_end FROM machines WHERE id = ANY($1)`, [machineIds]);
+      const mcRes = await query(`SELECT id, productive_start, productive_end FROM machines WHERE id IN (SELECT value FROM string_split($1, ','))`, [machineIds]);
       mcRes.rows.forEach(r => {
         machineConfigs[r.id] = r;
       });
@@ -234,9 +234,11 @@ export async function POST(request) {
           description, task_type, category, machine_id, nature,
           deviation, observaciones, affects_availability, final_state, status,
           start_out_time, end_out_time, stop_time_minutes, affected_lines
-        ) VALUES (
+        ) 
+        OUTPUT INSERTED.id
+        VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23
-        ) RETURNING id
+        )
       `;
 
       const params = [
