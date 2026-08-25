@@ -145,50 +145,50 @@ CREATE TABLE [monthly_business_days] (
 GO
 
 -- Data for plants
-INSERT INTO [plants] ([id], [name]) VALUES ('1', 'SL2');
-INSERT INTO [plants] ([id], [name]) VALUES ('2', 'SL1');
-INSERT INTO [plants] ([id], [name]) VALUES ('3', 'PIL');
-INSERT INTO [plants] ([id], [name]) VALUES ('4', 'PY');
-INSERT INTO [plants] ([id], [name]) VALUES ('5', 'RIV');
-INSERT INTO [plants] ([id], [name]) VALUES ('6', 'RAM');
-INSERT INTO [plants] ([id], [name]) VALUES ('7', 'CBA');
+INSERT INTO [plants] ([name]) VALUES ('SL2');
+INSERT INTO [plants] ([name]) VALUES ('SL1');
+INSERT INTO [plants] ([name]) VALUES ('PIL');
+INSERT INTO [plants] ([name]) VALUES ('PY');
+INSERT INTO [plants] ([name]) VALUES ('RIV');
+INSERT INTO [plants] ([name]) VALUES ('RAM');
+INSERT INTO [plants] ([name]) VALUES ('CBA');
 GO
 
 -- Data for record_types
-INSERT INTO [record_types] ([id], [name]) VALUES ('1', 'Mantenimiento de máquina (OT)');
-INSERT INTO [record_types] ([id], [name]) VALUES ('2', 'Mantenimiento edilicio / varios');
-INSERT INTO [record_types] ([id], [name]) VALUES ('3', 'Ausentismo / no productivo');
+INSERT INTO [record_types] ([name]) VALUES ('Mantenimiento de máquina (OT)');
+INSERT INTO [record_types] ([name]) VALUES ('Mantenimiento edilicio / varios');
+INSERT INTO [record_types] ([name]) VALUES ('Ausentismo / no productivo');
 GO
 
 -- Data for nature_types
-INSERT INTO [nature_types] ([id], [name]) VALUES ('1', 'Inspección');
-INSERT INTO [nature_types] ([id], [name]) VALUES ('2', 'Preventivo programado');
-INSERT INTO [nature_types] ([id], [name]) VALUES ('3', 'Preventivo condicional');
-INSERT INTO [nature_types] ([id], [name]) VALUES ('4', 'Preventivo semanal');
-INSERT INTO [nature_types] ([id], [name]) VALUES ('5', 'Preventivo mensual');
-INSERT INTO [nature_types] ([id], [name]) VALUES ('6', 'Preventivo trimestral');
-INSERT INTO [nature_types] ([id], [name]) VALUES ('7', 'Preventivo semestral');
-INSERT INTO [nature_types] ([id], [name]) VALUES ('8', 'Preventivo anual');
-INSERT INTO [nature_types] ([id], [name]) VALUES ('9', 'Mejoras');
-INSERT INTO [nature_types] ([id], [name]) VALUES ('10', 'Falla');
-INSERT INTO [nature_types] ([id], [name]) VALUES ('11', 'Montaje');
+INSERT INTO [nature_types] ([name]) VALUES ('Inspección');
+INSERT INTO [nature_types] ([name]) VALUES ('Preventivo programado');
+INSERT INTO [nature_types] ([name]) VALUES ('Preventivo condicional');
+INSERT INTO [nature_types] ([name]) VALUES ('Preventivo semanal');
+INSERT INTO [nature_types] ([name]) VALUES ('Preventivo mensual');
+INSERT INTO [nature_types] ([name]) VALUES ('Preventivo trimestral');
+INSERT INTO [nature_types] ([name]) VALUES ('Preventivo semestral');
+INSERT INTO [nature_types] ([name]) VALUES ('Preventivo anual');
+INSERT INTO [nature_types] ([name]) VALUES ( 'Mejoras');
+INSERT INTO [nature_types] ([name]) VALUES ( 'Falla');
+INSERT INTO [nature_types] ([name]) VALUES ( 'Montaje');
 GO
 
 -- Data for building_categories
-INSERT INTO [building_categories] ([id], [name]) VALUES ('1', 'Orden y limpieza');
-INSERT INTO [building_categories] ([id], [name]) VALUES ('2', 'Reunión, capacitación o asamblea');
-INSERT INTO [building_categories] ([id], [name]) VALUES ('3', 'Planta general');
-INSERT INTO [building_categories] ([id], [name]) VALUES ('4', 'Taller o pañol');
-INSERT INTO [building_categories] ([id], [name]) VALUES ('5', 'Asistencia a logística');
-INSERT INTO [building_categories] ([id], [name]) VALUES ('6', 'Asistencia a producción');
-INSERT INTO [building_categories] ([id], [name]) VALUES ('7', 'Asistencia a comercio');
+INSERT INTO [building_categories] ([name]) VALUES ('Orden y limpieza');
+INSERT INTO [building_categories] ([name]) VALUES ('Reunión, capacitación o asamblea');
+INSERT INTO [building_categories] ([name]) VALUES ('Planta general');
+INSERT INTO [building_categories] ([name]) VALUES ('Taller o pañol');
+INSERT INTO [building_categories] ([name]) VALUES ('Asistencia a logística');
+INSERT INTO [building_categories] ([name]) VALUES ('Asistencia a producción');
+INSERT INTO [building_categories] ([name]) VALUES ('Asistencia a comercio');
 GO
 
 -- Data for absence_reasons
-INSERT INTO [absence_reasons] ([id], [name]) VALUES ('1', 'Carpeta médica');
-INSERT INTO [absence_reasons] ([id], [name]) VALUES ('2', 'Vacaciones');
-INSERT INTO [absence_reasons] ([id], [name]) VALUES ('3', 'Salidas personales o retiros');
-INSERT INTO [absence_reasons] ([id], [name]) VALUES ('4', 'Feriados');
+INSERT INTO [absence_reasons] ([name]) VALUES ('Carpeta médica');
+INSERT INTO [absence_reasons] ([name]) VALUES ('Vacaciones');
+INSERT INTO [absence_reasons] ([name]) VALUES ('Salidas personales o retiros');
+INSERT INTO [absence_reasons] ([name]) VALUES ('Feriados');
 GO
 
 -- Data for users
@@ -544,14 +544,14 @@ INSERT INTO [machines] ([id], [name], [plant], [is_active], [created_at], [secto
 GO
 
 -- Data for shift_configs
-INSERT INTO [shift_configs] ([id], [plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('7', 'PIL', 'Turno Mañana', '06:00', '14:00', '2026-07-27 17:58:35');
-INSERT INTO [shift_configs] ([id], [plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('8', 'PIL', 'Turno Tarde', '14:00', '22:00', '2026-07-27 17:58:35');
-INSERT INTO [shift_configs] ([id], [plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('9', 'PIL', 'Turno Noche', '22:00', '06:00', '2026-07-27 17:58:35');
-INSERT INTO [shift_configs] ([id], [plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('1', 'SL2', 'Turno Mañana', '06:00', '14:00', '2026-07-27 18:03:26');
-INSERT INTO [shift_configs] ([id], [plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('3', 'SL2', 'Turno Noche', '22:00', '06:00', '2026-07-27 18:03:26');
-INSERT INTO [shift_configs] ([id], [plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('2', 'SL2', 'Turno Tarde', '14:00', '22:00', '2026-07-27 18:03:26');
-INSERT INTO [shift_configs] ([id], [plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('4', 'SL1', 'Turno Mañana', '06:00', '14:00', '2026-07-28 18:13:16');
-INSERT INTO [shift_configs] ([id], [plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('6', 'SL1', 'Turno Noche', '22:00', '06:00', '2026-07-28 18:13:16');
-INSERT INTO [shift_configs] ([id], [plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('5', 'SL1', 'Turno Tarde', '14:00', '22:00', '2026-07-28 18:13:16');
+INSERT INTO [shift_configs] ([plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('PIL', 'Turno Mañana', '06:00', '14:00', '2026-07-27 17:58:35');
+INSERT INTO [shift_configs] ([plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('PIL', 'Turno Tarde', '14:00', '22:00', '2026-07-27 17:58:35');
+INSERT INTO [shift_configs] ([plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('PIL', 'Turno Noche', '22:00', '06:00', '2026-07-27 17:58:35');
+INSERT INTO [shift_configs] ([plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('SL2', 'Turno Mañana', '06:00', '14:00', '2026-07-27 18:03:26');
+INSERT INTO [shift_configs] ([plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('SL2', 'Turno Noche', '22:00', '06:00', '2026-07-27 18:03:26');
+INSERT INTO [shift_configs] ([plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('SL2', 'Turno Tarde', '14:00', '22:00', '2026-07-27 18:03:26');
+INSERT INTO [shift_configs] ([plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('SL1', 'Turno Mañana', '06:00', '14:00', '2026-07-28 18:13:16');
+INSERT INTO [shift_configs] ([plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('SL1', 'Turno Noche', '22:00', '06:00', '2026-07-28 18:13:16');
+INSERT INTO [shift_configs] ([plant], [shift_name], [start_time], [end_time], [updated_at]) VALUES ('SL1', 'Turno Tarde', '14:00', '22:00', '2026-07-28 18:13:16');
 GO
 
