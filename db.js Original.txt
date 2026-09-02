@@ -1,70 +1,51 @@
 import sql from 'mssql';
 
 // Configuración con SQL Server Authentication (usuario y contraseña)
-// Se conecta directamente vía TCP al puerto 1433 (o DB_PORT)
+// Requiere que SQL Server tenga habilitado el modo mixto (SQL + Windows Auth)
 const sqlConfig = {
-  server: process.env.DB_SERVER || 'localhost',
-  port: parseInt(process.env.DB_PORT || '1433', 10),
-  database: process.env.DB_NAME || 'AppMantenimiento',
+  server: 'localhost',
+  database: 'AppMantenimiento',
   user: process.env.DB_USER || 'appnode',
   password: process.env.DB_PASSWORD || 'AppNode2026!',
   options: {
+    instanceName: 'SQLEXPRESS',
     encrypt: false,
     trustServerCertificate: true,
     enableArithAbort: true,
   },
 };
 
-let poolPromise;
-
-if (process.env.NODE_ENV === 'development') {
-  if (!global._mssqlPoolPromise) {
-    global._mssqlPoolPromise = new sql.ConnectionPool(sqlConfig)
-      .connect()
-      .then(pool => {
-        console.log('Connected to SQL Server (SQL Auth)');
-        return pool;
-      })
-      .catch(err => {
-        console.error('Database Connection Failed! Bad Config: ', err);
-        global._mssqlPoolPromise = null;
-        throw err;
-      });
-  }
-  poolPromise = global._mssqlPoolPromise;
-} else {
-  poolPromise = new sql.ConnectionPool(sqlConfig)
-    .connect()
-    .then(pool => {
-      console.log('Connected to SQL Server (SQL Auth)');
-      return pool;
-    })
-    .catch(err => {
-      console.error('Database Connection Failed! Bad Config: ', err);
-      throw err;
-    });
-}
+const poolPromise = new sql.ConnectionPool(sqlConfig)
+  .connect()
+  .then(pool => {
+    console.log('Connected to SQL Server (SQL Auth)');
+    return pool;
+  })
+  .catch(err => {
+    console.error('Database Connection Failed! Bad Config: ', err);
+    throw err;
+  });
 
 export async function query(text, params = []) {
   try {
     const pool = await poolPromise;
     const request = pool.request();
-
+    
     // Convertir parámetros estilo PostgreSQL ($1, $2) a estilo SQL Server (@p1, @p2)
     // y asignar los valores al request de mssql.
     let mssqlText = text;
-
+    
     if (params && params.length > 0) {
       params.forEach((param, index) => {
         const paramName = `p${index + 1}`;
-
+        
         // Manejar arreglos para usar en cláusulas IN
         if (Array.isArray(param)) {
           request.input(paramName, sql.NVarChar, param.join(','));
         } else {
           request.input(paramName, param);
         }
-
+        
         // Expresión regular para reemplazar el $X asegurando que no se reemplace $10 cuando buscamos $1
         const regex = new RegExp(`\\$${index + 1}(?!\\d)`, 'g');
         mssqlText = mssqlText.replace(regex, `@${paramName}`);
@@ -72,7 +53,7 @@ export async function query(text, params = []) {
     }
 
     const result = await request.query(mssqlText);
-
+    
     // Retornar en el mismo formato que esperaba pg (result.rows y result.rowCount)
     return {
       rows: result.recordset || [],
